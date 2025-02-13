@@ -6,10 +6,75 @@ First off, we will need a vending machine class: **VendingMachine**. This class'
 
 The vending machine will need to hold items, so we create an **Item** class as well. This could be defined in an abstract base class (ABC) if we want different derived types of objects, but that could also be needless complexity. The items will be managed by some object like **InventoryManager**.
 
-To use the database to store inventory information, it probably makes sense for there to be a separate class whose responsibility is communicating with the database: **DatabaseCommunicator**. In this case, it probably makes sense to define this class's interface in an ABC so a mock object can be created for testing purposes.
+To use the database to store inventory information, it probably makes sense for there to be a separate class whose responsibility is communicating with the database: **IDatabaseCommunicator**. In this case, it probably makes sense to define this class's interface in an ABC so a mock object **MockDatabaseCommunicator** can be created for testing purposes. A **RealDatabaseCommunicator** can then actually affect the database.
 
-Our MVP will just use a CLI to manage the vending machine, and there won't be any vendor-side application or interface yet. A class **CustomerCli** can hold an instance of **VendingMachine** and handle interactions via the command line. It will do input validation as well. 
+Our MVP will just use a CLI to manage the vending machine, and there won't be any vendor-side application or interface yet. A class **CustomerCli** can hold an instance of **VendingMachine** and handle interactions via the command line. It will do input validation as well.
 
-As mentioned in #14, a **PaymentProcessor** ABC should define the behaviors needed to process a payment. Then, there can be two implementations: one called **StripePaymentProcessor** that uses the Stripe API to actually process payments, and another called **MockPaymentProcessor** that can be used for testing or simply when we don't want to be using the API (pre-release).
+As mentioned in #14, a **IPaymentProcessor** ABC should define the behaviors needed to process a payment. Then, there can be two implementations: one called **StripePaymentProcessor** that uses the Stripe API to actually process payments, and another called **MockPaymentProcessor** that can be used for testing or simply when we don't want to be using the API (pre-release).
 
 ## Class Design Diagram
+
+```mermaid
+classDiagram
+    class VendingMachine {
+        +InventoryManager inventoryManager
+        +IPaymentProcessor paymentProcessor
+        +buy_product()
+        +list_options()
+    }
+
+    class InventoryManager {
+        +IDatabaseCommunicator databaseCommunicator
+        +items : List~Item~
+        +manage_inventory()
+    }
+
+    class Item {
+        +name : String
+        +price : double
+    }
+
+    class IDatabaseCommunicator {
+        <<abstract>>
+        +fetch_inventory() List~Item~
+        +update_inventory()
+    }
+
+    class MockDatabaseCommunicator {
+        +fetch_inventory() List~Item~
+        +update_inventory()
+    }
+
+    class RealDatabaseCommunicator {
+        +fetch_inventory() List~Item~
+        +update_inventory()
+    }
+
+    class CustomerCli {
+        +VendingMachine vendingMachine
+        +handle_input()
+    }
+
+    class IPaymentProcessor {
+        <<abstract>>
+        +process_payment() bool
+    }
+
+    class StripePaymentProcessor {
+        +process_payment() bool
+    }
+
+    class MockPaymentProcessor {
+        +process_payment() bool
+    }
+
+    VendingMachine --> "has-a" InventoryManager
+    InventoryManager --> "has-a" IDatabaseCommunicator
+    InventoryManager --> "has-many" Item
+    IDatabaseCommunicator <|-- "is-a" MockDatabaseCommunicator
+    IDatabaseCommunicator <|-- "is-a" RealDatabaseCommunicator
+    VendingMachine --> "has-a" IPaymentProcessor
+    IPaymentProcessor <|-- "is-a" StripePaymentProcessor
+    IPaymentProcessor <|-- "is-a" MockPaymentProcessor
+    CustomerCli --> "has-a" VendingMachine
+```
