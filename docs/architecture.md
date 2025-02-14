@@ -8,7 +8,7 @@
 
 - How to handle cases when products are out? List them as quantity 0, or just don't list at all. Delete from database whenever quantity reaches 0??
 
-- Even if we don't have a complete vendor-side application, we still need a way to restock. Even if it is a lot simpler, still something to say "add 5 candy bars" or something
+- Known race condition if multiple users simultaneously try to buy an item with only 1 left in stock.
 
 ## Design Decision Making Process
 
@@ -16,11 +16,15 @@ First off, we will need a vending machine class: **VendingMachine**. This class'
 
 The vending machine will need to hold items, and this inventory information will be stored in the database.
 
-To use the database to store inventory information, it probably makes sense for there to be a separate class whose responsibility is communicating with the database: **IDatabaseCommunicator**. In this case, it probably makes sense to define this class's interface in an ABC so a mock object **MockDatabaseCommunicator** can be created for testing purposes. A **RealDatabaseCommunicator** can then actually affect the database.
+To use the database to store inventory information, it probably makes sense for there to be a separate class whose responsibility is communicating with the database: **IDatabaseCommunicator**. In this case, it probably makes sense to define this class's interface in an abstract base class (ABC) so a mock object **MockDatabaseCommunicator** can be created for testing purposes. A **RealDatabaseCommunicator** can then be implemented to actually affect the database.
 
-It is proposed that there is a facade class, **InventoryManager**, that sits on top of **IDatabaseCommunicator** to further abstract away some information. For example, the **IDatabaseCommunicator** might have a method query_stock_information(string itemName) that performs the database query, and **InventoryManager** may have a method get_stock_information(string itemName) that then calls the query_stock_information(string itemName) method. This could be needless complexity, though, so it may not be necessary. 
+It is proposed that there is a class, **InventoryManager**, that sits on top of **IDatabaseCommunicator** to further abstract away some information. For example, the **IDatabaseCommunicator** might have a method query_stock_information(string itemName) that performs the database query, and **InventoryManager** may have a method get_stock_information(string itemName) that then calls the query_stock_information(string itemName) method.
 
-Our MVP will just use a CLI to manage the vending machine, and there won't be any fancy vendor-side application. A class **CustomerCli** can hold an instance of **VendingMachine** and handle interactions via the command line. It will do input validation as well.
+Once inventory information has been read from the **IDatabaseCommunicator**, the **InventoryManager** will cache that information in some sort of data structure so it doesn't need to re-query the database every time more information is requested. The data structure will hold instances of an **Item** class. Once the transcation is complete, the **InventoryManager** can then write the updated inventory information back to the database again using the **IDatabaseCommunicator**.
+
+NOTE: For now, we will ignore the following potential race condition that is presented by this design: imagine two people run the application at the same time. Say there is some item in inventory that has only 1 item left. Both users will have the ability to purchase this item, when in reality only 1 should be allowed. This is a known potential issue that we will worry about later.
+
+Our MVP will just use a CLI to interface with the vending machine, and there won't be any fancy vendor-side application. A class **CustomerCli** can hold an instance of **VendingMachine** and handle interactions via the command line. It will do input validation as well.
 
 For now, there can be a simple **VendorCli** that holds a reference to the same **InventoryManager** object that **VendingMachine** holds a reference to. The **VendorCli** can implement simple methods for restocking the vending machine.
 
@@ -41,6 +45,12 @@ classDiagram
         +IDatabaseCommunicator databaseCommunicator
         +get_stock_information(string itemName) : int
         +update_stock(string itemName, int quantity)
+    }
+    
+    class Item {
+        +double price
+        +int quantity
+        +string name
     }
 
     class IDatabaseCommunicator {
@@ -85,6 +95,7 @@ classDiagram
     VendingMachine "has-a" --> InventoryManager
     VendorCli --> "has-a" InventoryManager
     InventoryManager --> "has-a" IDatabaseCommunicator
+    InventoryManager --> "has-many" Item
     IDatabaseCommunicator <|-- "is-a" MockDatabaseCommunicator
     IDatabaseCommunicator <|-- "is-a" RealDatabaseCommunicator
     VendingMachine --> "has-a" IPaymentProcessor
