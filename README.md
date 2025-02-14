@@ -3,8 +3,7 @@
 ## Project-19: Vending Machine
 
 ### Project Abstract
-This software will, at first, offer a simple command line interface allowing users to simulate the process of purchasing items from the vending machine. As of now, we plan to first develop in Python to enable rapid development. If speed becomes an issue, we may refactor the system in C++.
-From there, there have been multiple ideas tossed around regarding further steps. We think it would be cool to integrate a Raspberry Pi to make a physical vending machine that can actually dispense product.  
+This software will, at first, offer a simple command line interface allowing users to simulate the process of purchasing items from the vending machine. We plan to first develop in Python to enable rapid development. If speed becomes an issue, we may refactor the system in C++. From there, we've have multiple ideas tossed around regarding further steps. We think it would be cool to integrate a Raspberry Pi to make a physical vending machine that can actually dispense product.  
 
 The database could hold information of how stocked a vending machine is. It could also contain this information for multiple vending machines. Maybe vendors' information could be kept in a database, and they could login to "restock" the vending machines or collect payment. Speaking of payments, maybe we use the Stripe API to collect payments? Or payments could automatically be routed.  
 
@@ -16,240 +15,86 @@ To that end, if we go this route the database would be the connection point betw
 
 As is made obvious, the ideas are endless. This document will be updated continuously as decisions are made about the overall system architecture and how far we want to reach. If we have more time, or less time, than expected, these system-wide architectural decisions will be reflected here.  
 
-
 ### Customer
 The customer for this software will be customers who would like to purchase an item from the vending machine as well as the vendors who'd like to sell their products in the vending machine. We expect to create two interaces: one for customers to purchase items, and one for vendors to view sales information and restock.
 
 ### Specification
 
-<!--A detailed specification of the system. UML, or other diagrams, such as finite automata, or other appropriate specification formalisms, are encouraged over natural language.-->
-
-<!--Include sections, for example, illustrating the database architecture (with, for example, an ERD).-->
-
-<!--Included below are some sample diagrams, including some example tech stack diagrams.-->
-
 #### Technology Stack
 
-Here are some sample technology stacks that you can use for inspiration:
-
 ```mermaid
 flowchart RL
 subgraph Front End
-	A(Javascript: React)
+    A(Python: CLI)
 end
 	
 subgraph Back End
-	B(Python: Django with \nDjango Rest Framework)
+    B(Python: ???)
 end
 	
 subgraph Database
-	C[(MySQL)]
+    C[(MySQL)]
 end
 
-A <-->|"REST API"| B
-B <-->|Django ORM| C
+A <-->|Function Calls| B
+B <-->|???| C
 ```
-
-```mermaid
-flowchart RL
-subgraph Front End
-	A(Javascript: Vue)
-end
-	
-subgraph Back End
-	B(Python: Flask)
-end
-	
-subgraph Database
-	C[(MySQL)]
-end
-
-A <-->|"REST API"| B
-B <-->|SQLAlchemy| C
-```
-
-```mermaid
-flowchart RL
-subgraph Front End
-	A(Javascript: Vue)
-end
-	
-subgraph Back End
-	B(Javascript: Express)
-end
-	
-subgraph Database
-	C[(MySQL)]
-end
-
-A <-->|"REST API"| B
-B <--> C
-```
-
-```mermaid
-flowchart RL
-subgraph Front End
-	A(Static JS, CSS, HTML)
-end
-	
-subgraph Back End
-	B(Java: SpringBoot)
-end
-	
-subgraph Database
-	C[(MySQL)]
-end
-
-A <-->|HTTP| B
-B <--> C
-```
-
-```mermaid
-flowchart RL
-subgraph Front End
-	A(Mobile App)
-end
-	
-subgraph Back End
-	B(Python: Django)
-end
-	
-subgraph Database
-	C[(MySQL)]
-end
-
-A <-->|REST API| B
-B <-->|Django ORM| C
-```
-
-
 
 #### Database
 
 ```mermaid
 ---
-title: Sample Database ERD for an Order System
+title: Vending Machine Stock Database ERD
 ---
 erDiagram
-    Customer ||--o{ Order : "placed by"
-    Order ||--o{ OrderItem : "contains"
-    Product ||--o{ OrderItem : "included in"
-
-    Customer {
-        int customer_id PK
-        string name
-        string email
-        string phone
+    VendingMachineStock {
+        string ProductName PK "20 chars max"
+        int ID PK "Unique identifier"
+        int Cost "Price of the item"
+        int Location "Machine slot location"
+        int Quantity "Number of items in stock"
     }
 
-    Order {
-        int order_id PK
-        int customer_id FK
-        string order_date
-        string status
+    %% Indexes
+    VendingMachineStock {
+        UNIQUE ProductName "Unique constraint on Product Name"
+        INDEX ID "Index on ID"
+        INDEX CompositeIndex "Index on Product Name and ID"
     }
 
-    Product {
-        int product_id PK
-        string name
-        string description
-        decimal price
-    }
-
-    OrderItem {
-        int order_item_id PK
-        int order_id FK
-        int product_id FK
-        int quantity
-    }
 ```
 
-#### Class Diagram
+#### [Class Diagram](docs/architecture.md)
 
-```mermaid
----
-title: Sample Class Diagram for Animal Program
----
-classDiagram
-    class Animal {
-        - String name
-        + Animal(String name)
-        + void setName(String name)
-        + String getName()
-        + void makeSound()
-    }
-    class Dog {
-        + Dog(String name)
-        + void makeSound()
-    }
-    class Cat {
-        + Cat(String name)
-        + void makeSound()
-    }
-    class Bird {
-        + Bird(String name)
-        + void makeSound()
-    }
-    Animal <|-- Dog
-    Animal <|-- Cat
-    Animal <|-- Bird
-```
+Please follow the link above.
 
 #### Flowchart
-
 ```mermaid
 ---
-title: Sample Program Flowchart
+title: Vending Machine Program Flowchart
 ---
 graph TD;
-    Start([Start]) --> Input_Data[/Input Data/];
-    Input_Data --> Process_Data[Process Data];
-    Process_Data --> Validate_Data{Validate Data};
-    Validate_Data -->|Valid| Process_Valid_Data[Process Valid Data];
-    Validate_Data -->|Invalid| Error_Message[/Error Message/];
-    Process_Valid_Data --> Analyze_Data[Analyze Data];
-    Analyze_Data --> Generate_Output[Generate Output];
-    Generate_Output --> Display_Output[/Display Output/];
-    Display_Output --> End([End]);
-    Error_Message --> End;
-```
-
-#### Behavior
-
-```mermaid
----
-title: Sample State Diagram For Coffee Application
----
-stateDiagram
-    [*] --> Ready
-    Ready --> Brewing : Start Brewing
-    Brewing --> Ready : Brew Complete
-    Brewing --> WaterLowError : Water Low
-    WaterLowError --> Ready : Refill Water
-    Brewing --> BeansLowError : Beans Low
-    BeansLowError --> Ready : Refill Beans
-```
-
-#### Sequence Diagram
-
-```mermaid
-sequenceDiagram
-
-participant ReactFrontend
-participant DjangoBackend
-participant MySQLDatabase
-
-ReactFrontend ->> DjangoBackend: HTTP Request (e.g., GET /api/data)
-activate DjangoBackend
-
-DjangoBackend ->> MySQLDatabase: Query (e.g., SELECT * FROM data_table)
-activate MySQLDatabase
-
-MySQLDatabase -->> DjangoBackend: Result Set
-deactivate MySQLDatabase
-
-DjangoBackend -->> ReactFrontend: JSON Response
-deactivate DjangoBackend
+    Start([Start]) --> Select_Mode{Select Mode};
+    
+    Select_Mode -->|Vendor| Vendor_Mode;
+    Vendor_Mode --> Enter_Item[/Enter "item price quantity"/];
+    Enter_Item --> Vendor_Mode;
+    Vendor_Mode -->|Exit| End([End]);
+    
+    Select_Mode -->|Customer| Customer_Mode;
+    Customer_Mode --> Customer_Choice{Select Option};
+    
+    Customer_Choice -->|List Products| List_Products[/Display Available Products/];
+    List_Products --> Customer_Choice;
+    
+    Customer_Choice -->|Purchase Product| Enter_Product[/Enter Product Name/];
+    Enter_Product --> Process_Payment[/Process Payment/];
+    Process_Payment -->|Success| Dispense_Item[/Dispense Item/];
+    Dispense_Item --> Customer_Choice;
+    Process_Payment -->|Failed| Payment_Failed[/Payment Failed, Try Again/];
+    Payment_Failed --> Customer_Choice;
+    
+    Customer_Choice -->|Exit| End;
 ```
 
 ### Standards & Conventions
