@@ -5,6 +5,8 @@ Publishable KEY: pk_test_51QtZf905Lo986fYCzPAJM3pp7s7Qv64E9L6a4jAwP0zSc7XxgHpMt2
 Secret KEY: 
 sk_test_51QtZf905Lo986fYCauDB7uTHm0jtKqdNrYC4HkOl8n1CLtdkA5ZJVNF1isK15PqFObQ9Ax8IQutOsgmJRWBla76400Y5BxJB2I
 
+### How to get your own
+Make an acount at https://stripe.com/ then click on the tab at the top left that says New Buisnesses. Click and select sandbox. Create a sandbox and note down the keys.
 
 ### What is the difference
 #### Secret Key:
