@@ -31,7 +31,7 @@ class InventoryManager:
     MAXHEIGHT = 10
     MAXWIDTH = 10
 
-    def __init__(self, height: int, width: int):
+    def __init__(self, height: int, width: int) -> None:
         """Initialize an InventoryManager with a 2d list of items."""
         if(height <= 0 or width <= 0 or
            height > self.MAXHEIGHT or width > self.MAXWIDTH):
@@ -85,7 +85,7 @@ class InventoryManager:
         row: int = ord(slot_name[0]) - ord('0')
         col: int = ord(slot_name[1]) - ord('0')
 
-        if(row < 0 or col < 0 or row > self.MAXHEIGHT or col > self.MAXWIDTH):
+        if(row < 0 or col < 0 or row > len(self.items) or col > len(self.items[0])):
             raise ValueError("Invalid slot name")
 
         return row, col
