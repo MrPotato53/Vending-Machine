@@ -1,3 +1,5 @@
+line-length = 100
+
 [lint]
 
 select = ["ALL"]
@@ -5,5 +7,8 @@ select = ["ALL"]
 # Rules to be ignored
 ignore = [
     "ANN002",
-    "D100" #undocumented-public-module
+    "D100", 
+    "EM101", 
+    "E701",
+    "TRY003"
 ]
