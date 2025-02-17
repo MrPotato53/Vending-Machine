@@ -32,19 +32,21 @@ As mentioned in #14, a **IPaymentProcessor** ABC should define the behaviors nee
 
 ## Class Design Diagram
 
+NOTE: The functions inside each class are just provided as example functionality of what each class may do. As each class gets developed, we can investigate and define each class's interface more thoughtfully. This document can be used as a guide when determining the single responsibility of each class, and to understand how other classes may interact with one another.
+
 ```mermaid
 classDiagram
     class VendingMachine {
-        +InventoryManager inventoryManager
-        +IPaymentProcessor paymentProcessor
-        +buy_product(string itemName)
+        +InventoryManager inventory_manager
+        +IPaymentProcessor payment_processor
+        +buy_product(string item_name)
         +list_options()
     }
 
     class InventoryManager {
-        +IDatabaseCommunicator databaseCommunicator
-        +get_stock_information(string itemName) : int
-        +update_stock(string itemName, int quantity)
+        +IDatabaseCommunicator database_communicator
+        +get_stock_information(string item_name) : int
+        +update_stock(string item_name, int quantity)
     }
     
     class Item {
@@ -55,28 +57,28 @@ classDiagram
 
     class IDatabaseCommunicator {
         <<abstract>>
-        +query_stock_information(string itemName) : int
-        +update_inventory(string itemName, int quantity)
+        +query_stock_information(string item_name) : int
+        +update_inventory(string item_name, int quantity)
     }
 
     class MockDatabaseCommunicator {
-        +query_stock_information(string itemName) : int
-        +update_inventory(string itemName, int quantity)
+        +query_stock_information(string item_name) : int
+        +update_inventory(string item_name, int quantity)
     }
 
     class RealDatabaseCommunicator {
-        +query_stock_information(string itemName) : int
-        +update_inventory(string itemName, int quantity)
+        +query_stock_information(string item_name) : int
+        +update_inventory(string item_name, int quantity)
     }
 
     class CustomerCli {
-        +VendingMachine vendingMachine
+        +VendingMachine vending_machine
         +handle_input()
     }
 
     class VendorCli {
         +InventoryManager inventoryManager
-        +restock(string itemName, int quantity)
+        +restock(string item_name, int quantity)
     }
 
     class IPaymentProcessor {
