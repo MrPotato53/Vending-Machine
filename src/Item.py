@@ -20,7 +20,7 @@ class Item:
         Get the stock of the item
     def set_cost(self, cost) -> None
         Set the cost of the item
-    def change_stock(self, stock) -> None
+    def adjust_stock(self, adjustment_amount) -> None
         Update the stock of the item (can be positive or negative value)
 
     """
@@ -49,6 +49,6 @@ class Item:
         if(cost <= 0): raise ValueError("Cost of item must be > 0")
         self.__cost = cost
 
-    def change_stock(self, stock: int) -> None:
-        if(self.__stock + stock < 0): raise ValueError("Value of stock cannot go below 0")
-        self.__stock += stock
+    def adjust_stock(self, adjustment_amount: int) -> None:
+        if(self.__stock + adjustment_amount < 0): raise ValueError("Value of stock cannot go below 0")
+        self.__stock += adjustment_amount
