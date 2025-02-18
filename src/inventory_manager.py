@@ -1,5 +1,12 @@
-from inventory_manager_mode import Mode
+from enum import Enum
+
 from item import Item
+
+
+class Mode(Enum):  # noqa: D101
+    IDLE = 1
+    TRANSACTION = 2
+    RESTOCKING = 3
 
 
 class InventoryManager:

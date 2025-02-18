@@ -1,5 +1,4 @@
-from inventory_manager import InventoryManager
-from inventory_manager_mode import Mode
+from inventory_manager import InventoryManager, Mode
 
 
 class VendingMachine:
