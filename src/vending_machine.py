@@ -1,4 +1,4 @@
-from inventory_manager import InventoryManager, Mode
+from inventory_manager import InventoryManager, InventoryManagerMode
 
 
 class VendingMachine:
@@ -35,39 +35,39 @@ class VendingMachine:
     """
 
     def __init__(self, inventory_manager: InventoryManager):
-        self.inv_man = inventory_manager
-        self.stripe_payment_token: str = None
-        self.transaction_price: float = 0
+        self.__inv_man = inventory_manager
+        self.__stripe_payment_token: str = None
+        self.__transaction_price: float = 0
 
 
     def list_options(self) -> str:
-        return self.inv_man.get_stock_information()
+        return self.__inv_man.get_stock_information()
 
 
     def start_transaction(self) -> None:
-        if(self.inv_man.get_mode() is not Mode.IDLE):
+        if(self.__inv_man.get_mode() is not InventoryManagerMode.IDLE):
             raise ValueError("Vending Machine must be IDLE to start transaction")
-        self.inv_man.set_mode(Mode.TRANSACTION)
+        self.__inv_man.set_mode(InventoryManagerMode.TRANSACTION)
 
         # stripe API implementation to log user in and obtain API token
         # self.stripe_payment_token = <API token>
 
 
     def buy_item(self, slot_name: str) -> None:
-        if(self.inv_man.get_mode() is not Mode.TRANSACTION):
+        if(self.__inv_man.get_mode() is not InventoryManagerMode.TRANSACTION):
             raise ValueError("buy_item() can only be called when transaction is in progress. "\
                              "Call start_transaction() first")
 
-        purchase_price = self.inv_man.change_stock(slot_name, -1)
-        self.transaction_price = round(self.transaction_price + purchase_price, 2)
+        purchase_price = self.__inv_man.change_stock(slot_name, -1)
+        self.__transaction_price = round(self.__transaction_price + purchase_price, 2)
 
 
     def end_transaction(self) -> None:
-        if(self.inv_man.get_mode() is not Mode.TRANSACTION):
+        if(self.__inv_man.get_mode() is not InventoryManagerMode.TRANSACTION):
             raise ValueError("Transaction is not currently in progress, start a transaction first")
 
         # Use stripe API to charge self.transaction_price with self.stripe_payment_token
-        self.transaction_price = 0
-        self.stripe_payment_token = None
+        self.__transaction_price = 0
+        self.__stripe_payment_token = None
 
-        self.inv_man.set_mode(Mode.IDLE)
+        self.__inv_man.set_mode(InventoryManagerMode.IDLE)
