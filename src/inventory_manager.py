@@ -22,6 +22,8 @@ class InventoryManager:
         New stock value = item_stock, because old stock is voided
     def clear_slot(self, slot_name) -> None
         Removes the item from a named slot
+    def set_cost(self, slot_name, new_cost) -> None
+        Sets a new cost for a given slot
     def __get_coordinates_from_slotname(self, slot_name) -> tuple[int, int]
         Given a slot_name in the form of a string, returns the coordinates in items
 
@@ -77,6 +79,15 @@ class InventoryManager:
     def clear_slot(self, slot_name: str) -> None:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
         self.items[itemrow][itemcol] = None
+
+
+    def set_cost(self, slot_name: str, new_cost: float) -> None:
+        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+
+        item: item_module.Item = self.items[itemrow][itemcol]
+        if(item is None): raise ValueError("No item at slot " + slot_name)
+
+        item.set_cost(new_cost)
 
 
     def __get_coordinates_from_slotname(self, slot_name: str) -> tuple[int, int]:
