@@ -126,7 +126,7 @@ class InventoryManager:
         item.set_cost(new_cost)
 
 
-    def get_item(self, slot_name: str):
+    def get_item(self, slot_name: str) -> str:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
