@@ -135,7 +135,7 @@ class VendingMachine:
         self.inv_man.add_item(slot_name, item_name, item_stock, item_cost)
 
 
-    def set_cost(self, slot_name, new_cost) -> None:
+    def set_cost(self, slot_name: str, new_cost: float) -> None:
         if(not self.restocking_in_progress):
             raise ValueError("set_cost() can only be called when restocking. "\
                              "Call start_restocking() first")
