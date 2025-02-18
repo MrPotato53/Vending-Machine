@@ -60,7 +60,7 @@ class VendingMachine:
                              "Call start_transaction() first")
 
         purchase_price = self.inv_man.change_stock(slot_name, -1)
-        self.transaction_price += purchase_price
+        self.transaction_price = round(self.transaction_price + purchase_price, 2)
 
 
     def end_transaction(self) -> None:
