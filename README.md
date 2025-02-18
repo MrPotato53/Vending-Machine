@@ -42,6 +42,8 @@ B <-->|???| C
 
 #### Database
 
+***TODO*** This database design will need to be updated as we investigate what specific information will need to be stored on the database as well as how the different tables will be organized
+
 ```mermaid
 ---
 title: Vending Machine Stock Database ERD
