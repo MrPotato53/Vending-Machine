@@ -16,8 +16,7 @@ class InventoryManager:
     def change_stock(self, slot_name, item_stock) -> float
         Changing the stock of a slot
         Update the stock of existing item in slot. If no item, throw error
-        If inputted stock < 0, return the price of items removed
-        If item_name field is used:
+        If inputted stock < 0, return the total combined price of items removed
     def add_item(self, slot_name, item_name, item_stock, item_cost) -> None
         Add new item in slot, override potentially preexisting items.
         New stock value = item_stock, because old stock is voided
