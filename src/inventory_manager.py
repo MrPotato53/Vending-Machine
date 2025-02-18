@@ -38,6 +38,8 @@ class InventoryManager:
         Removes the item from a named slot
     def set_cost(self, slot_name, new_cost) -> None
         Sets a new cost for a given slot
+    def get_item(self, slot_name) -> str
+        Returns the name of the item at a slot
     def __get_coordinates_from_slotname(self, slot_name) -> tuple[int, int]
         Given a slot_name in the form of a string, returns the coordinates in items
 
@@ -122,6 +124,15 @@ class InventoryManager:
         if(item is None): raise ValueError("No item at slot " + slot_name)
 
         item.set_cost(new_cost)
+
+
+    def get_item(self, slot_name: str):
+        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+
+        item: Item = self.__items[itemrow][itemcol]
+        if(item is None): raise ValueError("No item at slot " + slot_name)
+
+        return item.get_name()
 
 
     def __get_coordinates_from_slotname(self, slot_name: str) -> tuple[int, int]:
