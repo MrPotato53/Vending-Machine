@@ -1,6 +1,6 @@
 import pytest  # noqa: N999
 
-from src.Item import Item
+from src.item import Item
 
 
 # Fixture to create a sample Item instance
