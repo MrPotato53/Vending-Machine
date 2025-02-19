@@ -50,5 +50,6 @@ class Item:
         self.__cost = round(cost, 2)
 
     def adjust_stock(self, adjustment_amount: int) -> None:
-        if(self.__stock + adjustment_amount < 0): raise ValueError("Value of stock cannot go below 0")
+        if(self.__stock + adjustment_amount < 0):
+            raise ValueError("Value of stock cannot go below 0")
         self.__stock += adjustment_amount
