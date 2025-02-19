@@ -65,7 +65,7 @@ def perform_transaction():
         selection = input("Please type the slot name of the item you would like to purchase, " \
                           "or Q to finish transaction: ")
         if(selection == "Q"):
-            print(f"Payment method was charged {str(vending_machine.end_transaction())}")
+            print(f"Payment method was charged {vending_machine.end_transaction()!s}")
             return
 
         try:
@@ -84,7 +84,7 @@ def vendor_mode():
     inventory_manager.set_mode(InventoryManagerMode.RESTOCKING)
     while(True):
         print("Vending Machine Inventory: ")
-        print(inventory_manager.get_stock_information(True))
+        print(inventory_manager.get_stock_information(show_empty_slots=True))
         user_input = input(textwrap.dedent("""
                     Please select one of the following options
                     1. Update stock of a slot
@@ -131,7 +131,7 @@ def add_item():
         cost = float(input("Please enter the price of the item you'd like to add (dollars): "))
         amount = int(input("Please enter the amount you'd like to change the stock by: "))
         inventory_manager.add_item(slot, name, amount, cost)
-        print(f"Added {str(amount)} of {name} of price {str(cost)} to slot {slot}")
+        print(f"Added {amount!s} of {name} of price {cost!s} to slot {slot}")
     except ValueError as e:
         print("Error: ", e)
     except Exception as e:
@@ -145,7 +145,7 @@ def set_cost():
         slot = input("Please enter the slot you'd like to update: ")
         cost = float(input("Please enter the new price of this slot: "))
         inventory_manager.set_cost(slot, cost)
-        print(f"Set the cost of slot {slot} to {str(cost)}")
+        print(f"Set the cost of slot {slot} to {cost!s}")
     except ValueError as e:
         print("Error: ", e)
     except Exception as e:

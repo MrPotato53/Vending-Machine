@@ -47,6 +47,7 @@ class InventoryManager:
 
     MAXHEIGHT = 10
     MAXWIDTH = 10
+    SLOTNAMELENGTH = 2
 
     def __init__(self, height: int, width: int) -> None:
         """Initialize an InventoryManager with a 2d list of items."""
@@ -62,14 +63,17 @@ class InventoryManager:
 
 
     def set_mode(self, new_mode: InventoryManagerMode) -> None:
-        if(new_mode is InventoryManagerMode.IDLE and self.__mode is InventoryManagerMode.IDLE):
+        if(new_mode is InventoryManagerMode.IDLE and \
+           self.__mode is InventoryManagerMode.IDLE):
                 raise ValueError("Cannot change mode from IDLE to IDLE")
 
-        if(new_mode is InventoryManagerMode.TRANSACTION and self.__mode is not InventoryManagerMode.IDLE):
+        if(new_mode is InventoryManagerMode.TRANSACTION and \
+           self.__mode is not InventoryManagerMode.IDLE):
             raise ValueError("Mode must be IDLE before changing to TRANSACTION, not" \
                              + InventoryManagerMode.IDLE.name)
 
-        if(new_mode is InventoryManagerMode.RESTOCKING and self.__mode is not InventoryManagerMode.IDLE):
+        if(new_mode is InventoryManagerMode.RESTOCKING and \
+           self.__mode is not InventoryManagerMode.IDLE):
             raise ValueError("Mode must be IDLE before changing to RESTOCKING, not" \
                              + InventoryManagerMode.IDLE.name)
 
@@ -136,7 +140,8 @@ class InventoryManager:
 
 
     def __get_coordinates_from_slotname(self, slot_name: str) -> tuple[int, int]:
-        if(len(slot_name) != 2): raise ValueError("Slot name must be 2 characters long")
+        if(len(slot_name) != self.SLOTNAMELENGTH):
+            raise ValueError("Slot name must be 2 characters long")
         row: int = ord(slot_name[0]) - ord('0')
         col: int = ord(slot_name[1]) - ord('0')
 
