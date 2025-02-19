@@ -21,16 +21,18 @@ class VendingMachine:
         Only callable if mode of inv_man is IDLE
         Sets mode of inv_man to TRANSACTION
         Calls Stripe API to get stripe_payment_token for api calls
-    def buy_item(self, slot_name) -> None
+    def buy_item(self, slot_name) -> str
         Only callable if mode of inv_man is TRANSACTION
         Dispense item selected
         Update stock information and database (might happen in inventory_manager implementation)
         Add price of item to transaction_price
-    def end_transaction(self) -> None
+        Returns name of item that was purchased
+    def end_transaction(self) -> float
         Only callable if mode of inv_man is TRANSACTION
         Use Stripe API to charge user's payment method with transaction_price
         Clear transaction_price and stripe_payment_token
         Sets mode of inv_man to IDLE
+        Returns total purchase price
 
     """
 
@@ -53,21 +55,24 @@ class VendingMachine:
         # self.stripe_payment_token = <API token>
 
 
-    def buy_item(self, slot_name: str) -> None:
+    def buy_item(self, slot_name: str) -> str:
         if(self.__inv_man.get_mode() is not InventoryManagerMode.TRANSACTION):
             raise ValueError("buy_item() can only be called when transaction is in progress. "\
                              "Call start_transaction() first")
 
         purchase_price = self.__inv_man.change_stock(slot_name, -1)
         self.__transaction_price = round(self.__transaction_price + purchase_price, 2)
+        return self.__inv_man.get_item(slot_name)
 
 
-    def end_transaction(self) -> None:
+    def end_transaction(self) -> float:
         if(self.__inv_man.get_mode() is not InventoryManagerMode.TRANSACTION):
             raise ValueError("Transaction is not currently in progress, start a transaction first")
 
         # Use stripe API to charge self.transaction_price with self.stripe_payment_token
+        out = self.__transaction_price
         self.__transaction_price = 0
         self.__stripe_payment_token = None
 
         self.__inv_man.set_mode(InventoryManagerMode.IDLE)
+        return out
