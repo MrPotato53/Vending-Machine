@@ -1,3 +1,6 @@
+import src.exceptions as err
+
+
 class Item:
     """A item in the vending machine.
 
@@ -30,8 +33,8 @@ class Item:
         """Cost must be greater than 0 and stock must be at least 0."""
         self.__item_name = item_name
 
-        if(cost <= 0): raise ValueError("Cost of item must be > 0")
-        if(stock < 0): raise ValueError("Value of must be >= 0")
+        if(cost < 0): raise err.NegativeCostError("Cost of item must be >= 0")
+        if(stock < 0): raise err.NegativeStockError("Value of must be >= 0")
 
         self.__cost = round(cost, 2)
         self.__stock = stock
@@ -46,10 +49,10 @@ class Item:
         return self.__stock
 
     def set_cost(self, cost: float) -> None:
-        if(cost <= 0): raise ValueError("Cost of item must be > 0")
+        if(cost < 0): raise err.NegativeCostError("Cost of item must be >= 0")
         self.__cost = round(cost, 2)
 
     def adjust_stock(self, adjustment_amount: int) -> None:
         if(self.__stock + adjustment_amount < 0):
-            raise ValueError("Value of stock cannot go below 0")
+            raise err.NegativeStockError("Value of stock cannot go below 0")
         self.__stock += adjustment_amount
