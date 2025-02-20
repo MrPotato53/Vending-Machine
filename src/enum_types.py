@@ -1,4 +1,4 @@
-from enums import Enum
+from enum import Enum
 
 
 class InventoryManagerMode(Enum):  # noqa: D101

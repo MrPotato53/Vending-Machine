@@ -1,6 +1,6 @@
-import src.exceptions as err
-from src.enums import InventoryManagerMode
-from src.inventory_manager import InventoryManager
+import exceptions as err
+from enum_types import InventoryManagerMode
+from inventory_manager import InventoryManager
 
 
 class VendingMachine:

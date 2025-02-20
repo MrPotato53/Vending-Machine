@@ -1,4 +1,4 @@
-import src.exceptions as err
+import exceptions as err
 
 
 class Item:

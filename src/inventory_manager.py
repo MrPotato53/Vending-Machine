@@ -1,6 +1,6 @@
-import src.exceptions as err
-from src.enums import InventoryManagerMode
-from src.item import Item
+import exceptions as err
+from enum_types import InventoryManagerMode
+from item import Item
 
 
 class InventoryManager:
