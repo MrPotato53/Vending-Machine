@@ -1,12 +1,6 @@
-from enum import Enum
-
+import exceptions as err
+from enum_types import InventoryManagerMode
 from item import Item
-
-
-class InventoryManagerMode(Enum):  # noqa: D101
-    IDLE = 1
-    TRANSACTION = 2
-    RESTOCKING = 3
 
 
 class InventoryManager:
@@ -38,8 +32,8 @@ class InventoryManager:
         Removes the item from a named slot
     def set_cost(self, slot_name, new_cost) -> None
         Sets a new cost for a given slot
-    def get_item(self, slot_name) -> str
-        Returns the name of the item at a slot
+    def get_item(self, slot_name) -> Item
+        Returns the item at a slot
     def __get_coordinates_from_slotname(self, slot_name) -> tuple[int, int]
         Given a slot_name in the form of a string, returns the coordinates in items
 
@@ -50,10 +44,10 @@ class InventoryManager:
     SLOTNAMELENGTH = 2
 
     def __init__(self, height: int, width: int) -> None:
-        """Initialize an InventoryManager with a 2d list of items."""
+        """Initialize an InventoryManager with a 2d list of items and set mode to IDLE."""
         if(height <= 0 or width <= 0 or
            height > self.MAXHEIGHT or width > self.MAXWIDTH):
-            raise ValueError("Width and Height must be 0 < x < 11")
+            raise err.InvalidDimensionsError("Width and Height must be 0 < x < 11")
         self.__items = [[None for i in range(width)] for j in range(height)]
         self.__mode = InventoryManagerMode.IDLE
 
@@ -65,16 +59,16 @@ class InventoryManager:
     def set_mode(self, new_mode: InventoryManagerMode) -> None:
         if(new_mode is InventoryManagerMode.IDLE and \
            self.__mode is InventoryManagerMode.IDLE):
-                raise ValueError("Cannot change mode from IDLE to IDLE")
+                raise err.InvalidModeError("Cannot change mode from IDLE to IDLE")
 
         if(new_mode is InventoryManagerMode.TRANSACTION and \
            self.__mode is not InventoryManagerMode.IDLE):
-            raise ValueError("Mode must be IDLE before changing to TRANSACTION, not" \
+            raise err.InvalidModeError("Mode must be IDLE before changing to TRANSACTION, not" \
                              + InventoryManagerMode.IDLE.name)
 
         if(new_mode is InventoryManagerMode.RESTOCKING and \
            self.__mode is not InventoryManagerMode.IDLE):
-            raise ValueError("Mode must be IDLE before changing to RESTOCKING, not" \
+            raise err.InvalidModeError("Mode must be IDLE before changing to RESTOCKING, not" \
                              + InventoryManagerMode.IDLE.name)
 
         self.__mode = new_mode
@@ -103,7 +97,7 @@ class InventoryManager:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
-        if(item is None): raise ValueError("No item at slot " + slot_name)
+        if(item is None): raise err.EmptySlotError("No item at slot " + slot_name)
         item.adjust_stock(item_stock)
         if(item_stock < 0):
             return round(-1 * item_stock * item.get_cost(), 2)
@@ -125,27 +119,27 @@ class InventoryManager:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
-        if(item is None): raise ValueError("No item at slot " + slot_name)
+        if(item is None): raise err.EmptySlotError("No item at slot " + slot_name)
 
         item.set_cost(new_cost)
 
 
-    def get_item(self, slot_name: str) -> str:
+    def get_item(self, slot_name: str) -> Item:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
-        if(item is None): raise ValueError("No item at slot " + slot_name)
+        if(item is None): raise err.EmptySlotError("No item at slot " + slot_name)
 
-        return item.get_name()
+        return item
 
 
     def __get_coordinates_from_slotname(self, slot_name: str) -> tuple[int, int]:
         if(len(slot_name) != self.SLOTNAMELENGTH):
-            raise ValueError("Slot name must be 2 characters long")
+            raise err.InvalidSlotNameError("Slot name must be 2 characters long")
         row: int = ord(slot_name[0]) - ord('0')
         col: int = ord(slot_name[1]) - ord('0')
 
         if(row < 0 or col < 0 or row > len(self.__items) or col > len(self.__items[0])):
-            raise ValueError("Invalid slot name")
+            raise err.InvalidSlotNameError("Invalid slot name")
 
         return row, col
