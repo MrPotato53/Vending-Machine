@@ -1,8 +1,10 @@
+USE VendingMachineDB;
+
 CREATE TABLE IF NOT EXISTS vending_machines (
     id INT AUTO_INCREMENT PRIMARY KEY,
     vending_machine_name VARCHAR(100),
     row_count INT UNSIGNED NOT NULL,
-    column_count INT UNSIGNED NOT NULL,
+    column_count INT UNSIGNED NOT NULL
     -- vendor_id INT
 );
 
