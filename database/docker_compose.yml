@@ -1,0 +1,16 @@
+services:
+  db1:
+    image: mysql/mysql-server:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: teamninelives
+      MYSQL_DATABASE: VendingMachineDB
+      MYSQL_ROOT_HOST: '%'
+    volumes:
+      - vendingmachinedat:/var/lib/mysql   # Persistent database storage
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Run init script on startup
+    ports:
+      - "3306:3306"
+
+volumes:
+  vendingmachinedat:
