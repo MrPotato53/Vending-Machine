@@ -1,3 +1,6 @@
+-- IMPORTANT: when running this on the CSL machine, move this file to /nobackup/vending-machine-db
+-- THIS IS IMPORTANT BECAUSE OF YML FILE CONFIGURATION AND ACCESS PERMISSIONS
+
 USE VendingMachineDB;
 
 CREATE TABLE IF NOT EXISTS vending_machines (
