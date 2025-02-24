@@ -8,22 +8,23 @@ services:
       MYSQL_ROOT_HOST: '%'
     volumes:
       - vendingmachinedat:/var/lib/mysql   # Persistent database storage
-      - /nobackup/vending-machine-db/:/docker-entrypoint-initdb.d/  # Run init script on startup
+      - /nobackup/T_19/db/:/docker-entrypoint-initdb.d/  # Run init script on startup
     ports:
       - "3333:3306"
 
   backend:
-    build: ./api
+    build: /nobackup/T_19/api
     restart: always
     working_dir: /app
     volumes:
-      - ./api:/app
+      - /nobackup/T_19/api:/app
+      # - /app/node_modules # ensure we are not copying node_modules from the outside
     ports:
       - "8080:5000"
     depends_on:
       - db1
     env_file:
-      - ./api/.env
+      - /nobackup/T_19/api/.env
 
 volumes:
   vendingmachinedat:
