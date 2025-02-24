@@ -6,21 +6,21 @@ const app = express();
 const port = 5000;
 
 // Database connection
-// const db = mysql.createConnection({
-//   host: process.env.DATABASE_HOST,
-//   port: process.env.DATABASE_PORT,
-//   user: process.env.DATABASE_USER,
-//   password: process.env.DATABASE_PASSWORD,
-//   database: process.env.DATABASE_NAME,
-// });
-
 const db = mysql.createConnection({
-  host: "db1",  // Must match the MySQL service name in docker-compose
-  port: 3306,    // MySQL’s internal port
-  user: "root",
-  password: "teamninelives",
-  database: "VendingMachineDB",
+  host: process.env.DATABASE_HOST,
+  port: process.env.DATABASE_PORT,
+  user: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
 });
+
+// const db = mysql.createConnection({
+//   host: "db1",  // Must match the MySQL service name in docker-compose
+//   port: 3306,    // MySQL’s internal port
+//   user: "root",
+//   password: "teamninelives",
+//   database: "VendingMachineDB",
+// });
 
 db.connect((err) => {
   if (err) {
