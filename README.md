@@ -1,6 +1,6 @@
 # Specification Document
 
-## Project-19: Vending Machine
+## 9 Lives
 
 ### Project Abstract
 This software will, at first, offer a simple command line interface allowing users to simulate the process of purchasing items from the vending machine. We plan to first develop in Python to enable rapid development. If speed becomes an issue, we may refactor the system in C++. From there, we've have multiple ideas tossed around regarding further steps. We think it would be cool to integrate a Raspberry Pi to make a physical vending machine that can actually dispense product.  
@@ -29,40 +29,48 @@ subgraph Front End
 end
 	
 subgraph Back End
-    B(Python: ???)
+    B(JS Server: Serves HTTP requests, runs on the team's VM)
 end
 	
 subgraph Database
     C[(MySQL)]
 end
 
-A <-->|Function Calls| B
-B <-->|???| C
+A <-->|HTTP requests| B
+B <-->|Directly with database| C
 ```
 
 #### Database
 
-***TODO*** This database design will need to be updated as we investigate what specific information will need to be stored on the database as well as how the different tables will be organized
-
 ```mermaid
 ---
-title: Vending Machine Stock Database ERD
+title: Vending Machine Database ERD
 ---
 erDiagram
-    VendingMachineStock {
-        string ProductName PK "20 chars max"
-        int ID PK "Unique identifier"
-        int Cost "Price of the item"
-        int Location "Machine slot location"
-        int Quantity "Number of items in stock"
+    VENDING_MACHINE {
+        INT vm_id PK "Auto-increment (1000001+)"
+        VARCHAR(100) vm_name
+        INT vm_row_count "Unsigned, Not NULL"
+        INT vm_column_count "Unsigned, Not NULL"
+        INT vm_vendor_id "Future Implementation"
     }
 
-    %% Indexes
-    VendingMachineStock {
-        UNIQUE ProductName "Unique constraint on Product Name"
-        INDEX ID "Index on ID"
-        INDEX CompositeIndex "Index on Product Name and ID"
+    ITEMS {
+        INT item_id PK "Auto-increment (2000001+)"
+        VARCHAR(255) item_name "Not NULL, Unique"
     }
+
+    INVENTORY_JOIN_TABLE {
+        INT IJT_vm_id PK, FK "References VENDING_MACHINE(vm_id) Not NULL"
+        VARCHAR(5) IJT_slot_name PK "Not NULL"
+        INT IJT_item_id FK "References ITEMS(item_id), Not NULL"
+        DECIMAL(102) IJT_price "Unsigned, Not NULL"
+        INT IJT_stock "Unsigned, Not NULL"
+    }
+
+    %% Relationships
+    VENDING_MACHINE ||--o{ INVENTORY_JOIN_TABLE : contains
+    ITEMS ||--o{ INVENTORY_JOIN_TABLE : stocked_in
 
 ```
 
@@ -71,6 +79,7 @@ erDiagram
 Please follow the link above.
 
 #### Flowchart
+
 ```mermaid
 ---
 title: Vending Machine Program Flowchart
@@ -79,24 +88,38 @@ graph TD;
     Start([Start]) --> Select_Mode{Select Mode};
     
     Select_Mode -->|Vendor| Vendor_Mode;
-    Vendor_Mode --> Enter_Item[/Enter "item price quantity"/];
-    Enter_Item --> Vendor_Mode;
-    Vendor_Mode -->|Exit| End([End]);
+    Vendor_Mode --> Display_All[/Display All Slots/];
+    Display_All --> Vendor_Choice{Select Option};
+
+    Vendor_Choice --> |Adjust Stock|adjust_stock[/Enter "slot quantity"/];
+    adjust_stock --> Display_All;
+
+    Vendor_Choice --> |Add Item|add_item[/Enter "slot item price quantity"/];
+    add_item --> Display_All;
+
+    Vendor_Choice --> |Clear Slot|clear_slot[/Enter "slot"/];
+    clear_slot --> Display_All;
+
+    Vendor_Choice --> |Set Cost|set_cost[/Enter "slot new_price"/];
+    set_cost --> Display_All;
+
+    Vendor_Choice --> |Exit Vendor|Select_Mode;
+
     
     Select_Mode -->|Customer| Customer_Mode;
-    Customer_Mode --> Customer_Choice{Select Option};
+    Customer_Mode --> Display_Available[/Display Available Products/];
+    Display_Available --> Customer_Choice{Select Option};
+
+    Customer_Choice --> Process_Payment[/Process Payment/];
+    Process_Payment --> |Success|Dispense_Item[/Dispense Item/];
+    Dispense_Item --> Dispense_Item;
+    Dispense_Item --> |Finish Transaction|Display_Available
+    Process_Payment --> |Failed| Payment_Failed[/Payment Failed, Try Again/];
+    Payment_Failed --> Display_Available
     
-    Customer_Choice -->|List Products| List_Products[/Display Available Products/];
-    List_Products --> Customer_Choice;
-    
-    Customer_Choice -->|Purchase Product| Enter_Product[/Enter Product Name/];
-    Enter_Product --> Process_Payment[/Process Payment/];
-    Process_Payment -->|Success| Dispense_Item[/Dispense Item/];
-    Dispense_Item --> Customer_Choice;
-    Process_Payment -->|Failed| Payment_Failed[/Payment Failed, Try Again/];
-    Payment_Failed --> Customer_Choice;
-    
-    Customer_Choice -->|Exit| End;
+    Customer_Choice --> |Exit Customer|Select_Mode;
+
+    Select_Mode --> |Exit| End([End]);
 ```
 
 ### Standards & Conventions
