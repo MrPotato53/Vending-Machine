@@ -8,9 +8,9 @@ services:
       MYSQL_ROOT_HOST: '%'
     volumes:
       - vendingmachinedat:/var/lib/mysql   # Persistent database storage
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Run init script on startup
+      - /nobackup/vending-machine-db/:/docker-entrypoint-initdb.d/  # Run init script on startup
     ports:
-      - "3306:3306"
+      - "3333:3306"
 
 volumes:
   vendingmachinedat:
