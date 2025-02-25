@@ -5,13 +5,13 @@ FROM node:18
 WORKDIR /app
 
 # Copy package files first (for caching)
-# COPY package.json package-lock.json ./
+COPY package.json package-lock.json ./
 
 # Install dependencies
 RUN npm ci  # Faster, consistent installs
 
 # Copy files into working directory
-# COPY ./api ./
+COPY . .
 
 # Expose port 5000
 EXPOSE 5000
