@@ -10,9 +10,6 @@ COPY package.json package-lock.json ./
 # Install dependencies
 RUN npm ci  # Faster, consistent installs
 
-# Copy the rest of the application
-COPY . .
-
 # Expose port 5000
 EXPOSE 5000
 

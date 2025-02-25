@@ -1,4 +1,4 @@
 .DS_Store
 *.zip
-src/__pycache__
-src/server/api/node_modules
+*__pycache__
+*node_modules
