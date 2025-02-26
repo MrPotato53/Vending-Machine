@@ -2,8 +2,6 @@
 
 ## Issues with what's here so far and questions about design decisions: 
 
-- Where prices come from. Presumably, **VendingMachine** should retrieve price data from **InventoryManager**. So then **VendingMachine** will have to get pricing info from **InventoryManager** and then somehow send that to **IPaymentProcessor**
-
 - Overall, need to flush out more details of how the **IDatabaseCommunicator** works.
 
 - How to handle cases when products are out? List them as quantity 0, or just don't list at all. Delete from database whenever quantity reaches 0??
@@ -11,6 +9,10 @@
 - Known race condition if multiple users simultaneously try to buy an item with only 1 left in stock.
 
 ## Design Decision Making Process
+
+### Frontend
+
+This section discusses the object oriented class design of everything running locally on the user's device. The next section will discuss what runs on the team's virtual machine (backend serving HTTP requests and the database).
 
 First off, we will need a vending machine class: **VendingMachine**. This class's responsibility will be to manage the interaction of different objects and will host a simple interface for using the vending machine (think "buy product" or "list options").
 
@@ -40,9 +42,25 @@ Now is an appropriate time to explain how the **Main** class will work: First, i
 
 Hence, the third purpose arises. Once we move on from our MVP, we will no longer need the **VendorCli**. Instead of refactoring multiple layers of code (like removing vendor-side methods from **VendingMachine**), all we have to do is remove the option to select "vendor" from the control loop (instead sending straight to the **CustomerCli**), and delete the **VendorCli** object creation in **Main**.
 
+### Backend
+
+In this section, we discuss the backend, comprised of the server serving HTTP requests to the VM using a RESTful API as well as the database itself.
+
+The server portion will be written in js. It will use a REST API to handle HTTP requests to port 8080 on cs506x19.cs.wisc.edu. This server will communicate directly with the database. They may be running in the same container, but more likely will be running in separate containers -- one container for the MySQL database, one container for the server.
+
+The server's primary job is to serve HTTP requests regarding database queries. The server will use some sort of ODBC to communicate with the database.
+
+The server will also have a single API endpoint for processing payments. This way, the vending machine client can send a request, and the server (holding the secret API key) will perform the payment transaction. We don't want to put the secret key on all of our client's machines, as that is a big security fault. Though security isn't a big issue for this project, this vulternability is easy enough to avoid. 
+
+The goal of this structure is to be able to communicate with the database through this method so we don't need to use port forwarding (ssh -L ...) as was done in DevTech2. 
+
+We also won't use PhpMyAdmin for this (which was used in DevTech2).
+
 ## Class Design Diagram
 
 NOTE: The functions inside each class are just provided as example functionality of what each class may do. As each class gets developed, we can investigate and define each class's interface more thoughtfully. This document can be used as a guide when determining the single responsibility of each class, and to understand how other classes may interact with one another.
+
+### Frontend
 
 ```mermaid
 classDiagram
@@ -120,4 +138,32 @@ classDiagram
     IPaymentProcessor <|-- "is-a" StripePaymentProcessor
     IPaymentProcessor <|-- "is-a" MockPaymentProcessor
     CustomerCli --> "has-a" VendingMachine
+```
+### Backend
+
+```mermaid
+---
+title: Backend Architecture
+---
+
+graph TD;
+    subgraph ServerContainer["Server Container"]
+        Server["Node.js Server"]
+        API["REST API"]
+        PaymentProcessor["Payment Processor"]
+    end
+
+    subgraph DatabaseContainer["Database Container"]
+        Database["MySQL Database"]
+    end
+
+    Client["Vending Machine Client"] -->|Sends HTTP Requests| API
+    API -->|Queries| Database
+    API -->|Processes Payment Requests| PaymentProcessor
+    PaymentProcessor -->|Handles Secure Transactions| ExternalPaymentService["External Payment Service"]
+    ExternalPaymentService -.->|Returns Transaction Status| PaymentProcessor
+    PaymentProcessor -->|Sends Response| API
+    API -->|Sends Data Response| Client
+
+    Server -.->|ODBC Connection| Database
 ```
