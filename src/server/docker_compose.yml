@@ -18,7 +18,7 @@ services:
     working_dir: /app
     volumes:
       - ./api:/app
-#      - /app/node_modules
+      - /app/node_modules
     ports:
       - "8080:5000"
     depends_on:
