@@ -14,22 +14,6 @@ const db = mysql.createConnection({
   database: process.env.DATABASE_NAME,
 });
 
-// const db = mysql.createConnection({
-//   host: "db1",  // Must match the MySQL service name in docker-compose
-//   port: 3306,    // MySQL’s internal port
-//   user: "root",
-//   password: "teamninelives",
-//   database: "VendingMachineDB",
-// });
-
-db.connect((err) => {
-  if (err) {
-    console.error("Database connection failed:", err);
-  } else {
-    console.log("Connected to MySQL!");
-  }
-});
-
 // Connect to MySQL with retry logic
 const connectWithRetry = () => {
   db.connect((err) => {

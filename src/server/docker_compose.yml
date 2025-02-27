@@ -11,6 +11,10 @@ services:
       - ./database/:/docker-entrypoint-initdb.d/  # Run init script on startup
     ports:
       - "3333:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
 
   backend:
     build: ./api
@@ -22,7 +26,8 @@ services:
     ports:
       - "8080:5000"
     depends_on:
-      - db1
+      db1:
+        condition: service_healthy
     env_file:
       - ./api/.env
 
