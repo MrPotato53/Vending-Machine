@@ -18,6 +18,15 @@ shutdown() {
         echo "Container ${CONTAINER_NAME} not found. Skipping removal."
     fi
 
+    # Stop and remove the backend container if it exists
+    BACKEND_CONTAINER_NAME="vending_machine-backend-1"
+    if docker ps -a --format '{{.Names}}' | grep -q "^${BACKEND_CONTAINER_NAME}$"; then
+        echo "Stopping container: ${BACKEND_CONTAINER_NAME}"
+        docker stop "${BACKEND_CONTAINER_NAME}"
+    else
+        echo "Container ${BACKEND_CONTAINER_NAME} not found. Skipping removal."
+    fi
+
     # Bring down the docker-compose services and remove associated volumes
     echo "Running docker compose down..."
     docker compose -f "$COMPOSE_FILE" down -v
