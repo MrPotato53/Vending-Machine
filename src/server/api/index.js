@@ -6,37 +6,16 @@ const app = express();
 const port = 5000;
 
 // Database connection
-const db = mysql.createConnection({
-  host: process.env.DATABASE_HOST,
-  port: process.env.DATABASE_PORT,
-  user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME,
-});
-
-// Connect to MySQL with retry logic
-const connectWithRetry = () => {
-  db.connect((err) => {
-    if (err) {
-      console.error("Database connection failed. Retrying in 5 seconds...", err);
-      setTimeout(connectWithRetry, 5000);
-    } else {
-      console.log("Connected to MySQL!");
-    }
-  });
-};
-
-connectWithRetry();
+const db = require("./db_connection");
 
 // API route to get vending machines
-app.get("/vending-machines", (req, res) => {
-  db.query("SELECT * FROM vending_machines", (err, results) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else {
-      res.json(results);
-    }
-  });
+app.get("/vending-machines", async (req, res) => {
+  try {
+    const [results] = await db.query("SELECT * FROM vending_machines");
+    res.json(results);
+} catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.listen(port, () => {
