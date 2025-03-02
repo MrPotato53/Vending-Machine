@@ -1,4 +1,6 @@
-from inventory_manager import InventoryManager, InventoryManagerMode
+import exceptions as err
+from enum_types import InventoryManagerMode
+from inventory_manager import InventoryManager
 
 
 class VendingMachine:
@@ -47,8 +49,7 @@ class VendingMachine:
 
 
     def start_transaction(self) -> None:
-        if(self.__inv_man.get_mode() is not InventoryManagerMode.IDLE):
-            raise ValueError("Vending Machine must be IDLE to start transaction")
+        # set_mode will check that mode is in correct state(IDLE), throws error otherwise
         self.__inv_man.set_mode(InventoryManagerMode.TRANSACTION)
 
         # stripe API implementation to log user in and obtain API token
@@ -57,17 +58,20 @@ class VendingMachine:
 
     def buy_item(self, slot_name: str) -> str:
         if(self.__inv_man.get_mode() is not InventoryManagerMode.TRANSACTION):
-            raise ValueError("buy_item() can only be called when transaction is in progress. "\
-                             "Call start_transaction() first")
+            raise err.InvalidModeError("buy_item() can only be called when transaction is "\
+                             "in progress. Call start_transaction() first")
 
         purchase_price = self.__inv_man.change_stock(slot_name, -1)
         self.__transaction_price = round(self.__transaction_price + purchase_price, 2)
-        return self.__inv_man.get_item(slot_name)
+        return self.__inv_man.get_item(slot_name).get_name()
 
 
     def end_transaction(self) -> float:
+        # This check is necessary because we want to make sure inv_man is in the correct state but
+        # we want to change to IDLE only AFTER all operations (api and variables reset) are done.
         if(self.__inv_man.get_mode() is not InventoryManagerMode.TRANSACTION):
-            raise ValueError("Transaction is not currently in progress, start a transaction first")
+            raise err.InvalidModeError("Transaction is not currently in progress, "\
+                                       "start a transaction first")
 
         # Use stripe API to charge self.transaction_price with self.stripe_payment_token
         out = self.__transaction_price

@@ -1,7 +1,9 @@
 import sys
 import textwrap
 
-from inventory_manager import InventoryManager, InventoryManagerMode
+import exceptions as err
+from enum_types import InventoryManagerMode
+from inventory_manager import InventoryManager
 from vending_machine import VendingMachine
 
 vending_machine: VendingMachine = None
@@ -15,11 +17,8 @@ def main():
     try:
         inventory_manager = InventoryManager(row, col)
         vending_machine = VendingMachine(inventory_manager)
-    except ValueError as e:
+    except err.InvalidDimensionsError as e:
         print("Error: ", e)
-        sys.exit(1)
-    except Exception as e:
-        print("Fatal error: ", e)
         sys.exit(1)
 
 
@@ -57,8 +56,13 @@ def customer_mode():
 
 def perform_transaction():
     global vending_machine
-    vending_machine.start_transaction()
-    # All the stripe API payment stuff should happen inside here ^^
+    try:
+        vending_machine.start_transaction()
+        # All the stripe API payment stuff should happen inside here ^^
+    except err.InvalidModeError as e:
+        print("Error: " + e)
+        return
+
     print("Payment Information Entered...")
 
     while(True):
@@ -73,15 +77,18 @@ def perform_transaction():
             print("Dispensing Item: " + dispensed_item)
             print("Vending Machine Inventory: ")
             print(vending_machine.list_options())
-        except ValueError as e:
+        except err.EmptySlotError as e:
             print("Error: ", e)
-        except Exception as e:
-            print("Fatal error: ", e)
 
 
 def vendor_mode():
     global inventory_manager
-    inventory_manager.set_mode(InventoryManagerMode.RESTOCKING)
+    try:
+        inventory_manager.set_mode(InventoryManagerMode.RESTOCKING)
+    except err.InvalidModeError as e:
+        print("Error: " + e)
+        return
+
     while(True):
         print("Vending Machine Inventory: ")
         print(inventory_manager.get_stock_information(show_empty_slots=True))
@@ -117,11 +124,15 @@ def update_stock():
         amount = int(input("Please enter the amount you'd like to change the stock by: "))
         inventory_manager.change_stock(slot, amount)
         print("Updated slot " + slot + " by " + str(amount))
-    except ValueError as e:
+    except err.EmptySlotError as e:
         print("Error: ", e)
         return
-    except Exception as e:
-        print("Fatal error: ", e)
+    except err.InvalidSlotNameError as e:
+        print("Error: ", e)
+        return
+    except err.NegativeStockError as e:
+        print("Error: ", e)
+        return
 
 def add_item():
 
@@ -132,10 +143,18 @@ def add_item():
         amount = int(input("Please enter the amount you'd like to change the stock by: "))
         inventory_manager.add_item(slot, name, amount, cost)
         print(f"Added {amount!s} of {name} of price {cost!s} to slot {slot}")
-    except ValueError as e:
+    except err.EmptySlotError as e:
         print("Error: ", e)
-    except Exception as e:
-        print("Fatal error: ", e)
+        return
+    except err.InvalidSlotNameError as e:
+        print("Error: ", e)
+        return
+    except err.NegativeStockError as e:
+        print("Error: ", e)
+        return
+    except err.NegativeCostError as e:
+        print("Error: ", e)
+        return
 
 
 def set_cost():
@@ -146,10 +165,12 @@ def set_cost():
         cost = float(input("Please enter the new price of this slot: "))
         inventory_manager.set_cost(slot, cost)
         print(f"Set the cost of slot {slot} to {cost!s}")
-    except ValueError as e:
+    except err.InvalidSlotNameError as e:
         print("Error: ", e)
-    except Exception as e:
-        print("Fatal error: ", e)
+        return
+    except err.NegativeCostError as e:
+        print("Error: ", e)
+        return
 
 
 def clear_slot():
@@ -159,10 +180,9 @@ def clear_slot():
         slot = input("Please enter the slot you'd like to clear: ")
         inventory_manager.clear_slot(slot)
         print(f"Cleared slot {slot}")
-    except ValueError as e:
+    except err.InvalidSlotNameError as e:
         print("Error: ", e)
-    except Exception as e:
-        print("Fatal error: ", e)
+        return
 
 
 if __name__ == "__main__":

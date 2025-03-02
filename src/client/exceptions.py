@@ -1,0 +1,28 @@
+class EmptySlotError(Exception):
+    """Thrown when a function attempts to access a slot that is empty expecting an item."""
+    pass
+
+
+class NegativeStockError(Exception):
+    """Thrown when a function attempts to modify an item's stock to go below 0."""
+    pass
+
+
+class NegativeCostError(Exception):
+    """Thrown when a function attempts to set the cost of an item to a value below 0"""
+    pass
+
+
+class InvalidModeError(Exception):
+    """Thrown when a function attempts to perform an operation when in the incorrect mode."""
+    pass
+
+
+class InvalidDimensionsError(Exception):
+    """Thrown when an inventory_manager is instantiated with invalid dimensions"""
+    pass
+
+
+class InvalidSlotNameError(Exception):
+    """Thrown when trying to access a nonexistent slot"""
+    pass
