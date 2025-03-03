@@ -1,6 +1,5 @@
 import requests
-import json
-host = "http://cs506x19.cs.wisc.edu:8080"
+import jsonhost = "http://cs506x19.cs.wisc.edu:8080"
 localHost = "http://localhost:8080"
 machines = "/vending-machines"
 singleMachine = "/:id"
@@ -36,6 +35,15 @@ def main():
         #
 
     #def paymentStage(amount:float,currency:str, Number:float):
+
+machines = "http://localhost:8080/vending-machines"
+
+class vendingMachines:  
+    def getMachines():
+        response = requests.get(machines)
+        return response
+    
+  
     
     # payment_intent = stripe.PaymentIntent.create(
     #        amount=1099,
@@ -46,4 +54,4 @@ def main():
     #                "token": "tok_visa"
     #            }
     #       
-main()
+
