@@ -6,18 +6,22 @@ machines = "http://localhost:8080/vending-machines"
 class vendingMachines:  
     def getMachines():
         response = requests.get(machines)
-        return response
+        text = response.json()
+        print("hello my name is ", text[0].get('vm_name'), "and I am vending machine number ", text[0].get("vm_id"))
     
-    def rmMachine(char vm_ID):
+    #def rmMachine(self)->str:
         #Remove vending machine from service
+    
+def main():
+    vendingMachines.getMachines();
 
-    def getAllInv(char vm_ID):
+    #def getAllInv(self)->str:
         #Get all inventory of give VM
 
-    def updateInv(char vm_ID, list json.items):
+    #def updateInv(self,  json.items)->str:
         #
 
-    def paymentStage(float amount, char currency, card Number):
+    #def paymentStage(amount:float,currency:str, Number:float):
     
     # payment_intent = stripe.PaymentIntent.create(
     #        amount=1099,
@@ -27,4 +31,5 @@ class vendingMachines:
     #            "card": {
     #                "token": "tok_visa"
     #            }
-    #        },
+    #       
+main()
