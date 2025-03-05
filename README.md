@@ -2,6 +2,10 @@
 
 ## 9 Lives
 
+### CI/CD Status
+![Pipeline Status](https://git.doit.wisc.edu/cdis/cs/courses/cs506/sp2025/individual/ABROCH/test_ci/badges/main/pipeline.svg)
+![Test Coverage](https://git.doit.wisc.edu/cdis/cs/courses/cs506/sp2025/individual/ABROCH/test_ci/badges/main/coverage.svg)
+
 ### Project Abstract
 This software will, at first, offer a simple command line interface allowing users to simulate the process of purchasing items from the vending machine. We plan to first develop in Python to enable rapid development. If speed becomes an issue, we may refactor the system in C++. From there, we've have multiple ideas tossed around regarding further steps. We think it would be cool to integrate a Raspberry Pi to make a physical vending machine that can actually dispense product.  
 

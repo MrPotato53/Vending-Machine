@@ -1,7 +1,7 @@
 import pytest  # noqa: N999
 
-import exceptions as err
-from src.item import Item
+from src.client import exceptions as err
+from src.client.item import Item
 
 
 # Fixture to create a sample Item instance
