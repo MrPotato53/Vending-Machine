@@ -3,7 +3,8 @@
 ## 9 Lives
 
 ### CI/CD Status
-![Pipeline Status](https://git.doit.wisc.edu/cdis/cs/courses/cs506/sp2025/team/T_19/Project_19/badges/main/pipeline.svg)
+
+![pipeline status](https://git.doit.wisc.edu/cdis/cs/courses/cs506/sp2025/team/T_19/Project_19/badges/main/pipeline.svg)
 ![Test Coverage](https://git.doit.wisc.edu/cdis/cs/courses/cs506/sp2025/team/T_19/Project_19/badges/main/coverage.svg)
 
 ### Project Abstract
