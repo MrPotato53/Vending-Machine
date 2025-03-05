@@ -35,12 +35,15 @@ pytest:
     - echo "Running Pytest..."
     - export PYTHONPATH="$CI_PROJECT_DIR/src:$CI_PROJECT_DIR:$PYTHONPATH"
     - pytest --cov=src --cov=tests --cov-report=xml --cov-report=term-missing
+    - pytest --cov=src --cov-report=xml --cov-report=html:coverage_html
   artifacts:
     reports:
       junit: report.xml
     paths:
       - report.xml
+      - coverage_html/
       - .coverage
+    expire_in: 2 week
   coverage: '/TOTAL\s+\d+\s+\d+\s+\d+\s+(\d+%)$/'
   allow_failure: false
 
