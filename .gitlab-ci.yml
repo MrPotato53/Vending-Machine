@@ -1,0 +1,54 @@
+stages:
+  - lint
+  - test
+
+variables:
+  PIP_CACHE_DIR: "$src/.cache/pip"
+
+default:
+  image: python:3.12
+  before_script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+
+lint:
+  stage: lint
+  script:
+    - echo "Running Ruff Linting..."
+    - ruff check src/ tests/ --output-format=full | tee lint_report.txt || true # remove || true to not allow linting errors
+    - echo $(ruff check src/ tests/ | wc -l) > lint_errors.txt
+  allow_failure: true  # allow linting errors
+  artifacts:
+    paths:
+      - lint_report.txt
+      - lint_errors.txt
+
+pytest:
+  stage: test
+  script:
+    - echo "Debugging Environment..."
+    - echo "Checking Python Path..."
+    - source venv/bin/activate
+    - python -c "import sys; print('\n'.join(sys.path))"
+    - echo "Running Pytest..."
+    - export PYTHONPATH="$CI_PROJECT_DIR/src:$CI_PROJECT_DIR:$PYTHONPATH"
+    - pytest --cov=src --cov=tests --cov-report=xml --cov-report=term-missing
+    - pytest --cov=src --cov-report=xml --cov-report=html:coverage_html
+  artifacts:
+    reports:
+      junit: report.xml
+    paths:
+      - report.xml
+      - coverage_html/
+      - .coverage
+    expire_in: 2 week
+  coverage: '/TOTAL\s+\d+\s+\d+\s+\d+\s+(\d+%)$/'
+  allow_failure: false
+
+
+cache:
+  paths:
+    - .cache/pip/
+    - venv/

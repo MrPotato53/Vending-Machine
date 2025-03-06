@@ -1,8 +1,8 @@
 import pytest
 
-import exceptions as err
-from enum_types import InventoryManagerMode
-from inventory_manager import InventoryManager
+import src.client.exceptions as err
+from src.client.enum_types import InventoryManagerMode
+from src.client.inventory_manager import InventoryManager
 
 
 @pytest.fixture
