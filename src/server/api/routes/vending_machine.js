@@ -52,6 +52,43 @@ router.post("/", async (req, res) => {
     }
 });
 
+// Change mode of vending machine by ID
+router.patch("/:id/mode", async (req, res) => {
+    try {
+        const { vm_mode } = req.body;
+
+        if(vm_mode !== "i" && vm_mode !== "r" && vm_mode !== "t") {
+            res.status(400).json({ error: "Invalid vending machine mode" });
+            return;
+        }
+
+        const [results] = await db.query("UPDATE vending_machines SET vm_mode = ? WHERE vm_id = ?", [vm_mode, req.params.id]);
+        if (results.affectedRows === 0) {
+            res.status(404).json({ error: "Vending machine not found" });
+        } else {
+            res.json({ message: "Vending machine mode updated successfully" });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Change name of vending machine by ID
+router.patch("/:id/name", async (req, res) => {
+    try {
+        const { vm_name } = req.body;
+
+        const [results] = await db.query("UPDATE vending_machines SET vm_name = ? WHERE vm_id = ?", [vm_name, req.params.id]);
+        if (results.affectedRows === 0) {
+            res.status(404).json({ error: "Vending machine not found" });
+        } else {
+            res.json({ message: "Vending machine name updated successfully" });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Delete a vending machine by ID
 router.delete("/:id", async (req, res) => {
     try {

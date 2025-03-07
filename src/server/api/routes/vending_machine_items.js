@@ -54,7 +54,7 @@ router.post("/:slot_name", async (req, res) => {
 });
 
 // Update an item in a vending machine
-router.put("/:slot_name", async (req, res) => {
+router.patch("/:slot_name", async (req, res) => {
     try {
         const vendingMachineId = req.params.id;
         // Check if vending machine exists
@@ -119,6 +119,7 @@ router.post("/", async (req, res) => {
 
         const rows = req.body;
 
+        // Loop through each row and perform specified operation
         for(const row of rows) {
             const { slot_name, item_name, price, stock } = row;
 
