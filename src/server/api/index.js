@@ -7,7 +7,7 @@ const port = 5000;
 
 // Import routes
 const vendingMachinesRoutes = require("./routes/vending_machine");
-const { router: itemsRoutes } = require("./routes/items");
+const itemsRoutes = require("./routes/items");
 
 app.use(express.json());
 

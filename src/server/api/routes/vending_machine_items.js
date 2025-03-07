@@ -1,12 +1,17 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true }); // Merge params from parent route
 const db = require("../db/db_connection"); // Import database connection
-const { createItem, getItemIdByName } = require("./items");
+const items = require("../db/items"); // Import items table functions
+const IJT = require("../db/inventory_join_table"); // Import inventory_join_table functions
+const VM = require("../db/vending_machine"); // Import vending_machine functions
 
 // Get all items for a vending machine
 router.get("/", async (req, res) => {
     try {
         const vendingMachineId = req.params.id; // Get vending machine ID from URL
+        // Check if vending machine exists
+        if(!await VM.vendingMachineExists(vendingMachineId, res)) return;
+
         const [results] = await db.query("SELECT * FROM inventory_join_table WHERE IJT_vm_id = ?", [vendingMachineId]);
 
         res.json(results);
@@ -19,19 +24,22 @@ router.get("/", async (req, res) => {
 router.post("/:slot_name", async (req, res) => {
     try {
         const vendingMachineId = req.params.id;
+        // Check if vending machine exists
+        if(!await VM.vendingMachineExists(vendingMachineId, res)) return;
+        
         const slot_name = req.params.slot_name;
         const { item_name, price, stock } = req.body;
         
-        const [results] = await db.query("SELECT item_id FROM items WHERE item_name = ?", [item_name]);
-        if(results.length === 0) {
-            await createItem(item_name);
-        }
-        const item_id = await getItemIdByName(item_name);
+        // Add to items table if item does not exist
+        await items.create_item_if_not_exists(item_name);
+        const item_id = await items.getItemIdByName(item_name);
 
-        await db.query(
-            "INSERT INTO inventory_join_table (IJT_vm_id, IJT_slot_name, IJT_item_id, IJT_price, IJT_stock) VALUES (?, ?, ?, ?, ?)",
-            [vendingMachineId, slot_name, item_id, price, stock]
-        );
+        // Add item to inventory_join_table
+        const result = IJT.add_to_slot(vendingMachineId, slot_name, item_id, price, stock);
+        if(result.affectedRows === 0) {
+            res.status(500).json({ error: "Failed to add item to vending machine" });
+            return;
+        }
 
         res.json({ 
             vm_id: vendingMachineId, 
@@ -49,19 +57,22 @@ router.post("/:slot_name", async (req, res) => {
 router.put("/:slot_name", async (req, res) => {
     try {
         const vendingMachineId = req.params.id;
+        // Check if vending machine exists
+        if(!await VM.vendingMachineExists(vendingMachineId, res)) return;
+
         const slotName = req.params.slot_name;
         const { item_name, price, stock } = req.body;
 
-        const [results] = await db.query("SELECT item_id FROM items WHERE item_name = ?", [item_name]);
-        if(results.length === 0) {
-            await createItem(item_name);
-        }
-        const item_id = await getItemIdByName(item_name);
+        // Add item to items table if it does not exist
+        await items.create_item_if_not_exists(item_name);
+        const item_id = await items.getItemIdByName(item_name);
 
-        await db.query(
-            "UPDATE inventory_join_table SET IJT_item_id = ?, IJT_price = ?, IJT_stock = ? WHERE IJT_vm_id = ? AND IJT_slot_name = ?",
-            [item_id, price, stock, vendingMachineId, slotName]
-        );
+        // Update item in inventory_join_table
+        const results = IJT.update_slot(vendingMachineId, slotName, item_id, price, stock);
+        if(results.affectedRows === 0) {
+            res.status(404).json({ error: "Item not found in vending machine" });
+            return;
+        }
 
         res.json({ 
             vm_id: vendingMachineId, 
@@ -80,27 +91,49 @@ router.put("/:slot_name", async (req, res) => {
 router.delete("/:slot_name", async (req, res) => {
     try {
         const vendingMachineId = req.params.id;
+        // Check if vending machine exists
+        if(!await VM.vendingMachineExists(vendingMachineId, res)) return;
+
         const slotName = req.params.slot_name;
 
-        const[rows] = await db.query("SELECT * FROM inventory_join_table WHERE IJT_vm_id = ? AND IJT_slot_name = ?", [vendingMachineId, slotName]);
+        // Delete item from inventory_join_table
+        const result = IJT.delete_slot(vendingMachineId, slotName);
 
-        if (rows.length === 0) {
-            return res.status(404).json({ error: "Slot not found" });
-        }
-
-        const item_id = rows[0].IJT_item_id;
-
-        const [result] = await db.query(
-            "DELETE FROM inventory_join_table WHERE IJT_vm_id = ? AND IJT_slot_name = ?",
-            [vendingMachineId, slotName]
-        );
-
-        const [results] = await db.query("SELECT * FROM inventory_join_table WHERE IJT_item_id = ?", [item_id]);
-        if (results.length === 0) {
-            await db.query("DELETE FROM items WHERE item_id = ?", [item_id]);
+        if(result.affectedRows === 0) {
+            res.status(404).json({ error: "Item not found in vending machine" });
+            return;
         }
 
         res.json({ message: "Item deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Batch operation to update many rows in inventory_join_table
+router.post("/", async (req, res) => {
+    try {
+        const vendingMachineId = req.params.id;
+        // Check if vending machine exists
+        if(!await VM.vendingMachineExists(vendingMachineId, res)) return;
+
+        const rows = req.body;
+
+        for(const row of rows) {
+            const { slot_name, item_name, price, stock } = row;
+
+            // Add item to items table if it does not exist
+            var item_id = null;
+            if(item_name !== null) {
+                await items.create_item_if_not_exists(item_name);
+                item_id = await items.getItemIdByName(item_name);
+            }
+
+            // Update item in inventory_join_table
+            await IJT.modify_item_slot(vendingMachineId, slot_name, item_id, price, stock);
+        }
+
+        res.json({ message: "Items updated successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
