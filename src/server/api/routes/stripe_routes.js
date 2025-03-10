@@ -11,13 +11,17 @@ router.post("/pay", async (req, res) => {
             return res.status(400).json({ error: "Amount is required" });
         }
 
-        // Create a payment intent using Stripe with USD as the currency
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount,
-            currency: "usd", // Hardcoded to USD
-            payment_method: "tok_visa", // Test card token
-            confirm: true
-        });
+            amount: amount, // Amount in cents ($20.00)
+            currency: 'usd',
+            payment_method_data: {
+              type: 'card',
+              card: {
+                token: 'tok_visa',
+              },
+            },
+            confirm: true, // Automatically confirm the PaymentIntent
+          });
 
         // Check if the payment was successful
         const paymentStatus = paymentIntent.status === "succeeded";
