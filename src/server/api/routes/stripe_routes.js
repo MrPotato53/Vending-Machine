@@ -12,7 +12,7 @@ router.post("/pay", async (req, res) => {
         }
 
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount, // Amount in cents ($20.00)
+            amount: amount,
             currency: 'usd',
             payment_method_data: {
               type: 'card',
@@ -20,6 +20,8 @@ router.post("/pay", async (req, res) => {
                 token: 'tok_visa',
               },
             },
+            return_url: 'https://example/return',
+            description: "Test Payment using Visa test token with return_url",
             confirm: true, // Automatically confirm the PaymentIntent
           });
 
