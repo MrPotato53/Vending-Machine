@@ -18,7 +18,7 @@ shutdown() {
         echo "Container ${CONTAINER_NAME} not found. Skipping removal."
     fi
 
-    # Stop and remove the backend container if it exists
+    # Stop the backend container if it exists
     BACKEND_CONTAINER_NAME="vending_machine-backend-1"
     if docker ps -a --format '{{.Names}}' | grep -q "^${BACKEND_CONTAINER_NAME}$"; then
         echo "Stopping container: ${BACKEND_CONTAINER_NAME}"
@@ -52,6 +52,41 @@ startup() {
     echo "Startup complete."
 }
 
+reloadBackend() {
+    # Stop the backend container if it exists
+    BACKEND_CONTAINER_NAME="vending_machine-backend-1"
+    if docker ps -a --format '{{.Names}}' | grep -q "^${BACKEND_CONTAINER_NAME}$"; then
+        echo "Stopping container: ${BACKEND_CONTAINER_NAME}"
+        docker stop "${BACKEND_CONTAINER_NAME}"
+        docker start "${BACKEND_CONTAINER_NAME}"
+    else
+        echo "Container ${BACKEND_CONTAINER_NAME} not found."
+    fi
+
+    echo "Backend reloaded."
+}
+
+down() {
+    # Stop and the running mysql container if it exists
+    if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+        echo "Stopping container: ${CONTAINER_NAME}"
+        docker stop "${CONTAINER_NAME}"
+    else
+        echo "Container ${CONTAINER_NAME} not found."
+    fi
+
+    # Stop the backend container if it exists
+    BACKEND_CONTAINER_NAME="vending_machine-backend-1"
+    if docker ps -a --format '{{.Names}}' | grep -q "^${BACKEND_CONTAINER_NAME}$"; then
+        echo "Stopping container: ${BACKEND_CONTAINER_NAME}"
+        docker stop "${BACKEND_CONTAINER_NAME}"
+    else
+        echo "Container ${BACKEND_CONTAINER_NAME} not found. Skipping removal."
+    fi
+
+    echo "Containers stopped."
+}
+
 # Check script arguments
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 {shutdown|startup}"
@@ -65,6 +100,12 @@ case "$1" in
         ;;
     startup)
         startup
+        ;;
+    reloadBackend)
+        reloadBackend
+        ;;
+    down)
+        down
         ;;
     *)
         echo "Invalid command. Usage: $0 {shutdown|startup}"
