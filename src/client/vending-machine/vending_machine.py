@@ -1,6 +1,11 @@
+import json
+
 import exceptions as err
+from cardinfo import getCardInfo
 from enum_types import InventoryManagerMode
 from inventory_manager import InventoryManager
+
+from src.client.db_signal import Inventory, Items, Stripe, VendingMachines
 
 
 class VendingMachine:
@@ -39,7 +44,14 @@ class VendingMachine:
     """
 
     def __init__(self, inventory_manager: InventoryManager):
-        self.__inv_man = inventory_manager
+        with open("src/client/vending-machine/configuration.json") as f:
+            config = json.load(f)
+            self.__inv_man: InventoryManager = InventoryManager(config["rows"], config["columns"], config["hardware_id"])
+            self.__hardware_id: str = config["hardware_id"]
+
+            if(VendingMachines.get_vending_machine(self.__hardware_id) is None):
+                VendingMachines.create_vending_machine(self.__hardware_id, config["rows"], config["columns"])
+
         self.__stripe_payment_token: str = None
         self.__transaction_price: float = 0
 
@@ -52,8 +64,10 @@ class VendingMachine:
         # set_mode will check that mode is in correct state(IDLE), throws error otherwise
         self.__inv_man.set_mode(InventoryManagerMode.TRANSACTION)
 
+        card_number, exp_month, exp_year, cvc = getCardInfo() # Temporary function to get card info
+
         # stripe API implementation to log user in and obtain API token
-        # self.stripe_payment_token = <API token>
+        self.stripe_payment_token = Stripe.get_payment_token(card_number, exp_month, exp_year, cvc)
 
 
     def buy_item(self, slot_name: str) -> str:
@@ -74,6 +88,11 @@ class VendingMachine:
                                        "start a transaction first")
 
         # Use stripe API to charge self.transaction_price with self.stripe_payment_token
+        Stripe.charge(self.__stripe_payment_token, int(self.__transaction_price * 100))
+
+        # Load changes to database
+        self.__inv_man.save_to_db()
+
         out = self.__transaction_price
         self.__transaction_price = 0
         self.__stripe_payment_token = None
