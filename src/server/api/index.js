@@ -3,7 +3,7 @@ const express = require("express");
 const mysql = require("mysql2");
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
 
 // Import routes
 const vendingMachinesRoutes = require("./routes/vending_machine");
