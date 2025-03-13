@@ -188,5 +188,11 @@ def clear_slot():
         return
 
 
+'''
+# Here for testing purposes while configuring the docker setup
+def main():
+    print("hello, world!")
+'''
+
 if __name__ == "__main__":
     main()
