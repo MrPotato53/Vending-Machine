@@ -137,7 +137,7 @@ class stripe:
         try:
             token = stripe.Token.create(
             card={
-                'numbe': card_number,
+                'number': card_number,
                 'exp_month': exp_month,
                 'exp_year': exp_year,
                 'cvc': cvc,
