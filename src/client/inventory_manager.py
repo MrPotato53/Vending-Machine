@@ -1,7 +1,7 @@
-from src.client import exceptions as err
-from src.client.db_signal import Inventory, Items, VendingMachines
-from src.client.enum_types import InventoryManagerMode
-from src.client.item import Item
+import exceptions as err  # noqa: INP001
+from db_signal import Inventory, VendingMachines
+from enum_types import InventoryManagerMode
+from item import Item
 
 
 class InventoryManager:
@@ -76,6 +76,8 @@ class InventoryManager:
     def load_from_db(self) -> None:
         self.__items = [[None for i in range(self.width)] for j in range(self.height)]
         inventory: list[dict] = Inventory.get_inventory_of_vending_machine(self.hardware_id)
+        if(inventory is None):
+            raise err.QueryFailureException("get_inventory_of_vending_machine failed")
 
         for item in inventory:
             row, col = self.__get_coordinates_from_slotname(item["slot_name"])
@@ -91,14 +93,29 @@ class InventoryManager:
         }
         for slot_name, item in self.__change_log.items()]
 
-        Inventory.update_database(self.hardware_id, req_body)
+        if(Inventory.update_database(self.hardware_id, req_body) is None):
+            raise err.QueryFailureException("update_database failed")
+
         self.__change_log = {}
 
     def get_mode(self) -> InventoryManagerMode:
         return self.__mode
 
     def set_mode(self, new_mode: InventoryManagerMode) -> None:
-        self.__mode = VendingMachines.get_vending_machine(self.hardware_id)["mode"]
+        mode_map = {
+            "i": InventoryManagerMode.IDLE,
+            "r": InventoryManagerMode.RESTOCKING,
+            "t": InventoryManagerMode.TRANSACTION,
+            InventoryManagerMode.IDLE: "i",
+            InventoryManagerMode.RESTOCKING: "r",
+            InventoryManagerMode.TRANSACTION: "t",
+        }
+
+        res = VendingMachines.get_vending_machine(self.hardware_id)
+        if(res is None):
+            raise err.QueryFailureException("get_vending_machine failed")
+
+        self.__mode = mode_map[res["vm_mode"]]
 
         if new_mode is InventoryManagerMode.IDLE and self.__mode is InventoryManagerMode.IDLE:
             raise err.InvalidModeError("Cannot change mode from IDLE to IDLE")
@@ -109,12 +126,13 @@ class InventoryManager:
             and self.__mode is not InventoryManagerMode.IDLE
         ):
             raise err.InvalidModeError(
-                "Mode must be IDLE before changing to TRANSACTION or RESTOCKING, not"
-                + InventoryManagerMode.IDLE.name,
+                "Mode must be IDLE before changing to TRANSACTION or RESTOCKING, not "
+                + str(self.__mode),
             )
 
         self.__mode = new_mode
-        VendingMachines.set_mode(self.hardware_id, new_mode)
+        if(VendingMachines.set_mode(self.hardware_id, mode_map[new_mode]) is None):
+            raise err.QueryFailureException("set_mode failed")
 
     def get_stock_information(self, show_empty_slots: bool = False) -> str:
         out = ""
@@ -185,7 +203,7 @@ class InventoryManager:
         row: int = ord(slot_name[0]) - ord("0")
         col: int = ord(slot_name[1]) - ord("0")
 
-        if row < 0 or col < 0 or row > len(self.__items) or col > len(self.__items[0]):
+        if row < 0 or col < 0 or row >= len(self.__items) or col >= len(self.__items[0]):
             raise err.InvalidSlotNameError("Invalid slot name")
 
         return row, col

@@ -1,11 +1,8 @@
-import json
-
 import exceptions as err
-from cardinfo import getCardInfo
+from customer.cardinfo import CardInfo
+from db_signal import Stripe, VendingMachines
 from enum_types import InventoryManagerMode
 from inventory_manager import InventoryManager
-
-from src.client.db_signal import Inventory, Items, Stripe, VendingMachines
 
 
 class VendingMachine:
@@ -47,14 +44,17 @@ class VendingMachine:
         self.__inv_man: InventoryManager = inv_man
         self.__hardware_id: str = hardware_id
 
+        # Check that hardware_id of inventory manager matches vending machine
         if(self.__inv_man.hardware_id != self.__hardware_id):
             raise err.InvalidHardwareIDError(
                 "InventoryManager hardware_id does not match VendingMachine hardware_id")
 
+        # Check if vending machine exists in database, if not create it)
         if(VendingMachines.get_vending_machine(self.__hardware_id) is None):
             VendingMachines.create_vending_machine(
                 self.__hardware_id, self.__inv_man.height, self.__inv_man.width)
 
+        # Load items from database
         self.__inv_man.load_from_db()
 
         self.__stripe_payment_token: str = None
@@ -69,7 +69,7 @@ class VendingMachine:
         # set_mode will check that mode is in correct state(IDLE), throws error otherwise
         self.__inv_man.set_mode(InventoryManagerMode.TRANSACTION)
 
-        card_number, exp_month, exp_year, cvc = getCardInfo() # Temporary function to get card info
+        card_number, exp_month, exp_year, cvc = CardInfo.get_card_info() # Temporary function to get card info
 
         # stripe API implementation to log user in and obtain API token
         self.stripe_payment_token = Stripe.get_payment_token(card_number, exp_month, exp_year, cvc)

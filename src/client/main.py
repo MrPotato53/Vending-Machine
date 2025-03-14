@@ -1,10 +1,10 @@
-import sys
+import sys  # noqa: INP001
 import textwrap
 
 import exceptions as err
+from customer.vending_machine import VendingMachine
 from enum_types import InventoryManagerMode
 from inventory_manager import InventoryManager
-from vending_machine import VendingMachine
 
 vending_machine: VendingMachine = None
 inventory_manager: InventoryManager = None
@@ -15,8 +15,8 @@ def main():
     row = int(input("Please input the number of rows to be in the vending machine (1 digit): "))
     col = int(input("Please input the number of columns to be in the vending machine (1 digit): "))
     try:
-        inventory_manager = InventoryManager(row, col)
-        vending_machine = VendingMachine(inventory_manager)
+        inventory_manager = InventoryManager(row, col, "UNIQUEID")
+        vending_machine = VendingMachine(inventory_manager, "UNIQUEID")
     except err.InvalidDimensionsError as e:
         print("Error: ", e)
         sys.exit(1)
@@ -60,7 +60,7 @@ def perform_transaction():
         vending_machine.start_transaction()
         # All the stripe API payment stuff should happen inside here ^^
     except err.InvalidModeError as e:
-        print("Error: " + e)
+        print("Error: " + str(e))
         return
 
     print("Payment Information Entered...")
@@ -78,6 +78,8 @@ def perform_transaction():
             print("Vending Machine Inventory: ")
             print(vending_machine.list_options())
         except err.EmptySlotError as e:
+            print("Error: ", e)
+        except err.InvalidSlotNameError as e:
             print("Error: ", e)
 
 
