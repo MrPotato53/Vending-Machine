@@ -43,14 +43,19 @@ class VendingMachine:
 
     """
 
-    def __init__(self, inventory_manager: InventoryManager):
-        with open("src/client/vending-machine/configuration.json") as f:
-            config = json.load(f)
-            self.__inv_man: InventoryManager = InventoryManager(config["rows"], config["columns"], config["hardware_id"])
-            self.__hardware_id: str = config["hardware_id"]
+    def __init__(self, inv_man: InventoryManager, hardware_id: str) -> None:
+        self.__inv_man: InventoryManager = inv_man
+        self.__hardware_id: str = hardware_id
 
-            if(VendingMachines.get_vending_machine(self.__hardware_id) is None):
-                VendingMachines.create_vending_machine(self.__hardware_id, config["rows"], config["columns"])
+        if(self.__inv_man.hardware_id != self.__hardware_id):
+            raise err.InvalidHardwareIDError(
+                "InventoryManager hardware_id does not match VendingMachine hardware_id")
+
+        if(VendingMachines.get_vending_machine(self.__hardware_id) is None):
+            VendingMachines.create_vending_machine(
+                self.__hardware_id, self.__inv_man.height, self.__inv_man.width)
+
+        self.__inv_man.load_from_db()
 
         self.__stripe_payment_token: str = None
         self.__transaction_price: float = 0
@@ -90,7 +95,7 @@ class VendingMachine:
         # Use stripe API to charge self.transaction_price with self.stripe_payment_token
         Stripe.charge(self.__stripe_payment_token, int(self.__transaction_price * 100))
 
-        # Load changes to database
+        # Save changes to database
         self.__inv_man.save_to_db()
 
         out = self.__transaction_price

@@ -26,3 +26,7 @@ class InvalidDimensionsError(Exception):
 class InvalidSlotNameError(Exception):
     """Thrown when trying to access a nonexistent slot"""
     pass
+
+class InvalidHardwareIDError(Exception):
+    """Thrown when vending machine instantiated with inventory_manager with mismatched hardware_id"""
+    pass
