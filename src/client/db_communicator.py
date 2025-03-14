@@ -1,166 +1,243 @@
 #TODO: put into env file
+from __future__ import annotations
+
 import requests
-import json
 import stripe
 
 host = "http://cs506x19.cs.wisc.edu:8080" #cs CLI machine hosting the DB
-localHost = "http://localhost:8080" #For local testing
-machines = "/vending-machines" #API route for the related class
-inventory = "/inventory"
-items = "/items"#API route for items
+localhost = "http://localhost:8080" #For local testing
+machines = "vending-machines" #API route for the related class
+inventory = "inventory"
+items = "items"#API route for items
 headers = {'Content-Type':'application/json'} #header for api post
 
+SUCCESS = 200
+BAD_REQUEST = 400
+NOT_FOUND = 404
+INTERNAL_SERVER_ERROR = 500
+TIMEOUT = 10
 
+def string_builder(*args):
+    return '/'.join(args)
 
 #This class should only be used in the inventory manager file allowing complete filtered request
 #to be made to the server side mySQL on the docker.
 
-#Class for all api calls pertaining to vending machine IDs and set up
-#Does not contain inventory api calls
-class vms:  
+class VMs:
+    """Class for all api calls pertaining to vending machine IDs and set up.
+
+    Methods
+    -------
+    get_machines()
+        Pull all VMs
+    get_single_machine(self, hardware_id:str)
+        Pull specific VM based on the UNIQUEID on the Vending_machines table
+    post_machine(self, id:str, name:str, row:int, column:int, vm_mode:str)
+        Insert new machine into the Vending_machines table
+    delete_machine(self, id:str)
+        Remove a specific machine based on it's UNIQUEID on the VM table
+    alter_mode(self, id:str,mode:str)
+        Change the mode of a specific machine
+    alter_name(self, id:str, name:str)
+        Update name of a machine by ID
+
+    """
 
     #Pull all VMs
-    def get_machines():
-        response = requests.get(host+machines)
-        if(response.status_code !=200):
-            return (response.status_code)
-        text = json.loads(response)
-        return text
-    
+    @staticmethod
+    def get_machines() -> (dict | None):
+        api_route = string_builder(host,machines)
+        try:
+            response = requests.get(api_route, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
+
     #Pull specific VM based on the UNIQUEID on the Vending_machines table
-    def get_single_machine(id:str):
-        response = requests.get(host+machines+"/"+id)
-        if(response.status_code !=200):
-            print("vending machine",id," not found.")
-            return
-        text = json.loads(response)
-        return text
-    
-    #Insert new machine into the Vending_machines table 
-    #example machine json format [vm_id:id, vm_name"name, vm_row_count:cnt, vm_column_count:cnt, vm_mode:mode]
+    @staticmethod
+    def get_single_machine(hardware_id:str) -> (dict | None):
+        api_route = string_builder(host,machines,hardware_id)
+        try:
+            response = requests.get(api_route, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
+
+    #Insert new machine into the Vending_machines table
+    #example machine json format:
+    # [vm_id:id, vm_name"name, vm_row_count:cnt, vm_column_count:cnt, vm_mode:mode]
     #Directly relates to columns in mySQL server
-    def post_machine(id:str, name:str, row:int, column:int, vm_mode:str):
-        newInfo = {
-            'vm_id':id,
+    @staticmethod
+    def post_machine(hardware_id:str, name:str, row:int, column:int, vm_mode:str) -> (dict | None):
+        new_info = {
+            'vm_id':hardware_id,
             'vm_name':name,
             'vm_row_count':row,
             'vm_column_count': column,
-            'vm_mode':vm_mode
+            'vm_mode':vm_mode,
         }
-        response = requests.post(host+machines, data=newInfo,headers=headers)
-        if(response.status_code !=200):
-            return (response.status_code)     
-        text = json.loads(response)
-        return text
-    
-    
+        api_route = string_builder(host,machines)
+        try:
+            response = requests.post(api_route, json=new_info, headers=headers, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
+
     #Remove a specific machine based on it's UNIQUEID on the VM table
-    def delete_machine(id:str):
-        response = requests.delete(host+machines+"/"+id)
-        text = response.json()
-        if(response.status_code != 200):
-            return (response.status_code)
-        return text
+    @staticmethod
+    def delete_machine(hardware_id:str) -> (dict | None):
+        api_route = string_builder(host,machines,hardware_id)
+
+        try:
+            response = requests.delete(api_route, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
 
     #enum_types of MODE: i, r, t
-    def alter_mode(id:str,mode:str):
-        response = requests.patch(host+machines+'/'+id+'/mode', data=mode, headers=headers)
-        if(response.status_code !=200):
-            return(response.status_code)       
-        text = json.loads(response)
-        return text
+    @staticmethod
+    def alter_mode(hardware_id:str, mode:str) -> (dict | None):
+        api_route = string_builder(host,machines,hardware_id,'mode')
+        payload = {"vm_mode": mode}
+
+        try:
+            response = requests.patch(api_route, json=payload, headers=headers, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
 
     #Update name of a machine by ID
-    def alter_name(id:str, name:str):
-        response = requests.patch(host+machines+'/'+id+'/name', data=name, headers=headers)
-        if(response.status_code != 200):
-            return(response.status_code)
-        text = json.loads(response)
-        return text
-    
-class allItems:
-    #Query all available items for stocking
-    def get_items():
-        response = requests.get(host+items)
-        if(response.status_code != 200):
-            return(response.status_code)
-        text = json.loads(response)
-        return text
+    @staticmethod
+    def alter_name(hardware_id:str, name:str) -> (dict | None):
+        api_route = string_builder(host,machines,hardware_id,'name')
+        payload = {"vm_name": name}
 
-#Class for items within specific machines
-class vmItems:
-    def  get_items(id:str):
-        inventory_route = host+machines+'/'+id+inventory
-        response = requests.get(inventory_route)
-        if(response.status_code != 200):
-            return(response.status_code)
-        text = json.loads(response)
-        return text
-    
-    def add_to_slot(id:str,slot_name:str):
-        inventory_route = host+machines+'/'+id+inventory
-        response = requests.get(inventory_route+'/'+slot_name)
-        if(response.status_code != 200):
-            return(response.status_code)
-        text = json.loads(response)
-        return text
-
-    #{item_name, price, stock}
-    #TODO: takes whole update json as input 
-    def update_item_in_slot(id:str, slot_name:str, item:str):
-        inventory_route = host+machines+'/'+id+inventory
-        response = requests.patch(inventory_route+ '/'+slot_name, data=items, headers=headers)
-        if(response.status_code != 200):
-            return(response.status_code)
-        text = json.loads(response)
-        return text
-
-    def delete_item_in_slot(id:str, slot_name:str, item:str):
-        inventory_route = host+machines+'/'+id+inventory
-        response = requests.delete(inventory_route + '/'+slot_name, data= item, headers=headers)
-        if(response.status_code != 200):
-            return(response.status_code)
-        text = json.loads(response)
-        return text
-
-    def update_vm_inv(id:str,inventory:str):
-        inventory_route = host+machines+'/'+id+inventory
-        response = requests.post(inventory_route, data=inventory, headers=headers)
-        if(response.status_code != 200):
-            return(response.status_code)
-        text = json.loads(response)
-        return text
-    
-   
-class stripe:
-    def create_payment_token(card_number, exp_month, exp_year, cvc):
         try:
-            token = stripe.Token.create(
-            card={
-                'number': card_number,
-                'exp_month': exp_month,
-                'exp_year': exp_year,
-                'cvc': cvc,
-            }
-            )
-            return token.id # Send this to the backend
-        except stripe.error.StripeError as e:
-            return str(e)
+            response = requests.patch(api_route, json=payload, headers=headers, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
+
+class AllItems:
+    """Class for all items available for stocking.
+
+    Methods
+    -------
+    get_items()
+        Gets all available items inside database
+
+    """
+
+    #Query all available items for stocking
+    @staticmethod
+    def get_items() -> (dict | None):
+        api_route = string_builder(host,items)
+
+        try:
+            response = requests.get(api_route, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
+
+class VMItems:
+    """Class for items within specific machines.
+
+    Methods
+    -------
+    get_items(self, id:str)
+        Gets all items within a specific machine
+    add_to_slot(self, id:str, slot_name:str)
+        Add an item to a specific slot
+    update_item_in_slot(self, id:str, slot_name:str, item:str)
+        Update an item in a specific slot
+    delete_item_in_slot(self, id:str, slot_name:str, item:str)
+        Delete an item in a specific slot
+    update_vm_inv(self, id:str,inventory:list[dict])
+        Update the inventory of a specific machine with changelog
+
+    """
+
+    @staticmethod
+    def get_items(hardware_id:str) -> (dict | None):
+        api_route = string_builder(host,machines,hardware_id,inventory)
+
+        try:
+            response = requests.get(api_route, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
+
+    @staticmethod
+    def update_vm_inv(hardware_id:str,updated_inventory:list[dict]) -> (dict | None):
+        api_route = string_builder(host,machines,hardware_id,inventory)
+
+        try:
+            response = requests.post(api_route, json=updated_inventory, headers=headers, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
+
+
+class Stripe:
+    """Class for handling stripe payment tokens.
+
+    Methods
+    -------
+    create_payment_token(card_number:str, exp_month:str, exp_year:int, cvc:int)
+        Creates a payment token for a card
+
+    """
+
+    @staticmethod
+    def create_payment_token(card_number: str, exp_month: int, exp_year: int, cvc: str) -> (str | None):
+        # try:
+        #     token = stripe.Token.create(
+        #     card={
+        #         'number': card_number,
+        #         'exp_month': exp_month,
+        #         'exp_year': exp_year,
+        #         'cvc': cvc,
+        #     },
+        #     )
+        # except stripe.error.StripeError as e:
+        #     return None
+        # else:
+        #     return token.id # Send this to the backend
+
+        return "placeholdertoken"
+
+    @staticmethod
+    def charge_card(amount: int, payment_token: str = "") -> (dict | None):
+        api_route = string_builder(host, "stripe", "pay")
+        payload = {"amount": amount, "token": payment_token}
+
+        try:
+            response = requests.post(api_route, json=payload, headers=headers, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException:
+            return None
 
 func_dict = {
-        'get_machines': vms.get_machines,
-        'get_single_machine': vms.get_single_machine,
-        'post_machine': vms.post_machine,
-        'delete_machine': vms.delete_machine,
-        'alter_mode': vms.alter_mode,
-        'alter_name': vms.alter_name,
-        'get_items': allItems.get_items,
-        'get_vm_items': vmItems.get_items,
-        'add_to_slot': vmItems.add_to_slot,
-        'update_item_in_slot': vmItems.update_item_in_slot,
-        'delete_item_in_slot': vms.delete_machine,
-        'update_vm_inv': vmItems.update_vm_inv,
-        'create_payment_token': stripe.create_payment_token
+        'get_machines': VMs.get_machines,
+        'get_single_machine': VMs.get_single_machine,
+        'post_machine': VMs.post_machine,
+        'delete_machine': VMs.delete_machine,
+        'alter_mode': VMs.alter_mode,
+        'alter_name': VMs.alter_name,
+        'get_items': AllItems.get_items,
+        'get_vm_items': VMItems.get_items,
+        'update_vm_inv': VMItems.update_vm_inv,
+        'create_payment_token': Stripe.create_payment_token,
 }
 
 param_dict = {
@@ -172,42 +249,41 @@ param_dict = {
     'alter_name': "id, name",
     'get_items': "none",
     'get_vm_items': "id",
-    'add_to_slot': "id, slot_name",
-    'update_item_in_slot': "id, slot_name",
-    'delete_item_in_slot': "id:str, slot_name:str, item:str",
     'update_vm_inv': "id:str,update:str",
-    'create_payment_token': "card_number, exp_month, exp_year, cvc"
+    'create_payment_token': "card_number, exp_month, exp_year, cvc",
 }
 
-def switch_case(case, *args):
-    
+def switch_case(case: str, args: str):
+
     # Get the function from the dictionary
     func = func_dict.get(case)
     if func:
-        return func(*args)
-    else:
-        raise ValueError(f"Invalid case: {case}")
+        args_list = [arg.strip() for arg in args.split(",") if arg.strip()]
+        return func(*args_list)
 
-    
+    msg = f"Invalid case: {case}"
+    raise ValueError(msg)
+
+
 #Main provides example calls and output for each function. Providing the current
-#machines on the DB to inform the user. 
-#If you are having issues understanding the response utilize this. 
+#machines on the DB to inform the user.
+#If you are having issues understanding the response utilize this.
 def main():
     cont = 1
     while(cont):
-      
+
         print("This file contains three classes for DB comunication.")
         for i in func_dict:
             print("Function: ", i)
-            
-        func = input(str("What function and args would you like to test:"))
+
+        func = input("What function and args would you like to test:")
         print(param_dict.get(func))
 
-        args = input(str("What args would you like to use:"))
-        
-        switch_case(func, args)
-        
-        cont = input(int("Would you like to continue testing?(enter 1)"))
-        
-        
-main()
+        args = input("What args would you like to use:")
+
+        print(switch_case(func, args))
+
+        cont = int(input("Would you like to continue testing?(enter 1)"))
+
+
+# main()

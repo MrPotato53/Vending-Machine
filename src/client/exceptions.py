@@ -30,3 +30,7 @@ class InvalidSlotNameError(Exception):
 class InvalidHardwareIDError(Exception):
     """Thrown when vending machine instantiated with inventory_manager with mismatched hardware_id"""
     pass
+
+class QueryFailureException(Exception):
+    """Thrown when query fails or returns invalid results"""
+    pass
