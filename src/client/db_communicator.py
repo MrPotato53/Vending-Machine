@@ -66,7 +66,7 @@ class VMs:
         except requests.exceptions.RequestException as e:
             if(response.status_code == NOT_FOUND):
                 return None
-            raise err.QueryFailureException("Error: ", e) from e
+            raise err.QueryFailureError("Error: ", e) from e
 
     #Insert new machine into the Vending_machines table
     #example machine json format:
@@ -87,7 +87,7 @@ class VMs:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureException("Erorr:", e) from e
+            raise err.QueryFailureError("Erorr:", e) from e
 
     #Remove a specific machine based on it's UNIQUEID on the VM table
     @staticmethod
@@ -99,7 +99,7 @@ class VMs:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureException("Error:", e) from e
+            raise err.QueryFailureError("Error:", e) from e
 
     #enum_types of MODE: i, r, t
     @staticmethod
@@ -112,7 +112,7 @@ class VMs:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureException("Error:", e) from e
+            raise err.QueryFailureError("Error:", e) from e
 
     #Update name of a machine by ID
     @staticmethod
@@ -125,7 +125,7 @@ class VMs:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureException("Error:", e) from e
+            raise err.QueryFailureError("Error:", e) from e
 
 class AllItems:
     """Class for all items available for stocking.
@@ -147,7 +147,7 @@ class AllItems:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureException("Error:", e) from e
+            raise err.QueryFailureError("Error:", e) from e
 
 class VMItems:
     """Class for items within specific machines.
@@ -176,7 +176,7 @@ class VMItems:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureException("Error:", e) from e
+            raise err.QueryFailureError("Error:", e) from e
 
     @staticmethod
     def update_vm_inv(hardware_id:str,updated_inventory:list[dict]) -> (dict | None):
@@ -188,7 +188,7 @@ class VMItems:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureException("Error:", e) from e
+            raise err.QueryFailureError("Error:", e) from e
 
 
 class Stripe:
@@ -229,7 +229,7 @@ class Stripe:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureException("Error:", e) from e
+            raise err.QueryFailureError("Error:", e) from e
 
 func_dict = {
         'get_machines': VMs.get_machines,

@@ -12,12 +12,6 @@ router.get("/", async (req, res) => {
         // Check if vending machine exists
         if(!await VM.vendingMachineExists(vendingMachineId, res)) return;
 
-        // Optionally reset recently_restocked flag
-        // const resetRecentlyRestocked = req.query.reset_recently_restocked || false;
-        // if(resetRecentlyRestocked) {
-        //     await db.query("UPDATE vm_recently_restocked SET vm_recently_restocked = 0 WHERE vm_id = ?", [vendingMachineId]);
-        // }
-
         const [results] = await db.query(`
             SELECT 
                 ijt.IJT_slot_name AS slot_name, 
@@ -148,8 +142,6 @@ router.post("/", async (req, res) => {
             // Update item in inventory_join_table
             await IJT.modify_item_slot(vendingMachineId, slot_name, item_id, price, stock);
         }
-
-        // await db.query("UPDATE vm_recently_restocked SET vm_recently_restocked = 1 WHERE vm_id = ?", [vendingMachineId]);
 
         res.json({ message: "Items updated successfully" });
     } catch (err) {
