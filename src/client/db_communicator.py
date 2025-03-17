@@ -1,11 +1,12 @@
 #TODO: put into env file
-from __future__ import annotations
+from __future__ import annotations  # noqa: F404
 
+import exceptions as err
 import requests
 import stripe
 
 host = "http://cs506x19.cs.wisc.edu:8080" #cs CLI machine hosting the DB
-localhost = "http://localhost:8080" #For local testing
+# host = "http://localhost:8080" #For local testing
 machines = "vending-machines" #API route for the related class
 inventory = "inventory"
 items = "items"#API route for items
@@ -56,21 +57,23 @@ class VMs:
 
     #Pull specific VM based on the UNIQUEID on the Vending_machines table
     @staticmethod
-    def get_single_machine(hardware_id:str) -> (dict | None):
+    def get_single_machine(hardware_id:str) -> dict:
         api_route = string_builder(host,machines,hardware_id)
         try:
             response = requests.get(api_route, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            if(response.status_code == NOT_FOUND):
+                return None
+            raise err.QueryFailureException("Error: ", e) from e
 
     #Insert new machine into the Vending_machines table
     #example machine json format:
     # [vm_id:id, vm_name"name, vm_row_count:cnt, vm_column_count:cnt, vm_mode:mode]
     #Directly relates to columns in mySQL server
     @staticmethod
-    def post_machine(hardware_id:str, name:str, row:int, column:int, vm_mode:str) -> (dict | None):
+    def post_machine(hardware_id:str, name:str, row:int, column:int, vm_mode:str) -> dict:
         new_info = {
             'vm_id':hardware_id,
             'vm_name':name,
@@ -83,24 +86,24 @@ class VMs:
             response = requests.post(api_route, json=new_info, headers=headers, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureException("Erorr:", e) from e
 
     #Remove a specific machine based on it's UNIQUEID on the VM table
     @staticmethod
-    def delete_machine(hardware_id:str) -> (dict | None):
+    def delete_machine(hardware_id:str) -> dict:
         api_route = string_builder(host,machines,hardware_id)
 
         try:
             response = requests.delete(api_route, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureException("Error:", e) from e
 
     #enum_types of MODE: i, r, t
     @staticmethod
-    def alter_mode(hardware_id:str, mode:str) -> (dict | None):
+    def alter_mode(hardware_id:str, mode:str) -> dict:
         api_route = string_builder(host,machines,hardware_id,'mode')
         payload = {"vm_mode": mode}
 
@@ -108,12 +111,12 @@ class VMs:
             response = requests.patch(api_route, json=payload, headers=headers, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureException("Error:", e) from e
 
     #Update name of a machine by ID
     @staticmethod
-    def alter_name(hardware_id:str, name:str) -> (dict | None):
+    def alter_name(hardware_id:str, name:str) -> dict:
         api_route = string_builder(host,machines,hardware_id,'name')
         payload = {"vm_name": name}
 
@@ -121,8 +124,8 @@ class VMs:
             response = requests.patch(api_route, json=payload, headers=headers, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureException("Error:", e) from e
 
 class AllItems:
     """Class for all items available for stocking.
@@ -136,15 +139,15 @@ class AllItems:
 
     #Query all available items for stocking
     @staticmethod
-    def get_items() -> (dict | None):
+    def get_items() -> dict:
         api_route = string_builder(host,items)
 
         try:
             response = requests.get(api_route, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureException("Error:", e) from e
 
 class VMItems:
     """Class for items within specific machines.
@@ -172,19 +175,20 @@ class VMItems:
             response = requests.get(api_route, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureException("Error:", e) from e
 
     @staticmethod
     def update_vm_inv(hardware_id:str,updated_inventory:list[dict]) -> (dict | None):
         api_route = string_builder(host,machines,hardware_id,inventory)
 
         try:
-            response = requests.post(api_route, json=updated_inventory, headers=headers, timeout=TIMEOUT)
+            response = requests.post(
+                api_route, json=updated_inventory, headers=headers, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureException("Error:", e) from e
 
 
 class Stripe:
@@ -217,15 +221,15 @@ class Stripe:
 
     @staticmethod
     def charge_card(amount: int, payment_token: str = "") -> (dict | None):
-        api_route = string_builder(host, "stripe", "pay")
+        api_route = string_builder(host, "stripes", "pay")
         payload = {"amount": amount, "token": payment_token}
 
         try:
             response = requests.post(api_route, json=payload, headers=headers, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureException("Error:", e) from e
 
 func_dict = {
         'get_machines': VMs.get_machines,
@@ -238,6 +242,7 @@ func_dict = {
         'get_vm_items': VMItems.get_items,
         'update_vm_inv': VMItems.update_vm_inv,
         'create_payment_token': Stripe.create_payment_token,
+        'charge_card': Stripe.charge_card,
 }
 
 param_dict = {
@@ -251,6 +256,7 @@ param_dict = {
     'get_vm_items': "id",
     'update_vm_inv': "id:str,update:str",
     'create_payment_token': "card_number, exp_month, exp_year, cvc",
+    'charge_card': "amount, payment_token",
 }
 
 def switch_case(case: str, args: str):

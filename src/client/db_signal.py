@@ -8,7 +8,7 @@ class VendingMachines:
 
     Methods
     -------
-    checkExistence(id:str)
+    vending_machine_exists(id:str)
         Checks whether vending machine exists in database
     get_vending_machine(hardware_id: str)
         Returns vending machine in json format specified by ID
@@ -25,7 +25,7 @@ class VendingMachines:
     """
 
     @staticmethod
-    def check_existence(hardware_id:str) -> bool:
+    def vending_machine_exists(hardware_id:str) -> bool:
         return VendingMachines.get_vending_machine(hardware_id) is not None
 
     @staticmethod
@@ -36,29 +36,29 @@ class VendingMachines:
     def create_vending_machine(
         hardware_id:str, row_count:int, column_count:int, name:str | None = None, mode:str = "i",
         ) -> (dict | None):
-        if(VendingMachines.check_existence(hardware_id)):
+        if(VendingMachines.vending_machine_exists(hardware_id)):
             return None
         return db_communicator.VMs.post_machine(hardware_id,name, row_count, column_count, mode)
 
     @staticmethod
     def set_mode(hardware_id:str, new_mode:str) -> (dict | None):
-       if(VendingMachines.check_existence(hardware_id)):
+       if(VendingMachines.vending_machine_exists(hardware_id)):
             return db_communicator.VMs.alter_mode(hardware_id, new_mode)
        return None
 
     @staticmethod
     def rename(hardware_id:str, new_name:str) -> (dict | None):
-         if(VendingMachines.check_existence(hardware_id)):
+         if(VendingMachines.vending_machine_exists(hardware_id)):
             return db_communicator.VMs.alter_name(hardware_id, new_name)
          return None
 
     @staticmethod
     def delete_vending_machine(hardware_id:str) -> (dict | None):
         res = None
-        if(VendingMachines.check_existence(hardware_id)):
+        if(VendingMachines.vending_machine_exists(hardware_id)):
             res = db_communicator.VMs.delete_machine(hardware_id)
 
-        if(VendingMachines.check_existence(hardware_id)):
+        if(VendingMachines.vending_machine_exists(hardware_id)):
             return {"error": "Failed to delete vending machine"}
         return res
 
@@ -91,13 +91,13 @@ class Inventory:
 
     @staticmethod
     def get_inventory_of_vending_machine(hardware_id: str) -> (list[dict] | None):
-        if(VendingMachines.check_existence(hardware_id)):
+        if(VendingMachines.vending_machine_exists(hardware_id)):
             return db_communicator.VMItems.get_items(hardware_id)
         return None
 
     @staticmethod
     def update_database(hardware_id: str, inventory: list[dict[str, str]]) -> (dict | None):
-        if(VendingMachines.check_existence(hardware_id)):
+        if(VendingMachines.vending_machine_exists(hardware_id)):
             return db_communicator.VMItems.update_vm_inv(hardware_id, inventory)
         return None
 
@@ -120,7 +120,7 @@ class Stripe:
 
     @staticmethod
     def charge(token: str, amount: float) -> (dict | None):
-        return db_communicator.Stripe.charge_card(token, amount)
+        return db_communicator.Stripe.charge_card(amount, token)
 
     @staticmethod
     def make_payment(
