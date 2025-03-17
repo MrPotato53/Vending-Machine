@@ -24,12 +24,17 @@ class InventoryManager:
 
     Methods
     -------
-    def load_from_db(self) -> None
+    def sync_from_database() -> None
+        Check if dimensions match between local and db, load inventory of vending machine,
+        and sync mode with database
+    def load_inventory_from_db(self) -> None
         Load items from database
-    def save_to_db(self) -> None
+    def save_inventory_to_db(self) -> None
         Save items to database
     def get_mode(self) -> Mode
         Returns the operating mode of this inventory manager
+    def load_mode_from_db(self) -> None
+        Set the local mode to the mode that is on the db
     def set_mode(self, new_mode) -> None
         Sets the operating mode of this inventory manager
     def get_stock_information(self, show_empty_slots) -> str
@@ -67,13 +72,42 @@ class InventoryManager:
         self.height = height
         self.width = width
 
-        # Create items 2d list and fill it with database values
+        # Create items 2d list
         self.__items = [[None for i in range(width)] for j in range(height)]
 
-        self.__change_log = {}
+        # Create mode map for mode functions and set mode to IDLE
+        self.mode_map = {
+            "i": InventoryManagerMode.IDLE,
+            "r": InventoryManagerMode.RESTOCKING,
+            "t": InventoryManagerMode.TRANSACTION,
+            InventoryManagerMode.IDLE: "i",
+            InventoryManagerMode.RESTOCKING: "r",
+            InventoryManagerMode.TRANSACTION: "t",
+        }
         self.__mode = InventoryManagerMode.IDLE
 
-    def load_from_db(self) -> None:
+        self.__change_log = {}
+
+
+    def sync_from_database(self) -> dict:
+        vm_db = VendingMachines.get_vending_machine(self.hardware_id)
+        if(vm_db is None):
+            raise err.QueryFailureException("sync_to_database failed because vending machine DNE")
+
+        # Check that dimensions match between database and local
+        if(vm_db["vm_row_count"] != self.height or vm_db["vm_column_count"] != self.width):
+            raise(err.InvalidDimensionsError("Dimensions mismatch between local and database."))
+
+        # Load inventory from database
+        self.load_inventory_from_db()
+
+        # Load current mode from database
+        self.__mode = self.mode_map[vm_db["vm_mode"]]
+
+        return vm_db
+
+
+    def load_inventory_from_db(self) -> None:
         self.__items = [[None for i in range(self.width)] for j in range(self.height)]
         inventory: list[dict] = Inventory.get_inventory_of_vending_machine(self.hardware_id)
         if(inventory is None):
@@ -81,9 +115,9 @@ class InventoryManager:
 
         for item in inventory:
             row, col = self.__get_coordinates_from_slotname(item["slot_name"])
-            self.__items[row][col] = Item(item["item_name"], item["cost"], item["stock"])
+            self.__items[row][col] = Item(item["item_name"], float(item["price"]), int(item["stock"]))
 
-    def save_to_db(self) -> None:
+    def save_inventory_to_db(self) -> None:
         req_body = [
         {
             "slot_name": slot_name,
@@ -101,21 +135,15 @@ class InventoryManager:
     def get_mode(self) -> InventoryManagerMode:
         return self.__mode
 
-    def set_mode(self, new_mode: InventoryManagerMode) -> None:
-        mode_map = {
-            "i": InventoryManagerMode.IDLE,
-            "r": InventoryManagerMode.RESTOCKING,
-            "t": InventoryManagerMode.TRANSACTION,
-            InventoryManagerMode.IDLE: "i",
-            InventoryManagerMode.RESTOCKING: "r",
-            InventoryManagerMode.TRANSACTION: "t",
-        }
-
+    def load_mode_from_db(self) -> None:
         res = VendingMachines.get_vending_machine(self.hardware_id)
         if(res is None):
             raise err.QueryFailureException("get_vending_machine failed")
 
-        self.__mode = mode_map[res["vm_mode"]]
+        self.__mode = self.mode_map[res["vm_mode"]]
+
+    def set_mode(self, new_mode: InventoryManagerMode) -> None:
+        self.load_mode_from_db()
 
         if new_mode is InventoryManagerMode.IDLE and self.__mode is InventoryManagerMode.IDLE:
             raise err.InvalidModeError("Cannot change mode from IDLE to IDLE")
@@ -131,7 +159,7 @@ class InventoryManager:
             )
 
         self.__mode = new_mode
-        if(VendingMachines.set_mode(self.hardware_id, mode_map[new_mode]) is None):
+        if(VendingMachines.set_mode(self.hardware_id, self.mode_map[new_mode]) is None):
             raise err.QueryFailureException("set_mode failed")
 
     def get_stock_information(self, show_empty_slots: bool = False) -> str:
