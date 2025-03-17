@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: INP001
 
 import exceptions as err
 from api_constants import BAD_REQUEST

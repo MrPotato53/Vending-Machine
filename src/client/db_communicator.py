@@ -101,7 +101,7 @@ class VMs:
         except requests.exceptions.ConnectionError as e:
             raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
+            raise err.QueryFailureException("Error:", e) from e
 
     #enum_types of MODE: i, r, t
     @staticmethod
