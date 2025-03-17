@@ -32,5 +32,11 @@ class InvalidHardwareIDError(Exception):
     pass
 
 class QueryFailureError(Exception):
-    """Thrown when query fails or returns invalid results"""
-    pass
+    """Thrown when query fails or returns invalid results."""
+
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+
+    def __str__(self):
+        return self.message + "; Status code: " + str(self.status_code)
