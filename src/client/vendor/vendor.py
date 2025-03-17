@@ -1,4 +1,4 @@
-import exceptions as err
+import exceptions as err  # noqa: INP001
 from db_signal import VendingMachines
 from enum_types import InventoryManagerMode
 from inventory_manager import InventoryManager
@@ -50,7 +50,7 @@ class VendorInterface:
     def __init__(self, hardware_id: str):
         self.vm_db = VendingMachines.get_vending_machine(hardware_id)
         if(self.vm_db is None):
-            raise err.QueryFailureException("Cannot init vendor, vending machine ID DNE in DB")
+            raise err.QueryFailureError("Cannot init vendor, vending machine ID DNE in DB")
 
         self.__inv_man = InventoryManager(
             self.vm_db["vm_row_count"], self.vm_db["vm_column_count"], hardware_id)

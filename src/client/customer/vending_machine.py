@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: INP001
 
 import exceptions as err
 from customer.cardinfo import CardInfo
@@ -74,7 +74,8 @@ class VendingMachine:
         card_number, exp_month, exp_year, cvc = CardInfo.get_card_info()
 
         # stripe API implementation to log user in and obtain API token
-        self.__stripe_payment_token = Stripe.get_payment_token(card_number, exp_month, exp_year, cvc)
+        self.__stripe_payment_token = Stripe.get_payment_token(
+            card_number, exp_month, exp_year, cvc)
 
 
     def buy_item(self, slot_name: str) -> str:

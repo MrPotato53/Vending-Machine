@@ -21,6 +21,8 @@ class InventoryManager:
         Dictionary of changes to items to be saved to database
     mode
         Operating mode of inventory manager, is either IDLE, TRANSACTION, or RESTOCKING
+    mode_map
+        Mapping between character representations of mode (i, r, t) and their ENUM counterparts
 
     Methods
     -------
@@ -92,7 +94,7 @@ class InventoryManager:
     def sync_from_database(self) -> dict:
         vm_db = VendingMachines.get_vending_machine(self.hardware_id)
         if(vm_db is None):
-            raise err.QueryFailureException("sync_to_database failed because vending machine DNE")
+            raise err.QueryFailureError("sync_to_database failed because vending machine DNE")
 
         # Check that dimensions match between database and local
         if(vm_db["vm_row_count"] != self.height or vm_db["vm_column_count"] != self.width):
@@ -111,11 +113,12 @@ class InventoryManager:
         self.__items = [[None for i in range(self.width)] for j in range(self.height)]
         inventory: list[dict] = Inventory.get_inventory_of_vending_machine(self.hardware_id)
         if(inventory is None):
-            raise err.QueryFailureException("get_inventory_of_vending_machine failed")
+            raise err.QueryFailureError("get_inventory_of_vending_machine failed")
 
         for item in inventory:
             row, col = self.__get_coordinates_from_slotname(item["slot_name"])
-            self.__items[row][col] = Item(item["item_name"], float(item["price"]), int(item["stock"]))
+            self.__items[row][col] = Item(
+                item["item_name"], float(item["price"]), int(item["stock"]))
 
     def save_inventory_to_db(self) -> None:
         req_body = [
@@ -128,7 +131,7 @@ class InventoryManager:
         for slot_name, item in self.__change_log.items()]
 
         if(Inventory.update_database(self.hardware_id, req_body) is None):
-            raise err.QueryFailureException("update_database failed")
+            raise err.QueryFailureError("update_database failed")
 
         self.__change_log = {}
 
@@ -138,7 +141,7 @@ class InventoryManager:
     def load_mode_from_db(self) -> None:
         res = VendingMachines.get_vending_machine(self.hardware_id)
         if(res is None):
-            raise err.QueryFailureException("get_vending_machine failed")
+            raise err.QueryFailureError("get_vending_machine failed")
 
         self.__mode = self.mode_map[res["vm_mode"]]
 
@@ -160,7 +163,7 @@ class InventoryManager:
 
         self.__mode = new_mode
         if(VendingMachines.set_mode(self.hardware_id, self.mode_map[new_mode]) is None):
-            raise err.QueryFailureException("set_mode failed")
+            raise err.QueryFailureError("set_mode failed")
 
     def get_stock_information(self, show_empty_slots: bool = False) -> str:
         out = ""

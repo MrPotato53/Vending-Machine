@@ -15,7 +15,7 @@ def main():
     except err.InvalidDimensionsError as e:
         print("Error: ", e)
         sys.exit(1)
-    except err.QueryFailureException as e:
+    except err.QueryFailureError as e:
         print("Error: ", e)
         sys.exit(1)
 
@@ -82,7 +82,7 @@ def vendor_mode():
             print()
             try:
                 vendor_interface.end_restocking()
-            except err.QueryFailureException as e:
+            except err.QueryFailureError as e:
                 print("Error: ", e)
             return
         else:
@@ -164,7 +164,7 @@ def rename():
     try:
         new_name = input("Please enter a new name for the vending machine: ")
         vendor_interface.rename(new_name)
-    except err.QueryFailureException as e:
+    except err.QueryFailureError as e:
         print("Error: ", e)
         return
 

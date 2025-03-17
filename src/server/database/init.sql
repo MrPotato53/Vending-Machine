@@ -6,8 +6,6 @@ CREATE TABLE IF NOT EXISTS vending_machines (
     vm_row_count INT UNSIGNED NOT NULL,
     vm_column_count INT UNSIGNED NOT NULL,
     vm_mode CHAR(1) NOT NULL -- "i" for idle, "r" for restocking, "t" for transaction
-    -- vm_recently_restocked BIT(1) NOT NULL, -- 0 means not recently restocked, 1 means recently restocked
-    -- vendor_id INT
 );
 
 CREATE TABLE IF NOT EXISTS items (
