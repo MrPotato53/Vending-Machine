@@ -21,7 +21,7 @@ def main():
         except err.InvalidDimensionsError as e:
             print("Error: ", e)
             sys.exit(1)
-        except err.QueryFailureException as e:
+        except err.QueryFailureError as e:
             print("Error: ", e)
             sys.exit(1)
 
@@ -69,7 +69,7 @@ def perform_transaction():
             try:
                 print(f"Payment method was charged {vending_machine.end_transaction()!s}")
                 print()
-            except err.QueryFailureException as e:
+            except err.QueryFailureError as e:
                 print("Error: ", e)
             return
 
