@@ -64,9 +64,7 @@ class VMs:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            if(response.status_code == NOT_FOUND):
-                return None
-            raise err.QueryFailureError("Error: ", e) from e
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
     #Insert new machine into the Vending_machines table
     #example machine json format:
@@ -87,7 +85,7 @@ class VMs:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureError("Erorr:", e) from e
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
     #Remove a specific machine based on it's UNIQUEID on the VM table
     @staticmethod
@@ -99,7 +97,7 @@ class VMs:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureError("Error:", e) from e
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
     #enum_types of MODE: i, r, t
     @staticmethod
@@ -112,7 +110,7 @@ class VMs:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureError("Error:", e) from e
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
     #Update name of a machine by ID
     @staticmethod
@@ -125,7 +123,7 @@ class VMs:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureError("Error:", e) from e
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
 class AllItems:
     """Class for all items available for stocking.
@@ -147,7 +145,7 @@ class AllItems:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureError("Error:", e) from e
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
 class VMItems:
     """Class for items within specific machines.
@@ -176,7 +174,7 @@ class VMItems:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureError("Error:", e) from e
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
     @staticmethod
     def update_vm_inv(hardware_id:str,updated_inventory:list[dict]) -> (dict | None):
@@ -188,7 +186,7 @@ class VMItems:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureError("Error:", e) from e
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
 
 class Stripe:
@@ -198,6 +196,8 @@ class Stripe:
     -------
     create_payment_token(card_number:str, exp_month:str, exp_year:int, cvc:int)
         Creates a payment token for a card
+    charge_card(amount: int, payment_token: str = "")
+        Charges a payment method for a certain amount
 
     """
 
@@ -229,7 +229,7 @@ class Stripe:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            raise err.QueryFailureError("Error:", e) from e
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
 func_dict = {
         'get_machines': VMs.get_machines,

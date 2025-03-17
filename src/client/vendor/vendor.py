@@ -48,9 +48,13 @@ class VendorInterface:
     """
 
     def __init__(self, hardware_id: str):
-        self.vm_db = VendingMachines.get_vending_machine(hardware_id)
-        if(self.vm_db is None):
-            raise err.QueryFailureError("Cannot init vendor, vending machine ID DNE in DB")
+        # Check for existence of vending machine
+        try:
+            self.vm_db = VendingMachines.get_vending_machine(hardware_id)
+        except err.QueryFailureError as e:
+            if(e.status_code == 404):
+                e.message = "Cannot init vendor, vending machine ID DNE in DB"
+            raise
 
         self.__inv_man = InventoryManager(
             self.vm_db["vm_row_count"], self.vm_db["vm_column_count"], hardware_id)
@@ -80,6 +84,7 @@ class VendorInterface:
     def start_restocking(self) -> None:
         # set_mode will check that mode is in correct state(IDLE), throws error otherwise
         self.__inv_man.set_mode(InventoryManagerMode.RESTOCKING)
+        self.__inv_man.load_inventory_from_db()
 
 
     def ensure_restocking(self) -> bool:
