@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import exceptions as err
 from customer.cardinfo import CardInfo
 from db_signal import Stripe, VendingMachines
@@ -37,25 +39,24 @@ class VendingMachine:
         Clear transaction_price and stripe_payment_token
         Sets mode of inv_man to IDLE
         Returns total purchase price
+    def reload_data(self) -> None
+        Temporary function that loads up to date information from the database,
+        will be automated with message queueing in the future.
 
     """
 
-    def __init__(self, inv_man: InventoryManager, hardware_id: str) -> None:
-        self.__inv_man: InventoryManager = inv_man
+    def __init__(self, rows: int, columns: int, hardware_id: str, name: str | None = None) -> None:
+
         self.__hardware_id: str = hardware_id
+        self.__inv_man = InventoryManager(rows, columns, hardware_id)
 
-        # Check that hardware_id of inventory manager matches vending machine
-        if(self.__inv_man.hardware_id != self.__hardware_id):
-            raise err.InvalidHardwareIDError(
-                "InventoryManager hardware_id does not match VendingMachine hardware_id")
-
-        # Check if vending machine exists in database, if not create it)
-        if(VendingMachines.get_vending_machine(self.__hardware_id) is None):
+        # Check if vending machine exists in database, if not create it
+        if(not VendingMachines.vending_machine_exists(self.__hardware_id)):
             VendingMachines.create_vending_machine(
-                self.__hardware_id, self.__inv_man.height, self.__inv_man.width)
+                self.__hardware_id, rows, columns, name)
 
-        # Load items from database
-        self.__inv_man.load_from_db()
+        # Load data from database
+        self.__inv_man.sync_from_database()
 
         self.__stripe_payment_token: str = None
         self.__transaction_price: float = 0
@@ -69,10 +70,11 @@ class VendingMachine:
         # set_mode will check that mode is in correct state(IDLE), throws error otherwise
         self.__inv_man.set_mode(InventoryManagerMode.TRANSACTION)
 
-        card_number, exp_month, exp_year, cvc = CardInfo.get_card_info() # Temporary function to get card info
+        # Temporary function to get card info
+        card_number, exp_month, exp_year, cvc = CardInfo.get_card_info()
 
         # stripe API implementation to log user in and obtain API token
-        self.stripe_payment_token = Stripe.get_payment_token(card_number, exp_month, exp_year, cvc)
+        self.__stripe_payment_token = Stripe.get_payment_token(card_number, exp_month, exp_year, cvc)
 
 
     def buy_item(self, slot_name: str) -> str:
@@ -96,7 +98,7 @@ class VendingMachine:
         Stripe.charge(self.__stripe_payment_token, int(self.__transaction_price * 100))
 
         # Save changes to database
-        self.__inv_man.save_to_db()
+        self.__inv_man.save_inventory_to_db()
 
         out = self.__transaction_price
         self.__transaction_price = 0
@@ -104,3 +106,8 @@ class VendingMachine:
 
         self.__inv_man.set_mode(InventoryManagerMode.IDLE)
         return out
+
+
+    def reload_data(self):
+        # TODO: Automate this with message queueing
+        self.__inv_man.sync_from_database()
