@@ -1,4 +1,8 @@
+from __future__ import annotations  # noqa: INP001
+
 import exceptions as err
+from customer.cardinfo import CardInfo
+from db_signal import Stripe, VendingMachines
 from enum_types import InventoryManagerMode
 from inventory_manager import InventoryManager
 
@@ -35,11 +39,25 @@ class VendingMachine:
         Clear transaction_price and stripe_payment_token
         Sets mode of inv_man to IDLE
         Returns total purchase price
+    def reload_data(self) -> None
+        Temporary function that loads up to date information from the database,
+        will be automated with message queueing in the future.
 
     """
 
-    def __init__(self, inventory_manager: InventoryManager):
-        self.__inv_man = inventory_manager
+    def __init__(self, rows: int, columns: int, hardware_id: str, name: str | None = None) -> None:
+
+        self.__hardware_id: str = hardware_id
+        self.__inv_man = InventoryManager(rows, columns, hardware_id)
+
+        # Check if vending machine exists in database, if not create it
+        if(not VendingMachines.vending_machine_exists(self.__hardware_id)):
+            VendingMachines.create_vending_machine(
+                self.__hardware_id, rows, columns, name)
+
+        # Load data from database
+        self.__inv_man.sync_from_database()
+
         self.__stripe_payment_token: str = None
         self.__transaction_price: float = 0
 
@@ -52,8 +70,12 @@ class VendingMachine:
         # set_mode will check that mode is in correct state(IDLE), throws error otherwise
         self.__inv_man.set_mode(InventoryManagerMode.TRANSACTION)
 
+        # Temporary function to get card info
+        card_number, exp_month, exp_year, cvc = CardInfo.get_card_info()
+
         # stripe API implementation to log user in and obtain API token
-        # self.stripe_payment_token = <API token>
+        self.__stripe_payment_token = Stripe.get_payment_token(
+            card_number, exp_month, exp_year, cvc)
 
 
     def buy_item(self, slot_name: str) -> str:
@@ -74,9 +96,19 @@ class VendingMachine:
                                        "start a transaction first")
 
         # Use stripe API to charge self.transaction_price with self.stripe_payment_token
+        Stripe.charge(self.__stripe_payment_token, int(self.__transaction_price * 100))
+
+        # Save changes to database
+        self.__inv_man.save_inventory_to_db()
+
         out = self.__transaction_price
         self.__transaction_price = 0
         self.__stripe_payment_token = None
 
         self.__inv_man.set_mode(InventoryManagerMode.IDLE)
         return out
+
+
+    def reload_data(self):
+        # TODO: Automate this with message queueing
+        self.__inv_man.sync_from_database()

@@ -26,3 +26,17 @@ class InvalidDimensionsError(Exception):
 class InvalidSlotNameError(Exception):
     """Thrown when trying to access a nonexistent slot"""
     pass
+
+class InvalidHardwareIDError(Exception):
+    """Thrown when vending machine instantiated with inventory_manager with mismatched hardware_id"""
+    pass
+
+class QueryFailureError(Exception):
+    """Thrown when query fails or returns invalid results."""
+
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+
+    def __str__(self):
+        return self.message + "; Status code: " + str(self.status_code)

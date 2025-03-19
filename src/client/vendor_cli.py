@@ -2,130 +2,100 @@ import sys  # noqa: INP001
 import textwrap
 
 import exceptions as err
-from customer.vending_machine import VendingMachine
-from enum_types import InventoryManagerMode
-from inventory_manager import InventoryManager
+from vendor.vendor import VendorInterface
 
-vending_machine: VendingMachine = None
-inventory_manager: InventoryManager = None
+vendor_interface: VendorInterface = None
 
 def main():
-    global vending_machine
-    global inventory_manager
-    row = int(input("Please input the number of rows to be in the vending machine (1 digit): "))
-    col = int(input("Please input the number of columns to be in the vending machine (1 digit): "))
+    global vendor_interface
+
     hardware_id = input("Please enter a hardware_id for your vending machine: ")
     try:
-        inventory_manager = InventoryManager(row, col, hardware_id)
-        vending_machine = VendingMachine(inventory_manager, hardware_id)
+        vendor_interface = VendorInterface(hardware_id)
     except err.InvalidDimensionsError as e:
         print("Error: ", e)
         sys.exit(1)
-
-
-    while(True):
-        mode = input('Are you a Customer or Vendor? Type "C" or "V" to select, or Q for exit: ')
-        if(mode == "C"):
-            customer_mode()
-        elif(mode == "V"):
-            vendor_mode()
-        elif(mode == "Q"):
-            sys.exit(0)
-        else:
-            print("Invalid Option")
-
-
-def customer_mode():
-    global vending_machine
+    except err.QueryFailureError as e:
+        print("Error: ", e)
+        sys.exit(1)
 
     while(True):
-        print("Vending Machine Inventory: ")
-        print(vending_machine.list_options())
+        print(str(vendor_interface).strip())
         user_input = input(textwrap.dedent("""
                     Please select one of the following options
-                    1. Enter Payment Information
-                    2. Exit Customer CLI
+                    1. View inventory
+                    2. Reload inventory
+                    3. Start Restocking
+                    4. Rename Vending Machine
+                    5. Exit Vendor CLI
                 """))
 
         if(user_input == "1"):
-            perform_transaction()
+            print(vendor_interface.list_options())
+            print()
         elif(user_input == "2"):
+            vendor_interface.reload_data()
+            print("Data Reloaded")
+            print()
+        elif(user_input == "3"):
+            vendor_mode()
+        elif(user_input == "4"):
+            rename()
+        elif(user_input == "5"):
             return
         else:
-            print("Invalid input, please type 1 or 2")
-
-
-def perform_transaction():
-    global vending_machine
-    try:
-        vending_machine.start_transaction()
-        # All the stripe API payment stuff should happen inside here ^^
-    except err.InvalidModeError as e:
-        print("Error: " + str(e))
-        return
-
-    print("Payment Information Entered...")
-
-    while(True):
-        selection = input("Please type the slot name of the item you would like to purchase, " \
-                          "or Q to finish transaction: ")
-        if(selection == "Q"):
-            print(f"Payment method was charged {vending_machine.end_transaction()!s}")
-            return
-
-        try:
-            dispensed_item = vending_machine.buy_item(selection)
-            print("Dispensing Item: " + dispensed_item)
-            print("Vending Machine Inventory: ")
-            print(vending_machine.list_options())
-        except err.EmptySlotError as e:
-            print("Error: ", e)
-        except err.InvalidSlotNameError as e:
-            print("Error: ", e)
-
+            print("Invalid input, please neter an option 1 - 5: ")
 
 def vendor_mode():
-    global inventory_manager
+    global vendor_interface
     try:
-        inventory_manager.set_mode(InventoryManagerMode.RESTOCKING)
+        vendor_interface.start_restocking()
     except err.InvalidModeError as e:
-        print("Error: " + e)
+        print("Error: ", e)
         return
 
     while(True):
-        print("Vending Machine Inventory: ")
-        print(inventory_manager.get_stock_information(show_empty_slots=True))
+        print(str(vendor_interface))
+        print(vendor_interface.list_options())
         user_input = input(textwrap.dedent("""
                     Please select one of the following options
                     1. Update stock of a slot
                     2. Add or override an item
                     3. Set the cost of an item in a slot
                     4. Clear a slot
-                    5. Exit Vendor CLI
+                    5. End Restocking
                 """))
 
         if(user_input == "1"):
             update_stock()
+            print()
         elif(user_input == "2"):
             add_item()
+            print()
         elif(user_input == "3"):
             set_cost()
+            print()
         elif(user_input == "4"):
             clear_slot()
+            print()
         elif(user_input == "5"):
-            inventory_manager.set_mode(InventoryManagerMode.IDLE)
+            print()
+            try:
+                vendor_interface.end_restocking()
+            except err.QueryFailureError as e:
+                print("Error: ", e)
             return
         else:
             print("Invalid input, please enter an option 1 - 5: ")
 
 
 def update_stock():
-    global inventory_manager
+    global vendor_interface
 
     try:
         slot = input("Please enter the slot you'd like to update: ")
         amount = int(input("Please enter the amount you'd like to change the stock by: "))
-        inventory_manager.change_stock(slot, amount)
+        vendor_interface.change_stock_of_slot(slot, amount)
         print("Updated slot " + slot + " by " + str(amount))
     except err.EmptySlotError as e:
         print("Error: ", e)
@@ -138,13 +108,14 @@ def update_stock():
         return
 
 def add_item():
+    global vendor_interface
 
     try:
         slot = input("Please enter the slot you'd like to update: ")
         name = input("Please enter the name of the item you'd like to add: ")
         cost = float(input("Please enter the price of the item you'd like to add (dollars): "))
         amount = int(input("Please enter the amount you'd like to change the stock by: "))
-        inventory_manager.add_item(slot, name, amount, cost)
+        vendor_interface.add_item_to_slot(slot, name, cost, amount)
         print(f"Added {amount!s} of {name} of price {cost!s} to slot {slot}")
     except err.EmptySlotError as e:
         print("Error: ", e)
@@ -161,12 +132,12 @@ def add_item():
 
 
 def set_cost():
-    global inventory_manager
+    global vendor_interface
 
     try:
         slot = input("Please enter the slot you'd like to update: ")
         cost = float(input("Please enter the new price of this slot: "))
-        inventory_manager.set_cost(slot, cost)
+        vendor_interface.set_cost_of_slot(slot, cost)
         print(f"Set the cost of slot {slot} to {cost!s}")
     except err.InvalidSlotNameError as e:
         print("Error: ", e)
@@ -177,16 +148,25 @@ def set_cost():
 
 
 def clear_slot():
-    global inventory_manager
+    global vendor_interface
 
     try:
         slot = input("Please enter the slot you'd like to clear: ")
-        inventory_manager.clear_slot(slot)
+        vendor_interface.clear_slot(slot)
         print(f"Cleared slot {slot}")
     except err.InvalidSlotNameError as e:
         print("Error: ", e)
         return
 
+
+def rename():
+    global vendor_interface
+    try:
+        new_name = input("Please enter a new name for the vending machine: ")
+        vendor_interface.rename(new_name)
+    except err.QueryFailureError as e:
+        print("Error: ", e)
+        return
 
 if __name__ == "__main__":
     main()

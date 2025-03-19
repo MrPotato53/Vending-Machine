@@ -1,4 +1,4 @@
-import src.client.exceptions as err
+import exceptions as err  # noqa: INP001
 
 
 class Item:
