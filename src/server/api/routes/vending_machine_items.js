@@ -12,7 +12,16 @@ router.get("/", async (req, res) => {
         // Check if vending machine exists
         if(!await VM.vendingMachineExists(vendingMachineId, res)) return;
 
-        const [results] = await db.query("SELECT * FROM inventory_join_table WHERE IJT_vm_id = ?", [vendingMachineId]);
+        const [results] = await db.query(`
+            SELECT 
+                ijt.IJT_slot_name AS slot_name, 
+                items.item_name AS item_name, 
+                ijt.IJT_price AS price, 
+                ijt.IJT_stock AS stock
+            FROM inventory_join_table AS ijt
+            INNER JOIN items ON ijt.IJT_item_id = items.item_id
+            WHERE ijt.IJT_vm_id = ?
+        `, [vendingMachineId]);
 
         res.json(results);
     } catch (err) {
