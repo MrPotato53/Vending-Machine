@@ -45,4 +45,5 @@ echo ""
 
 # Run the Docker container with the selected script
 # docker run --rm -it vending-machine-frontend python "$SCRIPT"
+# To work correctly in git bash, we have to use this command
 winpty docker run --rm -it vending-machine-frontend python "$SCRIPT"
