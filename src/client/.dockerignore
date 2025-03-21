@@ -6,6 +6,4 @@ startup_docker_container.sh
 
 # We'll let the Python inside the container
 # compile its own .pyc files
-__pycache__
-customer/__pycache__
-vendor/__pycache__
+*__pycache__*
