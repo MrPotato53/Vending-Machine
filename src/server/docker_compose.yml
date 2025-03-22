@@ -16,6 +16,22 @@ services:
       timeout: 5s
       retries: 10
 
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    restart: always
+    ports:
+      - "3306:1883"  # MQTT Broker Port
+      - "9001:9001"  # WebSocket Port (optional, useful for web clients)
+    volumes:
+      - ./mosquitto/config:/mosquitto/config  # Custom config (optional)
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    healthcheck:
+      test: ["CMD", "mosquitto_pub", "-h", "localhost", "-t", "healthcheck", "-m", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./api
     restart: always
@@ -27,6 +43,8 @@ services:
       - "8080:5000"
     depends_on:
       db1:
+        condition: service_healthy
+      mosquitto:
         condition: service_healthy
     env_file:
       - ./api/.env

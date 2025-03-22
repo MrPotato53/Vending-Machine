@@ -2,6 +2,7 @@ from __future__ import annotations  # noqa: INP001
 
 import exceptions as err
 from customer.cardinfo import CardInfo
+from customer.mqtt import start_mqtt_connection
 from db_signal import Stripe, VendingMachines
 from enum_types import InventoryManagerMode
 from inventory_manager import InventoryManager
@@ -62,6 +63,8 @@ class VendingMachine:
 
         self.__stripe_payment_token: str = None
         self.__transaction_price: float = 0
+
+        start_mqtt_connection(self.__hardware_id, self.__inv_man)
 
 
     def list_options(self) -> str:

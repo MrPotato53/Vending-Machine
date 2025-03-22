@@ -37,19 +37,22 @@ def customer_mode():
         print(vending_machine.list_options())
         user_input = input(textwrap.dedent("""
                     Please select one of the following options
-                    1. Enter Payment Information
-                    2. Reload Inventory from Database
-                    3. Exit Customer CLI
+                    1. List Options
+                    2. Enter Payment Information
+                    3. Reload Inventory from Database
+                    4. Exit Customer CLI
                 """))
 
         if(user_input == "1"):
-            perform_transaction()
+            vending_machine.list_options()
         elif(user_input == "2"):
-            vending_machine.reload_data()
+            perform_transaction()
         elif(user_input == "3"):
+            vending_machine.reload_data()
+        elif(user_input == "4"):
             return
         else:
-            print("Invalid input, please type 1 or 2")
+            print("Invalid input, please type an option 1 - 4")
 
 
 def perform_transaction():

@@ -46,4 +46,14 @@ echo ""
 # Run the Docker container with the selected script
 # docker run --rm -it vending-machine-frontend python "$SCRIPT"
 # To work correctly in git bash, we have to use this command
-winpty docker run --rm -it vending-machine-frontend python "$SCRIPT"
+
+# Detect OS
+OS="$(uname -s)"
+
+if [[ "$OS" == "MINGW"* || "$OS" == "MSYS"* || "$OS" == "CYGWIN"* ]]; then
+    # Windows (Git Bash)
+    winpty docker run --network=host --rm -it vending-machine-frontend python "$SCRIPT"
+else
+    # macOS / Linux
+    docker run --network=host --rm -it vending-machine-frontend python "$SCRIPT"
+fi

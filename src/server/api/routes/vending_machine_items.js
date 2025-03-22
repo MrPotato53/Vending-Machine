@@ -4,6 +4,7 @@ const db = require("../db/db_connection"); // Import database connection
 const items = require("../db/items"); // Import items table functions
 const IJT = require("../db/inventory_join_table"); // Import inventory_join_table functions
 const VM = require("../db/vending_machine"); // Import vending_machine functions
+const mqtt = require("../mqtt/mqtt") // Import mqtt functions
 
 // Get all items for a vending machine
 router.get("/", async (req, res) => {
@@ -142,6 +143,9 @@ router.post("/", async (req, res) => {
             // Update item in inventory_join_table
             await IJT.modify_item_slot(vendingMachineId, slot_name, item_id, price, stock);
         }
+
+        // Notifies vending machine of restock if current operation is restock
+        await mqtt.notifyIfRestock(vendingMachineId)
 
         res.json({ message: "Items updated successfully" });
     } catch (err) {
