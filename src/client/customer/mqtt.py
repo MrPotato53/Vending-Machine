@@ -4,35 +4,45 @@ import threading
 import paho.mqtt.client as mqtt
 from inventory_manager import InventoryManager
 
-"""
-    This function serves 2 uses:
-    - Receive updates from the backend when restocking is done so inventory is automatically updated
-    - Set the status of the vending machine in the broker for health checks on the backend
-"""
-def start_mqtt_connection(hardware_id: str, inv_man: InventoryManager):
 
-    def on_message(client, userdata, message) -> None:
-        print("Restocked, syncing from database:")
-        inv_man.sync_from_database()
+class MQTTConnection:
+    """Message queueing service that serves automatic restocking and healthcheckups.
 
-    # No need to retain previous messages, inventory is loaded from db on init anyways
-    client = mqtt.Client(client_id=hardware_id, clean_session=False)
-    client.on_message = on_message
+    Methods
+    -------
+    start_mqtt_connection(hardware_id: str, inv_man: InventoryManager)
+        Sets a persistent will ("offline") in status topic for this machine before init
+        Sets the status persistently to "online" on init
+        Connects to broker, subscribes to restocking updates topic
+        If restock message comes through, sync local info with database
 
-    # Set up Last Will and Testament as a retained message
-    status_topic = f"vm/status/{hardware_id}"
-    client.will_set(status_topic, "offline", qos=1, retain=True)
+    """
 
-    # Connect with 60 second keepalive (pings broker once every 60 seconds as heartbeat)
-    client.connect("localhost", 3306, 60)
+    @staticmethod
+    def start_mqtt_connection(hardware_id: str, inv_man: InventoryManager) -> None:
 
-    # Publish online status as a retained message
-    client.on_connect = lambda client, u, f, rc: client.publish(
-        status_topic, "online", qos=1, retain=True,
-    )
+        def on_message(client, userdata, message) -> None:
+            print("Restocked, syncing from database:")
+            inv_man.sync_from_database()
 
-    client.subscribe(f"vm/restocked/{hardware_id}", qos=1)
+        # No need to retain previous messages, inventory is loaded from db on init anyways
+        client = mqtt.Client(client_id=hardware_id, clean_session=False)
+        client.on_message = on_message
 
-    mqtt_thread = threading.Thread(target=client.loop_forever)
-    mqtt_thread.daemon = True  # Make thread exit when main program exits
-    mqtt_thread.start()
+        # Set up Last Will and Testament as a retained message
+        status_topic = f"vm/status/{hardware_id}"
+        client.will_set(status_topic, "offline", qos=1, retain=True)
+
+        # Connect with 60 second keepalive (pings broker once every 60 seconds as heartbeat)
+        client.connect("cs506x19.cs.wisc.edu", 3306, 60)
+
+        # Publish online status as a retained message
+        client.on_connect = lambda client, u, f, rc: client.publish(
+            status_topic, "online", qos=1, retain=True,
+        )
+
+        client.subscribe(f"vm/restocked/{hardware_id}", qos=1)
+
+        mqtt_thread = threading.Thread(target=client.loop_forever)
+        mqtt_thread.daemon = True  # Make thread exit when main program exits
+        mqtt_thread.start()

@@ -5,8 +5,8 @@ import exceptions as err
 import requests
 import stripe
 
-# host = "http://cs506x19.cs.wisc.edu:8080" #cs CLI machine hosting the DB
-host = "http://localhost:8080" #For local testing
+host = "http://cs506x19.cs.wisc.edu:8080" #cs CLI machine hosting the DB
+# host = "http://localhost:8080" #For local testing
 machines = "vending-machines" #API route for the related class
 inventory = "inventory"
 items = "items"#API route for items
