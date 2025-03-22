@@ -27,6 +27,7 @@ def main():
 
     customer_mode()
 
+
 def customer_mode():
     global vending_machine
 

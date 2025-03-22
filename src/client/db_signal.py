@@ -30,11 +30,9 @@ class VendingMachines:
         try:
             VendingMachines.get_vending_machine(hardware_id)
         except err.QueryFailureError as e:
-            if(e.status_code == 404):
-                return False
-        else:
-            return True
-
+            if(e.status_code == 404): return False
+            raise
+        else: return True
 
     @staticmethod
     def get_vending_machine(hardware_id:str) -> (dict | None):

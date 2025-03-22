@@ -58,7 +58,7 @@ router.patch("/:id/mode", async (req, res) => {
         const { vm_mode } = req.body;
 
         if(vm_mode !== "i" && vm_mode !== "r" && vm_mode !== "t") {
-            res.status(400).json({ error: "Invalid vending machine mode" });
+            res.status(400).json({ error: "Invalid vending machine mode, must be 'i', 'r', or 't'" });
             return;
         }
 
@@ -69,6 +69,9 @@ router.patch("/:id/mode", async (req, res) => {
             res.json({ message: "Vending machine mode updated successfully" });
         }
     } catch (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+            return res.status(400).json({ error: "A vending machine with this ID already exists." });
+        }
         res.status(500).json({ error: err.message });
     }
 });
