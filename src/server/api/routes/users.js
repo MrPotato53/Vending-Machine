@@ -1,8 +1,16 @@
 const express = require("express");
+const argon = require("argon2");
+
 const router = express.Router({ mergeParams: true }); // params from parents
-const bcrypt = require("bcryptjs");
 const db = require("../db/db_connection"); // Import database connection
 const users = require("../db/users"); // Internal user functions for queries
+
+/*Sub routes needed:    
+    organization/:org_id
+    vending_machines
+    email invite to org home
+
+*/
 
 /*
 Currently all you need to create a user is ID, name, email, and password.
@@ -33,7 +41,7 @@ router.post("/new", async (req, res) => {
         }
 
         // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await argon.hash(password, 10);
 
         // Set default values for optional fields
         const role = u_role || "maintainer"; // Default role
@@ -55,6 +63,40 @@ router.post("/new", async (req, res) => {
             u_role: role,
             org_id: organization,
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post("/login", async (req, res) => {
+    try {
+        const { u_id, password } = req.body;
+
+        if (!u_id) {
+            return res.status(400).json({ error: "No user ID provided" });
+        }
+        if (!password) {
+            return res.status(400).json({ error: "No password provided" });
+        }
+
+        // Check if user exists
+        if (!(await users.userExist(u_id))) {
+            return res.status(400).json({ error: "User does not exist" });
+        }
+
+        // Get the user's hashed password
+        const [results] = await db.query(
+            "SELECT password FROM users WHERE u_id = ?",
+            [u_id]
+        );
+        const hashedPassword = results[0].password;
+
+        // Compare the provided password with the hashed password
+        if (!(await argon.verify(hashedPassword, password))) {
+            return res.status(400).json({ error: "Incorrect password" });
+        }
+
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
