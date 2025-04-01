@@ -9,7 +9,6 @@ const users = require("../db/users"); // Internal user functions for queries
     organization/:org_id
     vending_machines
     email invite to org home
-
 */
 
 /*
@@ -55,6 +54,8 @@ router.post("/new", async (req, res) => {
             [u_id, u_name, email, role, organization, hashedPassword]
         );
 
+        // TODO add add group to user and make group route under users
+        // TODO add email invite to organization
         // Return the created user (excluding the password)
         res.json({
             u_id,

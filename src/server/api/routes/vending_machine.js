@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const VM = require("../db/vending_machine"); // Import vending_machine functions
+
 const db = require("../db/db_connection"); // Import database connection
 const { healthCheck } = require("../mqtt/mqtt");
 
@@ -42,13 +44,25 @@ router.get("/:id/status", async (req, res) => {
 // Create a new vending machine
 router.post("/", async (req, res) => {
     try {
-        const { vm_id, vm_name, vm_row_count, vm_column_count, vm_mode } = req.body;
+        const { vm_id, vm_name, vm_row_count, vm_column_count, vm_mode, org_id, group_id } = req.body;
 
+        if(await VM.vendingMachineExists(vm_id, res)) {
+            res.status(400).json({ error: "Vending machine already exists" });
+            return;
+        }
+        if (!vm_id || !vm_name || !vm_row_count || !vm_column_count) {
+            res.status(400).json({ error: "Missing required fields" });
+            return;
+        }
+        if(!org_id || !group_id) {
+            org_id = 0;
+            group_id = 0;
+        }
         await db.query(
             `INSERT INTO vending_machines 
             (vm_id, vm_name, vm_row_count, vm_column_count, vm_mode) 
             VALUES (?, ?, ?, ?, ?)`, 
-            [vm_id, vm_name, vm_row_count, vm_column_count, vm_mode]
+            [vm_id, vm_name, vm_row_count, vm_column_count, vm_mode, org_id, group_id]
         );
 
         res.json({
