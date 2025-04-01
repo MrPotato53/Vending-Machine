@@ -1,2 +1,2 @@
 echo "Starting VPN connection..."
-openconnect --protocol=gp uwmadison.vpn.wisc.edu
+sudo openconnect --protocol=gp uwmadison.vpn.wisc.edu
