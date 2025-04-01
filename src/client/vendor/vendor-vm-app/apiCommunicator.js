@@ -1,6 +1,8 @@
-// TODO: In production, move the host and related values into environment variables.
-const HOST = "http://cs506x19.cs.wisc.edu:8080"; // cs CLI machine hosting the DB
-// const HOST = "http://localhost:8080"; // For local testing
+// Updated to use the localhost docker container as defined in the docker-compose file.
+// The backend container is exposed on host port 8080 (mapped from container port 5000).
+// In production, you can override the API host by setting the environment variable REACT_APP_API_HOST.
+const HOST = process.env.REACT_APP_API_HOST || "http://localhost:8080";
+
 const MACHINES = "vending-machines";
 const INVENTORY = "inventory";
 const ITEMS = "items";
