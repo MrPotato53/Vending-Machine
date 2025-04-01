@@ -21,11 +21,82 @@ The hardware will dispense a single type of item, like soda cans or chip bags. I
 
 The vendor-side application will be a React Native application. This will be hosted on the team's CSL machine.
 
-Once implemented, the database will be the only means of communication between the software running on the physical vending machine and vendors restocking or viewing information on the React application.
+Once the hardware and vendor-side React application are both implemented, the database will be the only means of communication between the software running on the physical vending machine and vendors restocking or viewing information on the React application.
 
 Each vendor-side user will be associated with an organization. Each organization can have many users. Users will be either an admin or a maintainer. Admins can view information about all vending machines in the organization, while maintainers can only view the information of vending machines which they are assigned to restock by an organization admin. Each organization must have at least 1 admin, but no maintainers are strictly required.
 
-When a user creates an account, they can either create an organization or join an organization. If they create an organization, they will automatically be an admin. If they join an organization, they will automatically be a maintainer assigned to no vending machines. Admins of the organization can promote a new maintainer to be an admin if they choose.
+When a user creates an account, they can either create an organization or join an organization. If they create an organization, they will automatically be an admin. If they join an organization, they will automatically be a maintainer assigned to no vending machines. Admins of the organization can promote a new maintainer to be an admin if they choose. Admins also hold the privilege of assigning maintainers to vending machines.
+
+Please see the following diagrams to better understand organization structure and the control flow of adding new users:
+
+```mermaid
+---
+title: Organization structure
+---
+classDiagram
+    class Organization {
+        1 or more Admins
+        0 or more Maintainers
+        0 or more VendingMachines
+    }
+
+    class Admin1
+    class Admin2
+
+    class Maintainer1
+    class Maintainer2
+    class Maintainer3
+
+    class VendingMachine1
+    class VendingMachine2
+    class VendingMachine3
+    class VendingMachine4
+    class VendingMachine5
+
+    Organization --> Admin1
+    Organization --> Admin2
+
+    Organization --> Maintainer1
+    Organization --> Maintainer2
+    Organization --> Maintainer3
+
+    Admin1 --> VendingMachine1
+    Admin1 --> VendingMachine2
+    Admin1 --> VendingMachine3
+    Admin1 --> VendingMachine4
+    Admin1 --> VendingMachine5
+
+    Admin2 --> VendingMachine1
+    Admin2 --> VendingMachine2
+    Admin2 --> VendingMachine3
+    Admin2 --> VendingMachine4
+    Admin2 --> VendingMachine5
+
+    Maintainer1 --> VendingMachine1
+    Maintainer1 --> VendingMachine2
+    
+    Maintainer2 --> VendingMachine2
+    Maintainer2 --> VendingMachine3
+    Maintainer2 --> VendingMachine4
+
+    
+    Maintainer3 --> VendingMachine5
+```
+
+```mermaid
+---
+title: User/Organization Creation
+---
+graph TD;
+    Start["User Creates Account"] -->|Creates Organization| NewOrg["New Organization"]
+    NewOrg -->|User Becomes Admin| AdminRole["Assigned Admin Role"]
+
+    Start -->|Joins Organization| ExistingOrg["Existing Organization"]
+    ExistingOrg -->|User Becomes Maintainer| MaintainerRole["Assigned Maintainer Role (No VMs)"]
+
+    AdminRole -->|Can Assign Maintainers| AssignMaintainers["Assign Maintain. to VMs"]
+    AdminRole -->|Can Promote Maintainers| PromoteMaintainer["Promote Maintain. to Admin"]
+```
 
 ### Customer
 

@@ -114,8 +114,7 @@ classDiagram
 ```mermaid
 graph TD;
     subgraph ServerContainer["Server Container"]
-        Server["Node.js Server"]
-        API["REST API"]
+        API["REST API (NodeJS Server)"]
     end
 
     subgraph DatabaseContainer["Database Container"]
@@ -126,7 +125,7 @@ graph TD;
         ReactNativeApp["Vendor App"]
     end
 
-    subgraph MessageBrokerContainer["Message Queue Broker Container"]
+    subgraph MessageBrokerContainer["Message Q Broker Container"]
         MessageBroker["Message Queue Broker"]
     end
 
@@ -136,7 +135,6 @@ graph TD;
     ExternalPaymentService -.->|Returns Transaction Status| API
     API -->|Sends Data Response| Client
 
-    Server -.->|ODBC Connection| Database
     API -->|Publishes Events| MessageBroker
     MessageBroker -->|Notifies Subscribers| ReactNativeApp
     MessageBroker -->|Notifies Subscribers| Client
