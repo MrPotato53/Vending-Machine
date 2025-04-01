@@ -8,20 +8,28 @@
 ![Test Coverage](https://git.doit.wisc.edu/cdis/cs/courses/cs506/sp2025/team/T_19/Project_19/badges/main/coverage.svg)
 
 ### Project Abstract
-This software will, at first, offer a simple command line interface allowing users to simulate the process of purchasing items from the vending machine. We plan to first develop in Python to enable rapid development. If speed becomes an issue, we may refactor the system in C++. From there, we've have multiple ideas tossed around regarding further steps. We think it would be cool to integrate a Raspberry Pi to make a physical vending machine that can actually dispense product.  
 
-The database could hold information of how stocked a vending machine is. It could also contain this information for multiple vending machines. Maybe vendors' information could be kept in a database, and they could login to "restock" the vending machines or collect payment. Speaking of payments, maybe we use the Stripe API to collect payments? Or payments could automatically be routed.  
+After a couple months of hard work, we have successfully reached a point where customers and vendors can fully interact with a simulated vending machine on the command line. This simulation through the command line uses Python for the frontend (aside: we had said originally that if speed became an issue, we would consider refactoring to C++; this has not become an issue). The backend server (which we make HTTP requests to) is a NodeJS server. The database being used is a MySQL database. Both command lines can be run anywhere Docker is installed. All you have to do is clone the repository, navigate to src/client, and run "./startup_docker_container.sh vendor" or "./startup_docker_container.sh vm". Please note, Docker must be running, and you must be connected to the campus VPN.
 
-Additional ideas included making a simple interface for customers to use in the Raspberry Pi. We would probably want the Pi to be running the latest code from main, so Docker would be configured to automatically do so. We can have an automated test suite that any merge requests must pass before being merged -- this could be a hard constraint similar to the "someone else from the team must approve this" already in place.  
+Running the script with option "vm" simulates the process of viewing the items in a vending machine. This automatically queries the database for items of the vending machine identified by the hardware ID stored in "src/client/customer/configuration.json".
 
-Another interface could be provided for vendors to see sales info, stock levels, and to actually add inventory to the machines. This could be a mobile app, a web app, or a desktop app. This would also interface with the database.  
+Running the script with option "vendor" simulates the process of restocking a vending machine as a vendor. For example, you can add entirely new items, or you can add more of an item already in the vending machine.
 
-To that end, if we go this route the database would be the connection point between the vending machines and the vendors.  
+Now that we have the command line interfaces fully integrated with the backend database and server, we are prepared to move forward with a hardware vending machine to be used by customers and a React Native frontend to be used by vendors.
 
-As is made obvious, the ideas are endless. This document will be updated continuously as decisions are made about the overall system architecture and how far we want to reach. If we have more time, or less time, than expected, these system-wide architectural decisions will be reflected here.  
+The hardware will dispense a single type of item, like soda cans or chip bags. It will be controlled by a Raspberry Pi, which will use the Python code we've already developed (and is currently used by the vendor command line interface).
+
+The vendor-side application will be a React Native application. This will be hosted on the team's CSL machine.
+
+Once implemented, the database will be the only means of communication between the software running on the physical vending machine and vendors restocking or viewing information on the React application.
+
+Each vendor-side user will be associated with an organization. Each organization can have many users. Users will be either an admin or a maintainer. Admins can view information about all vending machines in the organization, while maintainers can only view the information of vending machines which they are assigned to restock by an organization admin. Each organization must have at least 1 admin, but no maintainers are strictly required.
+
+When a user creates an account, they can either create an organization or join an organization. If they create an organization, they will automatically be an admin. If they join an organization, they will automatically be a maintainer assigned to no vending machines. Admins of the organization can promote a new maintainer to be an admin if they choose.
 
 ### Customer
-The customer for this software will be customers who would like to purchase an item from the vending machine as well as the vendors who'd like to sell their products in the vending machine. We expect to create two interaces: one for customers to purchase items, and one for vendors to view sales information and restock.
+
+The customer for this software will be customers who would like to purchase an item from the vending machine as well as the vendors who'd like to sell their products in the vending machine. We have two interaces: one for customers to purchase items, and one for vendors to view sales information and restock.
 
 ### Specification
 
@@ -29,20 +37,30 @@ The customer for this software will be customers who would like to purchase an i
 
 ```mermaid
 flowchart RL
-subgraph Front End
-    A(Python: CLI)
+subgraph Vending Machine Hardware
+    A(Raspberry Pi)
+end
+
+subgraph Hardware \"Backend\"
+    B(Python)
 end
 	
-subgraph Back End
-    B(JS Server: Serves HTTP requests, runs on the team's VM)
+subgraph Backend
+    C(JS Server)
 end
 	
 subgraph Database
-    C[(MySQL)]
+    D(MySQL)
 end
 
-A <-->|HTTP requests| B
-B <-->|Directly with database| C
+subgraph Vendor Frontend
+    E(React Native)
+end
+
+A <-->|Physical Parts| B
+B <-->|HTTP Requests| C
+C <-->|Directly with database| D
+E <-->|HTTP Requests| C
 ```
 
 #### Database
@@ -83,7 +101,7 @@ erDiagram
 
 Please follow the link above.
 
-#### Flowchart
+#### CLI Flowchart
 
 ```mermaid
 ---
@@ -126,6 +144,23 @@ graph TD;
 
     Select_Mode --> |Exit| End([End]);
 ```
+
+#### Vending Machine FLowchart
+
+TODO: Fill this out once we know a bit more about how the physical vending machine will be interacted with. This should be very similar to the customer half of the flowchart above.
+
+#### Vendor Application Flowchart
+
+TODO: Once more details of the vendor application have been decided upon, this will need to be filled in and a diagram should be created...
+
+for now, here's what we know:
+- the user first logs in
+- a new user account can be created if the user doesn't yet have a login
+- when creating a new user account, the user can either create an organization (and by the admin by default), or they can join an existing organization (and be a maintainer by default -- in this scenario, the admin of the organization can promote them to an admin)
+- then the user has a few options...
+- If they are an admin, they can view information about all of the organization's vending machines
+- If they are a maintainer, they can only view information about the organization's vending machines that they have been assigned to (ones they restock) by an admin
+
 
 ### Standards & Conventions
 
