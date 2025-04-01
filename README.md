@@ -141,11 +141,25 @@ E <-->|HTTP Requests| C
 title: Vending Machine Database ERD
 ---
 erDiagram
+    ORGANIZATION {
+        INT organization_id PK "Auto-increment"
+        VARCHAR(255) organization_name "Not NULL, Unique"
+    }
+
+    USER {
+        INT user_id PK "Auto-increment"
+        VARCHAR(255) user_email "Not NULL, Unique"
+        VARCHAR(255) user_username "Not NULL, Unique"
+        INT user_organization_id FK "References ORGANIZATION(organization_id), Not NULL"
+        VARCHAR user_position "Not NULL"
+    }
+
     VENDING_MACHINE {
         INT vm_id PK "Auto-increment (1000001+)"
         VARCHAR(100) vm_name
         INT vm_row_count "Unsigned, Not NULL"
         INT vm_column_count "Unsigned, Not NULL"
+        INT vm_organization_id FK "References ORGANIZATION(organization_id), Not NULL"
         INT vm_vendor_id "Future Implementation"
     }
 
@@ -158,11 +172,20 @@ erDiagram
         INT IJT_vm_id PK, FK "References VENDING_MACHINE(vm_id) Not NULL"
         VARCHAR(5) IJT_slot_name PK "Not NULL"
         INT IJT_item_id FK "References ITEMS(item_id), Not NULL"
-        DECIMAL(102) IJT_price "Unsigned, Not NULL"
+        DECIMAL(10) IJT_price "Unsigned, Not NULL"
         INT IJT_stock "Unsigned, Not NULL"
     }
 
+    USER_VM_JOIN_TABLE {
+        INT UVJT_user_id PK, FK "References USER(user_id) Not NULL"
+        INT UVJT_vm_id PK, FK "References VENDING_MACHINE(vm_id) Not NULL"
+    }
+
     %% Relationships
+    ORGANIZATION ||--o{ USER : employs
+    ORGANIZATION ||--o{ VENDING_MACHINE : owns
+    USER ||--o{ USER_VM_JOIN_TABLE : assigned_to
+    VENDING_MACHINE ||--o{ USER_VM_JOIN_TABLE : viewed_by
     VENDING_MACHINE ||--o{ INVENTORY_JOIN_TABLE : contains
     ITEMS ||--o{ INVENTORY_JOIN_TABLE : stocked_in
 
