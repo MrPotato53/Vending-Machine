@@ -50,5 +50,5 @@ class StepperMotor:
                 await asyncio.sleep(self.step_delay)
             await asyncio.sleep(self.step_delay)
         finally:
-            self.moving = False
             [coil.off() for coil in coils]
+            self.moving = False

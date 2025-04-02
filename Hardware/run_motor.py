@@ -15,22 +15,24 @@ stepper_motor = StepperMotor(STEPS_PER_QUARTER_REV, STEP_DELAY, STEP_SEQUENCE, S
 button = Button(23, pull_up=True, bounce_time=0.05)
 
 
-async def monitor_button() -> None:
-    while button.is_pressed and not stepper_motor.moving:
-        t = asyncio.create_task(stepper_motor.rotate_motor(4))
-        await asyncio.sleep(0.2)
-    await asyncio.sleep(0.02)
-
-
-async def print_test_with_while():
+async def monitor_button():
     while True:
-        print("Running something else")
+        if button.is_pressed:
+            if not stepper_motor.moving:
+                await stepper_motor.rotate_motor(4)
+            await asyncio.sleep(0.2)  # debounce delay
+        await asyncio.sleep(0.01)  # polling rate
+
+async def print_background():
+    while True:
+        print("System idle — waiting for button press... (Testing running other functions)")
         await asyncio.sleep(1)
 
 
 async def main():
     await asyncio.gather(
         monitor_button(),
+        print_background(),
     )
 
 
