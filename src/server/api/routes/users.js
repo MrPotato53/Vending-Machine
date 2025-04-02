@@ -1,6 +1,6 @@
 const express = require("express");
 const argon = require("argon2");
-
+const crypto = require("crypto");
 const router = express.Router({ mergeParams: true }); // params from parents
 const db = require("../db/db_connection"); // Import database connection
 const users = require("../db/users"); // Internal user functions for queries
@@ -38,9 +38,16 @@ router.post("/new", async (req, res) => {
         if (await users.userExist(u_id)) {
             return res.status(400).json({ error: "User already exists" });
         }
-
+        password1 = password.toString();
         // Hash the password
-        const hashedPassword = await argon.hash(password, 10);
+        const hashedPassword = await argon.hash({
+            password1, 
+            salt:crypto.randomBytes(32),
+            hashLength: 32,
+            type: argon.argon2id,
+        });
+        // Check if the hashed password is valid
+       console.log("hashed password: " + hashedPassword + hashedPassword.length);
 
         // Set default values for optional fields
         const role = u_role || "maintainer"; // Default role
