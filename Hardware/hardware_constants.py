@@ -27,3 +27,10 @@ individual coils in the correct sequence.
 
 STEPPER_1_PINS = [17, 18, 27, 22]
 """GPIO pins used on the pi to map to the inputs of the stepper motor."""
+
+###################
+##### Buttons  ####
+###################
+
+BUTTON_1_PIN = 23
+"""GPIO pin that the button is connected to on the raspberry pi."""
