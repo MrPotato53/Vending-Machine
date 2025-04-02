@@ -10,4 +10,12 @@ const vendingMachineExists = async (vendingMachineID, res) => {
     return true;
 };
 
-module.exports = { vendingMachineExists };
+const vendingMachineExistsBool = async (vendingMachineID) => {
+    const [results] = await db.query("SELECT * FROM vending_machines WHERE vm_id = ?", [vendingMachineID]);
+    if(results.length === 0) {
+        return false;
+    }
+    return true;
+};
+
+module.exports = { vendingMachineExists, vendingMachineExistsBool };
