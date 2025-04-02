@@ -45,33 +45,32 @@ router.get("/:id/status", async (req, res) => {
 router.post("/", async (req, res) => {
     try {
         const { vm_id, vm_name, vm_row_count, vm_column_count, vm_mode, org_id, group_id } = req.body;
-
-        if(await VM.vendingMachineExists(vm_id, res)) {
+        if(await VM.vendingMachineExistsBool(vm_id, res)){
             res.status(400).json({ error: "Vending machine already exists" });
             return;
-        }
+        } 
+         
         if (!vm_id || !vm_name || !vm_row_count || !vm_column_count) {
             res.status(400).json({ error: "Missing required fields" });
             return;
         }
-        if(!org_id || !group_id) {
-            org_id = 0;
-            group_id = 0;
-        }
+               
         await db.query(
             `INSERT INTO vending_machines 
-            (vm_id, vm_name, vm_row_count, vm_column_count, vm_mode) 
+            (vm_id, vm_name, vm_row_count, vm_column_count, vm_mode, org_id, group_id) 
             VALUES (?, ?, ?, ?, ?)`, 
             [vm_id, vm_name, vm_row_count, vm_column_count, vm_mode, org_id, group_id]
         );
-
-        res.json({
+        res.status(200).json({
             vm_id,
             vm_name,
             vm_row_count,
             vm_column_count,
             vm_mode,
+            org_id,
+            group_id
         });
+
     } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') {
             // If there's a duplicate entry error, return a 400 status

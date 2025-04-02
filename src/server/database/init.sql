@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     u_role CHAR(12) DEFAULT 'maintainer', 
     org_id INT NOT NULL, 
     group_id INT NOT NULL,
-    password CHAR(60) NOT NULL, -- Fixed typo from 'pasword' to 'password'
+    password CHAR(64) NOT NULL, -- Fixed typo from 'pasword' to 'password'
     FOREIGN KEY (org_id) REFERENCES orgs(org_id) ON DELETE CASCADE
 );
 ALTER TABLE users AUTO_INCREMENT = 2000001;
