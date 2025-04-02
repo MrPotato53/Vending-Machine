@@ -41,7 +41,7 @@ class StepperMotor:
         # cycle through number of steps
         # try statement used to make sure coils turn off in case of error
         try:
-            for step_num in range(my_quarter_rotations):
+            for step_num in range(total_steps):
                 step = self.step_sequence[step_num % len(self.step_sequence)]
                 for coil, val in zip(coils, step):
                     coil.value = val
