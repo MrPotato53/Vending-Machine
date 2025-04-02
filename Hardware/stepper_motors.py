@@ -21,6 +21,7 @@ class StepperMotor:
         self.step_delay = step_delay
         self.step_sequence = step_sequence
         self.pins = pins
+        self.moving = False
 
     async def rotate_motor(self, my_quarter_rotations: int) -> None:
         """Rotates motor clockwise with quarter rotation precision.
@@ -40,6 +41,7 @@ class StepperMotor:
 
         # cycle through number of steps
         # try statement used to make sure coils turn off in case of error
+        self.moving = True
         try:
             for step_num in range(total_steps):
                 step = self.step_sequence[step_num % len(self.step_sequence)]
@@ -48,4 +50,5 @@ class StepperMotor:
                 await asyncio.sleep(self.step_delay)
             await asyncio.sleep(self.step_delay)
         finally:
+            self.moving = False
             [coil.off() for coil in coils]
