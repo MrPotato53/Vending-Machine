@@ -38,7 +38,10 @@ router.post("/new", async (req, res) => {
         if (await users.userExist(u_id)) {
             return res.status(400).json({ error: "User already exists" });
         }
-        password1 = password.toString();
+
+        //todo hash is not working, likly to long 
+        //  "error": "The first argument must be of type string or an instance of Buffer, ArrayBuffer, or Array or an Array-like Object. Received an instance of Object"
+        let password1 = password.toString();
         // Hash the password
         const hashedPassword = await argon.hash({
             password1, 
@@ -63,6 +66,7 @@ router.post("/new", async (req, res) => {
 
         // TODO add add group to user and make group route under users
         // TODO add email invite to organization
+        
         // Return the created user (excluding the password)
         res.json({
             u_id,
