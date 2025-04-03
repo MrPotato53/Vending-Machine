@@ -15,18 +15,18 @@ CREATE TABLE IF NOT EXISTS users (
     u_role CHAR(12) DEFAULT 'maintainer', 
     org_id INT NOT NULL, 
     group_id INT NOT NULL,
-    password CHAR(64) NOT NULL, -- Fixed typo from 'pasword' to 'password'
+    hash_p VARCHAR(255) NOT NULL, -- Fixed typo from 'pasword' to 'password'
     FOREIGN KEY (org_id) REFERENCES orgs(org_id) ON DELETE CASCADE
 );
 ALTER TABLE users AUTO_INCREMENT = 2000001;
 
-CREATE TABLE IF NOT EXISTS `groups` (
+CREATE TABLE IF NOT EXISTS region (
     group_id INT AUTO_INCREMENT PRIMARY KEY,
     group_name VARCHAR(20) NOT NULL UNIQUE,
     org_id INT NOT NULL,
     FOREIGN KEY (org_id) REFERENCES orgs(org_id) ON DELETE CASCADE
 );
-ALTER TABLE `groups` AUTO_INCREMENT = 3000001;
+ALTER TABLE region AUTO_INCREMENT = 3000001;
 
 CREATE TABLE IF NOT EXISTS vending_machines (
     vm_id VARCHAR(10) PRIMARY KEY,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS vending_machines (
     org_id INT NOT NULL, 
     FOREIGN KEY (org_id) REFERENCES orgs(org_id) ON DELETE CASCADE,
     group_id INT NOT NULL,
-    CONSTRAINT fk_group_id FOREIGN KEY (group_id) REFERENCES `groups`(group_id) ON DELETE CASCADE
+    CONSTRAINT fk_group_id FOREIGN KEY (group_id) REFERENCES region(group_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS items (
@@ -59,3 +59,10 @@ CREATE TABLE IF NOT EXISTS inventory_join_table (
     FOREIGN KEY (IJT_vm_id) REFERENCES vending_machines(vm_id) ON DELETE CASCADE,
     FOREIGN KEY (IJT_item_id) REFERENCES items(item_id) ON DELETE CASCADE
 );
+
+INSERT INTO orgs (org_name, stripeID) VALUES
+('Org1', 'stripe_123');-- org id 1000001
+
+
+INSERT INTO region (group_name, org_id) VALUES
+('Group1', 1000001);--grp id 3000001
