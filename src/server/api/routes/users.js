@@ -19,11 +19,9 @@ Security is next step but atm the password is stored plain for testing.
 */
 router.post("/new", async (req, res) => {
     try {
-        const { u_id, u_name, email, u_role, org_id, password } = req.body;
+        const { u_name, email, u_role, org_id,group_id, password } = req.body;
 
-        if (!u_id) {
-            return res.status(400).json({ error: "No user ID provided" });
-        }
+       
         if (!u_name) {
             return res.status(400).json({ error: "No username provided" });
         }
@@ -35,56 +33,64 @@ router.post("/new", async (req, res) => {
         }
 
         // Check if user already exists
-        if (await users.userExist(u_id)) {
+        if (await users.userExist(u_name)) {
             return res.status(400).json({ error: "User already exists" });
         }
 
-        //todo hash is not working, likly to long 
-        //  "error": "The first argument must be of type string or an instance of Buffer, ArrayBuffer, or Array or an Array-like Object. Received an instance of Object"
-        let password1 = password.toString();
-        // Hash the password
-        const hashedPassword = await argon.hash({
-            password1, 
-            salt:crypto.randomBytes(32),
-            hashLength: 32,
+        // Hash the password - removed toString() and adjusted options
+        const hashedPassword = await argon.hash(password, {
             type: argon.argon2id,
+            hashLength: 32, // 32 bytes
+            memoryCost: 2 ** 15, // 64MB
+            timeCost: 2,
+            parallelism: 1,
+            raw: false
         });
-        // Check if the hashed password is valid
-       console.log("hashed password: " + hashedPassword + hashedPassword.length);
+
+        // Debug logging
+        console.log("Password hash type:", typeof hashedPassword);
+        console.log("Password hash length:", hashedPassword.length);
 
         // Set default values for optional fields
-        const role = u_role || "maintainer"; // Default role
-        const organization = org_id || 0; // Default organization ID
+        const role = u_role || "maintainer";
+        const organization = org_id || 1000001;
+        const group = group_id || 3000001;
 
         // Insert the new user into the database
-        await db.query(
-            `INSERT INTO users
-                (u_id, u_name, email, u_role, org_id, password)
-                VALUES(?, ?, ?, ?, ?, ?)`,
-            [u_id, u_name, email, role, organization, hashedPassword]
-        );
+        try {
+            await db.query(
+                `INSERT INTO users
+                    (u_name, email, u_role, org_id,group_id, hash_p)
+                    VALUES(?, ?, ?, ?, ?, ?)`,
+                [u_name, email, role, organization, group, hashedPassword]
+            );
+        } catch (dbError) {
+            console.error("Database error:", dbError);
+            return res.status(500).json({ 
+                error: "Failed to create user",
+                details: dbError.message 
+            });
+        }
 
-        // TODO add add group to user and make group route under users
-        // TODO add email invite to organization
-        
         // Return the created user (excluding the password)
         res.json({
-            u_id,
             u_name,
             email,
             u_role: role,
             org_id: organization,
+            group_id: group,
         });
     } catch (err) {
+        console.error("Error creating user:", err);
         res.status(500).json({ error: err.message });
     }
 });
 
 router.post("/login", async (req, res) => {
     try {
-        const { u_id, password } = req.body;
+        const { u_name, password } = req.body;
 
-        if (!u_id) {
+        if (!U_name) {
             return res.status(400).json({ error: "No user ID provided" });
         }
         if (!password) {
@@ -92,25 +98,37 @@ router.post("/login", async (req, res) => {
         }
 
         // Check if user exists
-        if (!(await users.userExist(u_id))) {
+        if (!(await users.userExist(u_name))) {
             return res.status(400).json({ error: "User does not exist" });
         }
 
         // Get the user's hashed password
         const [results] = await db.query(
-            "SELECT password FROM users WHERE u_id = ?",
-            [u_id]
+            "SELECT password FROM users WHERE u_name = ?",
+            [u_name]
         );
+
+        if (!results || results.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
         const hashedPassword = results[0].password;
 
-        // Compare the provided password with the hashed password
-        if (!(await argon.verify(hashedPassword, password))) {
-            return res.status(400).json({ error: "Incorrect password" });
+        // Verify the password with better error handling
+        try {
+            const isValid = await argon.verify(hashedPassword, password);
+            if (!isValid) {
+                return res.status(401).json({ error: "Invalid credentials" });
+            }
+        } catch (verifyError) {
+            console.error("Password verification error:", verifyError);
+            return res.status(500).json({ error: "Authentication failed" });
         }
 
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error("Login error:", err);
+        res.status(500).json({ error: "Login failed" });
     }
 });
 
