@@ -16,7 +16,9 @@ client.on('error', (error) => {
 // Send notification to vending machine of restock
 function notifyDatabaseChange(vendingMachineID) {
     const topic = `vm/restocked/${vendingMachineID}`;
-    client.publish(topic, `${vendingMachineID} restocked`, { qos: 1 }); // qos 1 ensures messages that don't go through will be queued until connection is fixed
+    // qos 1 ensures messages that don't go through will be queued until connection is fixed
+    // retain true ensures that the last message sent is stored and sent to new subscribers but not repeated
+    client.publish(topic, `${vendingMachineID} restocked`, { qos: 1, retain: true }); 
     console.log(`Published to ${topic}: ${vendingMachineID} restocked`);
 }
 
