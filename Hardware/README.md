@@ -29,6 +29,6 @@ The scripts necessary for this are located in the `hardware/` directory. Specifi
 To start the VPN connection, execute the following command on the Raspberry Pi:
 
 ```bash
-cd hardware/
+cd Hardware/
 ./startVPN.sh
 ```
