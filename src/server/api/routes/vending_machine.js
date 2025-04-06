@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db/db_connection"); // Import database connection
+const { healthCheck } = require("../mqtt/mqtt");
 
 router.use("/:id/inventory", require("./vending_machine_items")); // Nested route
 
@@ -28,6 +29,16 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// Check status of vending machine
+router.get("/:id/status", async (req, res) => {
+    try {
+        const status = await healthCheck(req.params.id);
+        res.json(status);
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
+});
+
 // Create a new vending machine
 router.post("/", async (req, res) => {
     try {
@@ -48,6 +59,10 @@ router.post("/", async (req, res) => {
             vm_mode,
         });
     } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            // If there's a duplicate entry error, return a 400 status
+            return res.status(400).json({ error: "Vending machine with this ID already exists" });
+        }
         res.status(500).json({ error: err.message });
     }
 });
@@ -58,7 +73,7 @@ router.patch("/:id/mode", async (req, res) => {
         const { vm_mode } = req.body;
 
         if(vm_mode !== "i" && vm_mode !== "r" && vm_mode !== "t") {
-            res.status(400).json({ error: "Invalid vending machine mode" });
+            res.status(400).json({ error: "Invalid vending machine mode, must be 'i', 'r', or 't'" });
             return;
         }
 
@@ -69,6 +84,9 @@ router.patch("/:id/mode", async (req, res) => {
             res.json({ message: "Vending machine mode updated successfully" });
         }
     } catch (err) {
+        if (err.code === "ER_DUP_ENTRY") {
+            return res.status(400).json({ error: "A vending machine with this ID already exists." });
+        }
         res.status(500).json({ error: err.message });
     }
 });

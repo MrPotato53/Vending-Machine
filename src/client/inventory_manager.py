@@ -116,6 +116,7 @@ class InventoryManager:
             self.__items[row][col] = Item(
                 item["item_name"], float(item["price"]), int(item["stock"]))
 
+
     def save_inventory_to_db(self) -> None:
         req_body = [
         {
@@ -130,13 +131,16 @@ class InventoryManager:
 
         self.__change_log = {}
 
+
     def get_mode(self) -> InventoryManagerMode:
         return self.__mode
+
 
     def load_mode_from_db(self) -> None:
         res = VendingMachines.get_vending_machine(self.hardware_id)
 
         self.__mode = self.mode_map[res["vm_mode"]]
+
 
     def set_mode(self, new_mode: InventoryManagerMode) -> None:
         self.load_mode_from_db()
@@ -157,6 +161,7 @@ class InventoryManager:
         self.__mode = new_mode
         VendingMachines.set_mode(self.hardware_id, self.mode_map[new_mode])
 
+
     def get_stock_information(self, show_empty_slots: bool = False) -> str:
         out = ""
 
@@ -176,6 +181,7 @@ class InventoryManager:
 
         return out.strip()
 
+
     def change_stock(self, slot_name: str, item_stock: int) -> float:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
 
@@ -190,16 +196,19 @@ class InventoryManager:
             return round(-1 * item_stock * item.get_cost(), 2)
         return 0
 
+
     def add_item(self, slot_name: str, item_name: str, item_stock: int, item_cost: float) -> None:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
         new_item: Item = Item(item_name, item_cost, item_stock)
         self.__items[itemrow][itemcol] = new_item
         self.__change_log[slot_name] = new_item
 
+
     def clear_slot(self, slot_name: str) -> None:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
         self.__items[itemrow][itemcol] = None
         self.__change_log[slot_name] = None
+
 
     def set_cost(self, slot_name: str, new_cost: float) -> None:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
@@ -211,6 +220,7 @@ class InventoryManager:
         item.set_cost(new_cost)
         self.__change_log[slot_name] = item
 
+
     def get_item(self, slot_name: str) -> Item:
         itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
 
@@ -219,6 +229,7 @@ class InventoryManager:
             raise err.EmptySlotError("No item at slot " + slot_name)
 
         return item
+
 
     def __get_coordinates_from_slotname(self, slot_name: str) -> tuple[int, int]:
         if len(slot_name) != self.SLOTNAMELENGTH:

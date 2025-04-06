@@ -9,25 +9,22 @@ print_usage() {
     echo "to install many packages (e.g., stripe, requests) onto"
     echo "your development machine."
     echo ""
-    echo "To run this script, please use git bash."
-    echo "  1. Navigate to this directory (repo/src/client)"
-    echo "  2. Enter the following command:"
-    echo "       Usage: ./startup_docker_container.sh [vendor|vm]"
+    echo "Usage: ./startup_docker_container.sh [vendor|vm]"
     echo ""
     echo "--------------------------------------------------------"
     echo ""
 }
 
 # Check if an argument is provided or if the user requests help
-if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     print_usage
     exit 1
 fi
 
 # Determine which script to run
-if [ "$1" == "vendor" ]; then
+if [ "$1" = "vendor" ]; then
     SCRIPT="vendor_cli.py"
-elif [ "$1" == "vm" ]; then
+elif [ "$1" = "vm" ]; then
     SCRIPT="vm_cli.py"
 else
     echo "Error: Invalid argument '$1'."
@@ -36,14 +33,34 @@ else
 fi
 
 # Build the Docker image
+echo "Building Docker image 'vending-machine-frontend'..."
 docker build -t vending-machine-frontend .
 
-# Provide some output to the user
-echo "SCRIPT OUTPUT: Docker container build successfully."
+if [ $? -ne 0 ]; then
+    echo "Docker build failed. Exiting."
+    exit 1
+fi
+
+echo ""
+echo "SCRIPT OUTPUT: Docker container built successfully."
 echo "SCRIPT OUTPUT: Now running $SCRIPT inside the container..."
 echo ""
 
-# Run the Docker container with the selected script
-# docker run --rm -it vending-machine-frontend python "$SCRIPT"
-# To work correctly in git bash, we have to use this command
-winpty docker run --rm -it vending-machine-frontend python "$SCRIPT"
+# Detect OS
+OS="$(uname -s)"
+
+if [ "$OS" = "Linux" ] || [ "$OS" = "Darwin" ]; then
+    # Linux (including Raspberry Pi OS) and macOS
+    docker run --network=host --rm -it vending-machine-frontend python "$SCRIPT"
+elif [[ "$OS" == MINGW* || "$OS" == MSYS* || "$OS" == CYGWIN* ]]; then
+    # Windows (Git Bash) — fallback, assuming winpty is available
+    if command -v winpty >/dev/null 2>&1; then
+        winpty docker run --rm -it vending-machine-frontend python "$SCRIPT"
+    else
+        echo "Warning: winpty not found. Running without it..."
+        docker run --rm -it vending-machine-frontend python "$SCRIPT"
+    fi
+else
+    echo "Unsupported OS: $OS"
+    exit 1
+fi
