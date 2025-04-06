@@ -6,7 +6,7 @@ from smbus2 import SMBus
 class LCDDisplay:
     """LCD display class to encapsulate control of displaying characters to a LCD display with an I2C module."""
 
-    def __init__(  # noqa: D417, PLR0913
+    def __init__(  # noqa: PLR0913
         self,
         i2c_addr: int,
         width: int,
@@ -19,7 +19,7 @@ class LCDDisplay:
         e_pulse: float,
         e_delay: float,
     ) -> None:
-        """_summary_.
+        """Creates LCD object.
 
         Parameters
         ----------
@@ -34,7 +34,7 @@ class LCDDisplay:
             e_pulse (float): Enable timing for flip flop to be enabled to store updated characters
             e_delay (float): Delay before and after for enabling flip flops for characters
 
-        """
+        """  # noqa: D401
         # Device constants
         self.I2C_ADDR = i2c_addr
         self.LCD_WIDTH = width
@@ -46,6 +46,9 @@ class LCDDisplay:
         self.LCD_ENABLE = enable_flag
         self.E_PULSE = e_pulse
         self.E_DELAY = e_delay
+
+        # Track scrolling routines per line
+        self._scrolling_tasks = {}
 
         # I2C bus setup
         self.bus = SMBus(1)
@@ -64,26 +67,45 @@ class LCDDisplay:
         await asyncio.sleep(self.E_DELAY)
 
     async def write(self, message: str, line: int, scroll_delay: float = 0.3) -> None:
-        """Write a message to the LCD. If message is too long, scroll it."""
+        """Write a message to the LCD. If it's too long, scroll it indefinitely until cleared."""
+        # Cancel any existing scroll task for this line
+        if line in self._scrolling_tasks:
+            self._scrolling_tasks[line].cancel()
+
         if len(message) <= self.LCD_WIDTH:
-            # Short message: just display it normally
-            padded = message.ljust(self.LCD_WIDTH, " ")
             await self._lcd_byte(line, self.LCD_CMD)
-            for char in padded:
+            message = message.ljust(self.LCD_WIDTH, " ")
+            for char in message:
                 await self._lcd_byte(ord(char), self.LCD_CHR)
         else:
-            # Long message: scroll across the display
-            # Space padding for smooth scroll
-            scroll_text = message + " " * self.LCD_WIDTH
-            for i in range(len(scroll_text) - self.LCD_WIDTH + 1):
-                window = scroll_text[i : i + self.LCD_WIDTH]
-                await self._lcd_byte(line, self.LCD_CMD)
-                for char in window:
-                    await self._lcd_byte(ord(char), self.LCD_CHR)
-                await asyncio.sleep(scroll_delay)
+            # Launch a new task to scroll indefinitely
+            task = asyncio.create_task(self._scroll_loop(message, line, scroll_delay))
+            self._scrolling_tasks[line] = task
 
-    async def clear(self) -> None:
-        await self._lcd_byte(0x01, self.LCD_CMD)
+    async def _scroll_loop(self, message: str, line: int, scroll_delay: float) -> None:
+        scroll_text = message + " " * self.LCD_WIDTH
+        try:
+            while True:
+                for i in range(len(scroll_text) - self.LCD_WIDTH + 1):
+                    window = scroll_text[i : i + self.LCD_WIDTH]
+                    await self._lcd_byte(line, self.LCD_CMD)
+                    for char in window:
+                        await self._lcd_byte(ord(char), self.LCD_CHR)
+                    await asyncio.sleep(scroll_delay)
+        except asyncio.CancelledError:
+            # Exit cleanly when the task is canceled
+            pass
+
+    async def clear_line(self, line: int) -> None:
+        """Clear a specific line and cancel any scrolling task on it."""
+        if line in self._scrolling_tasks:
+            self._scrolling_tasks[line].cancel()
+            del self._scrolling_tasks[line]
+
+        await self._lcd_byte(line, self.LCD_CMD)
+        blank = " " * self.LCD_WIDTH
+        for char in blank:
+            await self._lcd_byte(ord(char), self.LCD_CHR)
 
     async def _lcd_byte(self, bits: int, mode: int) -> None:
         bits_high = mode | (bits & 0xF0) | self.LCD_BACKLIGHT
