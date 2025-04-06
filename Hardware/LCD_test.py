@@ -30,7 +30,7 @@ async def main() -> None:
     )
 
     await lcd.init()
-    await lcd.write("Test short Message", LCD_LINE_1)
+    await lcd.write("Test Message", LCD_LINE_1)
     await lcd.write("This is a test of a very long message", LCD_LINE_2)
     await asyncio.sleep(5)
     await lcd.clear()
