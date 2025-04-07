@@ -2,6 +2,7 @@ from __future__ import annotations  # noqa: INP001
 
 import exceptions as err
 from customer.cardinfo import CardInfo
+from customer.mqtt import MQTTConnection
 from db_signal import Stripe, VendingMachines
 from enum_types import InventoryManagerMode
 from inventory_manager import InventoryManager
@@ -51,15 +52,19 @@ class VendingMachine:
         self.__inv_man = InventoryManager(rows, columns, hardware_id)
 
         # Check if vending machine exists in database, if not create it
-        if(not VendingMachines.vending_machine_exists(self.__hardware_id)):
-            VendingMachines.create_vending_machine(
-                self.__hardware_id, rows, columns, name)
+        try:
+            VendingMachines.create_vending_machine(self.__hardware_id, rows, columns, name)
+        except err.QueryFailureError as e:
+            # If error code is 400, vending machine exists so we ignore the error.
+            if(e.status_code != 400): raise
 
         # Load data from database
         self.__inv_man.sync_from_database()
 
         self.__stripe_payment_token: str = None
         self.__transaction_price: float = 0
+
+        MQTTConnection.start_mqtt_connection(self.__hardware_id, self.__inv_man)
 
 
     def list_options(self) -> str:

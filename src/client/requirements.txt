@@ -5,3 +5,4 @@
 
 stripe   # for payment processing
 requests # for making requests to Stripe API and our server
+paho-mqtt # for message queueing for automated updates and healthchecks
