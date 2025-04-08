@@ -22,13 +22,13 @@ The backend server is hosted on **CSL machines** and will be responsible for:
 
 To enable the Raspberry Pi to communicate with the backend server, it must first connect to the **Campus VPN**. 
 
-The scripts necessary for this are located in the `hardware/` directory. Specifically:
+The scripts necessary for this are located in the `Hardware/` directory. Specifically:
 - **`startVPN.sh`**: This script sets up and starts the VPN connection. Run it to establish a secure connection to the campus network.
 
 ### Running the VPN Connection Script
 To start the VPN connection, execute the following command on the Raspberry Pi:
 
 ```bash
-cd hardware/
+cd Hardware/
 ./startVPN.sh
 ```

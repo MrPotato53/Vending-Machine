@@ -34,3 +34,38 @@ STEPPER_1_PINS = [17, 18, 27, 22]
 
 BUTTON_1_PIN = 23
 """GPIO pin that the button is connected to on the raspberry pi."""
+
+###################
+### LCD Display  ##
+###################
+
+# Device settings
+I2C_ADDR = 0x27
+"""I2C device address"""
+LCD_WIDTH = 16
+"""Maximum characters per line for LCD display."""
+
+LCD_CHR = 1
+"""LCD character mode for sending data."""
+
+LCD_CMD = 0
+"""LCD mode for sending commands."""
+
+LCD_LINE_1 = 0x80
+"""RAM address for 1st line of LCD."""
+
+LCD_LINE_2 = 0xC0
+"""RAM address for 2nd line of LCD."""
+
+LCD_BACKLIGHT = 0x08
+"""ON for LCD backlight."""
+
+LCD_ENABLE = 0b00000100
+"""Enable string for LCD."""
+
+# Device timings
+LCD_E_PULSE = 0.0005
+"""Enable timing for flip flop to be enabled to store updated characters."""
+
+LCD_E_DELAY = 0.0005
+"""Delay before and after for enabling flip flops for characters."""
