@@ -86,5 +86,5 @@ KEYPAD_LAYOUT = [
 KEYPAD_ROW_PINS = [5, 6, 13, 19]
 """Pins associated with the rows of the keypad."""
 
-COL_PINS = [4, 12, 26, 24]
+KEYPAD_COL_PINS = [4, 12, 26, 24]
 """Pins associated with the cols of the keypad."""
