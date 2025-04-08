@@ -102,10 +102,14 @@ class LCDDisplay:
             self._scrolling_tasks[line].cancel()
             del self._scrolling_tasks[line]
 
-        await self._lcd_byte(line, self.LCD_CMD)
+        await self._lcd_byte(line, self.LCD_CMD)  # move cursor to fix clearing line
         blank = " " * self.LCD_WIDTH
         for char in blank:
             await self._lcd_byte(ord(char), self.LCD_CHR)
+
+    async def clear_all(self):
+        await self.clear_line(self.LCD_LINE_1)
+        await self.clear_line(self.LCD_LINE_2)
 
     async def _lcd_byte(self, bits: int, mode: int) -> None:
         bits_high = mode | (bits & 0xF0) | self.LCD_BACKLIGHT
