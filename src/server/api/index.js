@@ -15,6 +15,11 @@ app.use("/vending-machines", vendingMachinesRoutes);
 app.use("/items", itemsRoutes);
 app.use("/stripes", stripeRoutes);
 
+// Basic healthcheck endpoint for api
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
