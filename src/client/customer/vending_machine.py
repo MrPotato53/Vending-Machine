@@ -1,6 +1,7 @@
-from __future__ import annotations  # noqa: INP001
+from __future__ import annotations
 
 import exceptions as err
+from api_constants import BAD_REQUEST
 from customer.cardinfo import CardInfo
 from customer.mqtt import MQTTConnection
 from db_signal import Stripe, VendingMachines
@@ -33,6 +34,12 @@ class VendingMachine:
         Dispense item selected
         Update stock information and database (might happen in inventory_manager implementation)
         Add price of item to transaction_price
+    def buy_free_item(self, slot_name) -> str
+        Only callable if mode of inv_man is TRANSACTION
+        Make SURE that item cost is 0
+        Dispense item selected
+        Update stock information and database (might happen in inventory_manager implementation)
+        Reset mode back to IDLE
         Returns name of item that was purchased
     def end_transaction(self) -> float
         Only callable if mode of inv_man is TRANSACTION
@@ -56,7 +63,7 @@ class VendingMachine:
             VendingMachines.create_vending_machine(self.__hardware_id, rows, columns, name)
         except err.QueryFailureError as e:
             # If error code is 400, vending machine exists so we ignore the error.
-            if(e.status_code != 400): raise
+            if(e.status_code != BAD_REQUEST): raise
 
         # Load data from database
         self.__inv_man.sync_from_database()
@@ -93,6 +100,22 @@ class VendingMachine:
         return self.__inv_man.get_item(slot_name).get_name()
 
 
+    def buy_free_item(self, slot_name: str) -> str:
+        # set_mode will check that mode is in correct state(IDLE), throws error otherwise
+        item = self.__inv_man.get_item(slot_name)
+
+        # Ensure that the item that you're dispensing for free is ACTUALLY free.
+        if(item.get_cost() != 0):
+            raise ValueError("Cost of slot must be 0 to use this function.")
+
+        self.__inv_man.set_mode(InventoryManagerMode.TRANSACTION)
+        self.__inv_man.change_stock(slot_name, -1)
+        self.__inv_man.save_inventory_to_db()
+        self.__inv_man.set_mode(InventoryManagerMode.IDLE)
+
+        return item.get_name()
+
+
     def end_transaction(self) -> float:
         # This check is necessary because we want to make sure inv_man is in the correct state but
         # we want to change to IDLE only AFTER all operations (api and variables reset) are done.
@@ -115,5 +138,4 @@ class VendingMachine:
 
 
     def reload_data(self):
-        # TODO: Automate this with message queueing
         self.__inv_man.sync_from_database()

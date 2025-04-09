@@ -1,7 +1,8 @@
-import os
+
 import threading
 
 import paho.mqtt.client as mqtt
+from api_constants import BROKER_HOST
 from inventory_manager import InventoryManager
 
 
@@ -21,7 +22,7 @@ class MQTTConnection:
     @staticmethod
     def start_mqtt_connection(hardware_id: str, inv_man: InventoryManager) -> None:
 
-        def on_message(client, userdata, message) -> None:
+        def on_message(client, userdata, message) -> None:  # noqa: ANN001, ARG001
             print("Restocked, syncing from database:")
             inv_man.sync_from_database()
 
@@ -34,10 +35,10 @@ class MQTTConnection:
         client.will_set(status_topic, "offline", qos=1, retain=True)
 
         # Connect with 60 second keepalive (pings broker once every 60 seconds as heartbeat)
-        client.connect("cs506x19.cs.wisc.edu", 3306, 60)
+        client.connect(BROKER_HOST, 3306, 60)
 
         # Publish online status as a retained message
-        client.on_connect = lambda client, u, f, rc: client.publish(
+        client.on_connect = lambda client, u, f, rc: client.publish(  # noqa: ARG005
             status_topic, "online", qos=1, retain=True,
         )
 
