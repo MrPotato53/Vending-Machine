@@ -9,8 +9,12 @@ inv_manager = vending_machine.inv_man
 hardware_manager = HardwareManager(inv_manager)
 
 
-if __name__ == "__main__":
+async def main():
     while True:
         key = asyncio.run(hardware_manager.read_keypad_input())
         print(key)
-        asyncio.sleep(0.05)
+        await asyncio.sleep(0.05)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
