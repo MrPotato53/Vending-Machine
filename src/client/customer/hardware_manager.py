@@ -44,15 +44,16 @@ class HardwareManager:
                 # key that means try to dispense
                 if DISPENSE_KEY is key:
                     self.current_input_string = self.current_input_string[:-1]
-                    self.keypad.close()
+                    await self.keypad.close()
                     return self.current_input_string
                 if DELETE_KEY is key:
                     self.current_input_string = self.current_input_string[:-2]
                 # Case of inputting
                 elif CARD_INFO_KEY is key:
+                    await self.keypad.close()
                     return CARD_INFO_KEY
         finally:
-            self.keypad.close()
+            await self.keypad.close()
 
     # async def dispense_item(self, slot_name: str):
     #     row, col =

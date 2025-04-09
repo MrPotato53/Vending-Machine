@@ -57,6 +57,11 @@ class AsyncKeypad:
 
             await asyncio.sleep(self.scan_delay)
 
-    def close(self) -> None:
-        self._task.cancel()
+    async def close(self) -> None:
+        if self._task:
+            self._task.cancel()
+            try:  # noqa: SIM105
+                await self._task
+            except asyncio.CancelledError:
+                pass
         lgpio.gpiochip_close(self.handle)
