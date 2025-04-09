@@ -1,9 +1,8 @@
+from customer.Hardware.hardware_constants import *
+from customer.Hardware.keypad import AsyncKeypad
+from customer.Hardware.LCD_display import LCDDisplay
+from customer.Hardware.stepper_motors import StepperMotor
 from inventory_manager import InventoryManager
-
-from Hardware.hardware_constants import *
-from Hardware.keypad import AsyncKeypad
-from Hardware.LCD_display import LCDDisplay
-from Hardware.stepper_motors import StepperMotor
 
 
 class HardwareManager:
