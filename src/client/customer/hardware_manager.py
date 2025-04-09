@@ -34,7 +34,8 @@ class HardwareManager:
         self.current_input_string = None
 
     async def read_keypad_input(self) -> str:
-        self.current_input_string = None
+        self.current_input_string = ""
+        await self.keypad.start()  # Start the keypad scan loop inside the running event loop
         try:
             while True:
                 key = await self.keypad.get_key()

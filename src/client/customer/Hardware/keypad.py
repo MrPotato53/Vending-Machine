@@ -33,7 +33,7 @@ class AsyncKeypad:
         for pin in self.col_pins:
             lgpio.gpio_claim_output(self.handle, pin, 1)
 
-        # Start scanning loop
+    async def start(self) -> None:
         self._task = asyncio.create_task(self._scan_loop())
 
     async def get_key(self) -> str:
