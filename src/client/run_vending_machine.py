@@ -1,7 +1,7 @@
 import asyncio
 
-from hardware_manager import HardwareManager
-from vending_machine import VendingMachine
+from customer.hardware_manager import HardwareManager
+from customer.vending_machine import VendingMachine
 
 vending_machine = VendingMachine(rows=1, columns=3, hardware_id="REALVM", name="Physical_VM")
 
