@@ -10,10 +10,9 @@ hardware_manager = HardwareManager(inv_manager)
 
 
 async def main():
-    while True:
-        key = asyncio.run(hardware_manager.read_keypad_input())
-        print(key)
-        await asyncio.sleep(0.05)
+    key = asyncio.run(hardware_manager.read_keypad_input())
+    print(key)
+    await asyncio.sleep(0.05)
 
 
 if __name__ == "__main__":
