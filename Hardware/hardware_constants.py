@@ -94,3 +94,17 @@ KEYPAD_ROW_PINS = [5, 6, 13, 19]
 
 KEYPAD_COL_PINS = [4, 12, 26, 24]
 """Pins associated with the cols of the keypad."""
+
+
+###################
+#######  UI  ######
+###################
+
+DISPENSE_KEY = "*"
+"""Key to intiate dispensing of item."""
+
+DELETE_KEY = "D"
+"""Deltes last user inputted key."""
+
+CARD_INFO_KEY = "C"
+"""Simulates entering card info."""
