@@ -10,5 +10,4 @@ hardware_manager = HardwareManager(inv_manager)
 
 
 if __name__ == "__main__":
-    key = asyncio.run(hardware_manager.read_keypad_input())
-    print(key)
+    asyncio.run(hardware_manager.read_keypad_input())
