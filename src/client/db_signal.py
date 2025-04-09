@@ -13,6 +13,7 @@ from api_constants import (
 )
 
 
+# Repeatedly pings health endpoint of api until valid response is received
 def ping_endpoint():
     print("Connecting...")
     while(True):
@@ -27,6 +28,8 @@ def ping_endpoint():
         time.sleep(5)
 
 
+# Decorator for all endpoint calling functions that tries to call the endpoint
+# If the initial call fails, we ping the api till reconnection, then call it again
 def ping_endpoint_till_connect():
     def decorator(func):  # noqa: ANN001, ANN202
         @wraps(func)
