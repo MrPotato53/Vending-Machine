@@ -15,7 +15,6 @@ class HardwareManager:
             ],
         ]
 
-        self.keypad = AsyncKeypad(KEYPAD_LAYOUT, KEYPAD_ROW_PINS, KEYPAD_COL_PINS)
         self.lcd = LCDDisplay(
             I2C_ADDR,
             LCD_WIDTH,
@@ -33,27 +32,26 @@ class HardwareManager:
 
         self.current_input_string = None
 
+    async def start(self) -> None:
+        self.keypad = AsyncKeypad(KEYPAD_LAYOUT, KEYPAD_ROW_PINS, KEYPAD_COL_PINS)
+        await self.keypad.start()
+
     async def read_keypad_input(self) -> str:
         self.current_input_string = ""
-        await self.keypad.start()  # Start the keypad scan loop inside the running event loop
-        try:
-            while True:
-                key = await self.keypad.get_key()
-                print(key)
-                self.current_input_string += key
-                # key that means try to dispense
-                if DISPENSE_KEY is key:
-                    self.current_input_string = self.current_input_string[:-1]
-                    await self.keypad.close()
-                    return self.current_input_string
-                if DELETE_KEY is key:
-                    self.current_input_string = self.current_input_string[:-2]
-                # Case of inputting
-                elif CARD_INFO_KEY is key:
-                    await self.keypad.close()
-                    return CARD_INFO_KEY
-        finally:
-            await self.keypad.close()
+        while True:
+            key = await self.keypad.get_key()
+            print(key)
+            self.current_input_string += key
+
+            if DISPENSE_KEY is key:
+                self.current_input_string = self.current_input_string[:-1]
+                return self.current_input_string
+
+            if DELETE_KEY is key:
+                self.current_input_string = self.current_input_string[:-2]
+
+            elif CARD_INFO_KEY is key:
+                return CARD_INFO_KEY
 
     # async def dispense_item(self, slot_name: str):
     #     row, col =
