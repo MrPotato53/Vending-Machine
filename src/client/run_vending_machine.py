@@ -13,3 +13,4 @@ if __name__ == "__main__":
     while True:
         key = asyncio.run(hardware_manager.read_keypad_input())
         print(key)
+        asyncio.sleep(0.05)
