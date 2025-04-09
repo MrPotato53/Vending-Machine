@@ -5,7 +5,7 @@ from customer.vending_machine import VendingMachine
 
 vending_machine = VendingMachine(rows=1, columns=3, hardware_id="REALVM", name="Physical_VM")
 
-inv_manager = vending_machine.__inv_man
+inv_manager = vending_machine.inv_man
 hardware_manager = HardwareManager(inv_manager)
 
 
