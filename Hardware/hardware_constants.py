@@ -69,3 +69,22 @@ LCD_E_PULSE = 0.0005
 
 LCD_E_DELAY = 0.0005
 """Delay before and after for enabling flip flops for characters."""
+
+
+###################
+##### Keypad  #####
+###################
+
+KEYPAD_LAYOUT = [
+    ["1", "2", "3", "A"],
+    ["4", "5", "6", "B"],
+    ["7", "8", "9", "C"],
+    ["*", "0", "#", "D"],
+]
+"""4x4 matrix keypad layout with button relating button positions."""
+
+KEYPAD_ROW_PINS = [5, 6, 13, 19]
+"""Pins associated with the rows of the keypad."""
+
+KEYPAD_COL_PINS = [4, 12, 26, 24]
+"""Pins associated with the cols of the keypad."""

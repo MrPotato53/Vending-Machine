@@ -100,12 +100,20 @@ class LCDDisplay:
         """Clear a specific line and cancel any scrolling task on it."""
         if line in self._scrolling_tasks:
             self._scrolling_tasks[line].cancel()
+            try:  # noqa: SIM105
+                await self._scrolling_tasks[line]
+            except asyncio.CancelledError:
+                pass
             del self._scrolling_tasks[line]
 
         await self._lcd_byte(line, self.LCD_CMD)
-        blank = " " * self.LCD_WIDTH
-        for char in blank:
-            await self._lcd_byte(ord(char), self.LCD_CHR)
+        for _ in range(self.LCD_WIDTH):
+            await self._lcd_byte(ord(" "), self.LCD_CHR)
+            await asyncio.sleep(0.005)  # delay for I2C stability
+
+    async def clear_all(self):
+        await self.clear_line(self.LCD_LINE_1)
+        await self.clear_line(self.LCD_LINE_2)
 
     async def _lcd_byte(self, bits: int, mode: int) -> None:
         bits_high = mode | (bits & 0xF0) | self.LCD_BACKLIGHT
