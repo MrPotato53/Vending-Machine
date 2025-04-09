@@ -42,15 +42,15 @@ class HardwareManager:
                 print(key)
                 self.current_input_string += key
                 # key that means try to dispense
-                # if DISPENSE_KEY is key:
-                #     del self.current_input_string[-1]
-                #     self.keypad.close()
-                #     return self.current_input_string
-                # if DELETE_KEY is key:
-                #     self.current_input_string = self.current_input_string[:-2]
-                # # Case of inputting
-                # elif CARD_INFO_KEY is key:
-                #     return CARD_INFO_KEY
+                if DISPENSE_KEY is key:
+                    del self.current_input_string[-1]
+                    self.keypad.close()
+                    return self.current_input_string
+                if DELETE_KEY is key:
+                    self.current_input_string = self.current_input_string[:-2]
+                # Case of inputting
+                elif CARD_INFO_KEY is key:
+                    return CARD_INFO_KEY
         finally:
             self.keypad.close()
 
