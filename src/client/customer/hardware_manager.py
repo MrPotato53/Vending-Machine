@@ -43,7 +43,7 @@ class HardwareManager:
                 self.current_input_string += key
                 # key that means try to dispense
                 if DISPENSE_KEY is key:
-                    del self.current_input_string[-1]
+                    self.current_input_string = self.current_input_string[:-1]
                     self.keypad.close()
                     return self.current_input_string
                 if DELETE_KEY is key:
