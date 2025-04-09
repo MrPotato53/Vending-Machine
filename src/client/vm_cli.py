@@ -1,4 +1,4 @@
-import json  # noqa: INP001
+import json
 import sys
 import textwrap
 

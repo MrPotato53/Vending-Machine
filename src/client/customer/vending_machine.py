@@ -1,6 +1,7 @@
-from __future__ import annotations  # noqa: INP001
+from __future__ import annotations
 
 import exceptions as err
+from api_constants import BAD_REQUEST
 from customer.cardinfo import CardInfo
 from customer.mqtt import MQTTConnection
 from db_signal import Stripe, VendingMachines
@@ -62,7 +63,7 @@ class VendingMachine:
             VendingMachines.create_vending_machine(self.__hardware_id, rows, columns, name)
         except err.QueryFailureError as e:
             # If error code is 400, vending machine exists so we ignore the error.
-            if(e.status_code != 400): raise
+            if(e.status_code != BAD_REQUEST): raise
 
         # Load data from database
         self.__inv_man.sync_from_database()
@@ -137,5 +138,4 @@ class VendingMachine:
 
 
     def reload_data(self):
-        # TODO: Automate this with message queueing
         self.__inv_man.sync_from_database()
