@@ -33,6 +33,8 @@ class AsyncKeypad:
         for pin in self.col_pins:
             lgpio.gpio_claim_output(self.handle, pin, 1)
 
+        self._task = None
+
     async def start(self) -> None:
         self._task = asyncio.create_task(self._scan_loop())
 
@@ -60,8 +62,15 @@ class AsyncKeypad:
     async def close(self) -> None:
         if self._task:
             self._task.cancel()
-            try:  # noqa: SIM105
+            try:
                 await self._task
             except asyncio.CancelledError:
                 pass
-        lgpio.gpiochip_close(self.handle)
+            self._task = None
+
+        if self.handle is not None:
+            try:
+                lgpio.gpiochip_close(self.handle)
+            except lgpio.error as e:
+                print(f"Warning: Tried to close GPIO handle that may already be closed: {e}")
+            self.handle = None
