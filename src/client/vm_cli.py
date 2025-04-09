@@ -65,12 +65,13 @@ def dispense_free():
         dispensed_item = vending_machine.buy_free_item(selection)
         print("Dispensing Item: " + dispensed_item)
         print("Vending Machine Inventory: ")
-        print(vending_machine.list_options())
     except err.NegativeStockError:
         print("Item at this slot is out of stock, please try another.")
     except err.EmptySlotError as e:
         print("Error: ", e)
     except err.InvalidSlotNameError as e:
+        print("Error: ", e)
+    except ValueError as e:
         print("Error: ", e)
 
 
