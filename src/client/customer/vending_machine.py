@@ -103,13 +103,12 @@ class VendingMachine:
         # set_mode will check that mode is in correct state(IDLE), throws error otherwise
         item = self.__inv_man.get_item(slot_name)
 
-        self.__inv_man.set_mode(InventoryManagerMode.TRANSACTION)
-
         # Ensure that the item that you're dispensing for free is ACTUALLY free.
         if(item.get_cost() != 0):
             raise ValueError("Cost of slot must be 0 to use this function.")
-        self.__inv_man.change_stock(slot_name, -1)
 
+        self.__inv_man.set_mode(InventoryManagerMode.TRANSACTION)
+        self.__inv_man.change_stock(slot_name, -1)
         self.__inv_man.save_inventory_to_db()
         self.__inv_man.set_mode(InventoryManagerMode.IDLE)
 
