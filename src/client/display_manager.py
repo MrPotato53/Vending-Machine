@@ -1,4 +1,4 @@
-from client.customer.Hardware.LCD_display import LCDDisplay
+from customer.Hardware.LCD_display import LCDDisplay
 
 
 class DisplayManager:
