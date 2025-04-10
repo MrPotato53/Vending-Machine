@@ -46,6 +46,7 @@ class VendingMachineHardware:
 
     async def run(self):
         await self.input.start()
+        await self.display.start()
         await display_mgr.show_text("Choose a Slot:", LCD_LINE_1)
         await display_mgr.show_text("", LCD_LINE_2)
         try:
