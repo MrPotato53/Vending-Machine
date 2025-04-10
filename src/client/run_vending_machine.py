@@ -64,7 +64,9 @@ class VendingMachineHardware:
                         await self.dispenser.dispense(row, col)
 
                     else:
-                        await self.display.show_text("Invalid slot", line=LCD_LINE_2)
+                        await self.display.show_text(
+                            "Invalid slot! Choose a valid Slot", line=LCD_LINE_2
+                        )
 
                     self.current_input_string = ""
 
