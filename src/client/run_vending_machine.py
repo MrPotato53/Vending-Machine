@@ -46,21 +46,23 @@ class VendingMachineHardware:
 
     async def run(self):
         await self.input.start()
+        await display_mgr.show_text("Choose a Slot:", LCD_LINE_1)
+        await display_mgr.show_text("", LCD_LINE_2)
         try:
             while True:
                 key = await self.input.get_key()
                 print(f"Key: {key}")
                 if key == DISPENSE_KEY:
                     slot = self.current_input_string
-                    self.display.show_text(f"Trying: {slot}", line=LCD_LINE_2)
+                    await self.display.show_text(f"Trying: {slot}", line=LCD_LINE_2)
 
                     if slot in VALID_SLOT_KEYS:
                         row, col = self.slot_to_coords(slot)
-                        self.display.show_text("Dispensing", line=LCD_LINE_2)
+                        await self.display.show_text("Dispensing", line=LCD_LINE_2)
                         await self.dispenser.dispense(row, col)
 
                     else:
-                        self.display.show_text("Invalid slot", line=LCD_LINE_2)
+                        await self.display.show_text("Invalid slot", line=LCD_LINE_2)
 
                     self.current_input_string = ""
 
@@ -68,11 +70,11 @@ class VendingMachineHardware:
                     self.current_input_string = self.current_input_string[:-1]
 
                 elif key == CARD_INFO_KEY:
-                    self.display.show_text("Card mode", LCD_LINE_2)
+                    await self.display.show_text("Card mode", LCD_LINE_2)
 
                 else:
                     self.current_input_string += key
-                    self.display.show_text(self.current_input_string, LCD_LINE_2)
+                    await self.display.show_text(self.current_input_string, LCD_LINE_2)
 
         finally:
             await self.input.close()
@@ -103,8 +105,7 @@ if __name__ == "__main__":
             "e_delay": LCD_E_DELAY,
         },
     )
-    display_mgr.show_text("Choose a Slot:", LCD_LINE_1)
-    display_mgr.show_text("", LCD_LINE_2)
+
     dispenser_mgr = DispenserManager(
         [
             [
