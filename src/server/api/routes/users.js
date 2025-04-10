@@ -4,6 +4,8 @@ const crypto = require("crypto");
 const router = express.Router({ mergeParams: true }); // params from parents
 const db = require("../db/db_connection"); // Import database connection
 const users = require("../db/users"); // Internal user functions for queries
+const { type } = require("os");
+const { email } = require("../email/login");
 
 /*Sub routes needed:    
     organization/:org_id
@@ -47,10 +49,7 @@ router.post("/new", async (req, res) => {
             raw: false
         });
 
-        // Debug logging
-        console.log("Password hash type:", typeof hashedPassword);
-        console.log("Password hash length:", hashedPassword.length);
-
+       
         // Set default values for optional fields
         const role = u_role || "maintainer";
         const organization = org_id || 1000001;
@@ -88,9 +87,9 @@ router.post("/new", async (req, res) => {
 
 router.post("/login", async (req, res) => {
     try {
-        const { u_name, password } = req.body;
+        const { u_email, password } = req.body;
 
-        if (!U_name) {
+        if (!u_email) {
             return res.status(400).json({ error: "No user ID provided" });
         }
         if (!password) {
@@ -98,38 +97,133 @@ router.post("/login", async (req, res) => {
         }
 
         // Check if user exists
-        if (!(await users.userExist(u_name))) {
+        if (!(await users.userExist(u_email))) {
             return res.status(400).json({ error: "User does not exist" });
         }
 
         // Get the user's hashed password
-        const [results] = await db.query(
-            "SELECT password FROM users WHERE u_name = ?",
-            [u_name]
-        );
+       if(await users.userVerify(password, u_email, res)){
+            res.json({ success: true });
+       }
+       return res.status(401).json({ error: "Invalid credentials" });
+    } catch (err) {
+        console.error("Login error:", err);
+        res.status(500).json({ error: "Login failed", err });
+    }
+});
 
-        if (!results || results.length === 0) {
-            return res.status(404).json({ error: "User not found" });
+
+router.delete("/delete", async (req, res) => {
+    try {
+        const { u_email, password } = req.body;
+
+        if (!u_email) {
+            return res.status(400).json({ error: "No user ID provided" });
+        }
+        if (!password) {
+            return res.status(400).json({ error: "No user ID provided" });
         }
 
-        const hashedPassword = results[0].password;
-
-        // Verify the password with better error handling
-        try {
-            const isValid = await argon.verify(hashedPassword, password);
-            if (!isValid) {
-                return res.status(401).json({ error: "Invalid credentials" });
-            }
-        } catch (verifyError) {
-            console.error("Password verification error:", verifyError);
-            return res.status(500).json({ error: "Authentication failed" });
+        // Check if user exists
+        if (!(await users.userExist(u_email))) {
+            return res.status(400).json({ error: "User does not exist" });
         }
+
+        if(!await users.userVerify(password, u_email, res)){
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        // Delete the user from the database
+        await db.query("DELETE FROM users WHERE email = ?", [u_email]);
 
         res.json({ success: true });
     } catch (err) {
-        console.error("Login error:", err);
-        res.status(500).json({ error: "Login failed" });
+        console.error("Delete user error:", err);
+        res.status(500).json({ error: "Failed to delete user", err });
     }
+});
+
+router.get("/all", async (req, res) => {
+    try {
+        const [results] = await db.query("SELECT * FROM users");
+        res.json(results);
+    } catch (err) {
+        console.error("Get all users error:", err);
+        res.status(500).json({ error: "Failed to retrieve users", err });
+    }
+});
+
+router.get("/:email", async (req, res) => {
+    try {
+        const { u_email } = req.params;
+
+        if (!u_email) {
+            return res.status(400).json({ error: "No user ID provided" });
+        }
+
+        // Check if user exists
+        if (!(await users.userExist(u_email))) {
+            return res.status(400).json({ error: "User does not exist" });
+        }
+
+        // Get the user's information
+        const [results] = await db.query("SELECT * FROM users WHERE email = ?", [u_email]);
+
+
+        res.json(results[0]);
+    } catch (err) {
+        console.error("Get user error:", err);
+        res.status(500).json({ error: "Failed to retrieve user", err });
+    }
+});
+
+router.get("/:u_email/otp", async (req, res) => {
+    try {
+        const { u_email } = req.params;
+
+        if (!u_email) {
+            return res.status(400).json({ error: "No user ID provided" });
+        }
+
+        // Check if user exists
+        if (!(await users.userExist(u_email))) {
+            return res.status(400).json({ error: "User does not exist" });
+        }
+
+        // Generate a random OTP
+        const otp = crypto.randomInt(100000, 999999);
+
+        // Send the OTP to the user's email (implementation not shown)
+        // await sendOtpEmail(u_email, otp);
+
+        res.json({ otp });
+    } catch (err) {
+        console.error("Generate OTP error:", err);
+        res.status(500).json({ error: "Failed to generate OTP", err });
+    }
+});
+
+router.patch("/:u_email/update", async (req, res) => {
+
+    const { u_email } = req.params;
+    const { password, new_email, new_role, new_org, new_group } = req.body;
+
+    if(new_email!=email){
+        if(await users.userExist(new_email)){
+            return res.status(400).json({ error: "User does already exist" });
+        }
+        //update email
+    }
+    if(new_role){
+        //update name
+    }
+    if(new_org){
+        //update org
+    }
+    if(new_group){
+        //update group
+    }
+
 });
 
 module.exports = router;
