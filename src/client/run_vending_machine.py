@@ -59,7 +59,8 @@ class VendingMachineHardware:
 
                     if slot in VALID_SLOT_KEYS:
                         row, col = self.slot_to_coords(slot)
-                        await self.display.show_text("Dispensing", line=LCD_LINE_2)
+                        await self.display.show_text(f"Dispensing: {slot}", line=LCD_LINE_2)
+                        print(row, col)
                         await self.dispenser.dispense(row, col)
 
                     else:

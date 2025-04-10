@@ -7,4 +7,5 @@ class DispenserManager:
 
     async def dispense(self, row: int, col: int) -> None:
         motor = self.motors[row][col]
+        print(motor.pins)
         await motor.rotate_motor(4)
