@@ -91,16 +91,16 @@ if __name__ == "__main__":
     input_mgr = InputManager(KEYPAD_LAYOUT, KEYPAD_ROW_PINS, KEYPAD_COL_PINS)
     display_mgr = DisplayManager(
         {
-            "addr": I2C_ADDR,
+            "i2c_addr": I2C_ADDR,
             "width": LCD_WIDTH,
-            "line1": LCD_LINE_1,
-            "line2": LCD_LINE_2,
-            "chr": LCD_CHR,
-            "cmd": LCD_CMD,
+            "line_1": LCD_LINE_1,
+            "line_2": LCD_LINE_2,
+            "lcd_chr": LCD_CHR,
+            "lcd_cmd": LCD_CMD,
             "backlight": LCD_BACKLIGHT,
-            "enable": LCD_ENABLE,
-            "pulse": LCD_E_PULSE,
-            "delay": LCD_E_DELAY,
+            "enable_flag": LCD_ENABLE,
+            "e_pulse": LCD_E_PULSE,
+            "e_delay": LCD_E_DELAY,
         },
     )
     dispenser_mgr = DispenserManager(
