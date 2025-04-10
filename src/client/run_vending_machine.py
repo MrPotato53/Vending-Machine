@@ -1,9 +1,8 @@
 import asyncio
 
+from customer.Hardware.hardware_constants import CARD_INFO_KEY, DELETE_KEY, DISPENSE_KEY
 from customer.hardware_manager import HardwareManager
 from customer.vending_machine import VendingMachine
-
-from client.customer.Hardware.hardware_constants import CARD_INFO_KEY, DELETE_KEY, DISPENSE_KEY
 
 
 class VendingMachineHardware:
