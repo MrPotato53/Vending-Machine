@@ -84,7 +84,7 @@ class VendingMachineHardware:
     def slot_to_coords(self, slot: str) -> tuple[int, int]:
         # only 1 run for now can update to be int(slot[0])
         row = 0
-        col = int(slot[1])
+        col = int(slot[1]) - 1
         return (row, col)
 
 
