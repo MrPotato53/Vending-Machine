@@ -72,7 +72,7 @@ class VendingMachineHardware:
 
                 else:
                     self.current_input_string += key
-                    self.display.show_text(self.current_input_string)
+                    self.display.show_text(self.current_input_string, LCD_LINE_2)
 
         finally:
             await self.input.close()
@@ -103,6 +103,8 @@ if __name__ == "__main__":
             "e_delay": LCD_E_DELAY,
         },
     )
+    display_mgr.show_text("Choose a Slot:", LCD_LINE_1)
+    display_mgr.show_text("", LCD_LINE_2)
     dispenser_mgr = DispenserManager(
         [
             [
