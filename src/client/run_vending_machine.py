@@ -1,12 +1,18 @@
 import asyncio
 
-from customer.Hardware.hardware_constants import CARD_INFO_KEY, DELETE_KEY, DISPENSE_KEY
+from customer.Hardware.hardware_constants import (
+    CARD_INFO_KEY,
+    DELETE_KEY,
+    DISPENSE_KEY,
+    VALID_SLOT_KEYS,
+)
 from customer.hardware_manager import HardwareManager
 from customer.vending_machine import VendingMachine
 
 
 class VendingMachineHardware:
     def __init__(self) -> None:
+        # atrribute for holding the current user input from keypad
         self.current_input_string = None
 
     async def keypad_moniter(self):
@@ -15,6 +21,7 @@ class VendingMachineHardware:
             while True:
                 key = await hardware_manager.read_keypad_input()
                 print(key)
+                self.current_input_string += key
                 if DISPENSE_KEY is key:
                     self.current_input_string = self.current_input_string[:-1]
                     # check that user input is valid
@@ -30,6 +37,10 @@ class VendingMachineHardware:
         finally:
             if hardware_manager.keypad:
                 await hardware_manager.keypad.close()
+
+    def validate_user_entry(self) -> bool:
+        """Validates user selection to make sure that it is one of the valid slots."""
+        return self.current_input_string in VALID_SLOT_KEYS
 
 
 if __name__ == "__main__":
