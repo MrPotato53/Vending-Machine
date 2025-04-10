@@ -6,6 +6,9 @@ from customer.vending_machine import VendingMachine
 
 
 class VendingMachineHardware:
+    def __init__(self) -> None:
+        self.current_input_string = None
+
     async def keypad_moniter(self):
         await hardware_manager.start()
         try:
