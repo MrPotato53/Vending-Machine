@@ -50,11 +50,13 @@ router.post("/", async (req, res) => {
             return;
         } 
          
-        if (!vm_id || !vm_name || !vm_row_count || !vm_column_count) {
+        if (!vm_id || !vm_name || !vm_row_count || !vm_column_count || !org_id){
             res.status(400).json({ error: "Missing required fields" });
             return;
         }
-               
+        
+        group_id = group_id || 3000001;
+
         await db.query(
             `INSERT INTO vending_machines 
             (vm_id, vm_name, vm_row_count, vm_column_count, vm_mode, org_id, group_id) 

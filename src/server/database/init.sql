@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     u_name CHAR(20) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE, -- Increased length for email
     u_role CHAR(12) DEFAULT 'maintainer', 
-    org_id INT NOT NULL, 
-    group_id INT NOT NULL,
+    org_id INT NOT NULL DEFAULT 1000001, 
+    group_id INT NOT NULL DEFAULT 3000001,
     hash_p VARCHAR(255) NOT NULL, -- Fixed typo from 'pasword' to 'password'
     FOREIGN KEY (org_id) REFERENCES orgs(org_id) ON DELETE CASCADE
 );
