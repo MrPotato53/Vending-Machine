@@ -62,10 +62,9 @@ class HardwareManager:
         Retrun:
             str: str of user input.
         """  # noqa: D401
-        self.current_input_string = ""
+        # self.current_input_string = ""
         while True:
-            key = await self.keypad.get_key()
-            print(key)
+            return await self.keypad.get_key()
 
     # async def dispense_item(self, slot_name: str):
     #     row, col =
