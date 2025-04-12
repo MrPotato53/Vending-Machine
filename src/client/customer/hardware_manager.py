@@ -1,67 +1,48 @@
-from customer.Hardware.hardware_constants import (
-    I2C_ADDR,
-    KEYPAD_COL_PINS,
-    KEYPAD_LAYOUT,
-    KEYPAD_ROW_PINS,
-    LCD_BACKLIGHT,
-    LCD_CHR,
-    LCD_CMD,
-    LCD_E_DELAY,
-    LCD_E_PULSE,
-    LCD_ENABLE,
-    LCD_LINE_1,
-    LCD_LINE_2,
-    LCD_WIDTH,
-    STEP_DELAY,
-    STEP_SEQUENCE,
-    STEPPER_1_PINS,
-    STEPPER_2_PINS,
-    STEPPER_3_PINS,
-    STEPS_PER_QUARTER_REV,
-)
 from customer.Hardware.keypad import AsyncKeypad
 from customer.Hardware.LCD_display import LCDDisplay
 from customer.Hardware.stepper_motors import StepperMotor
-from inventory_manager import InventoryManager
 
 
-class HardwareManager:
-    def __init__(self, inv_man: InventoryManager) -> None:
-        self.motors = [
-            [
-                StepperMotor(STEPS_PER_QUARTER_REV, STEP_DELAY, STEP_SEQUENCE, STEPPER_1_PINS),
-                StepperMotor(STEPS_PER_QUARTER_REV, STEP_DELAY, STEP_SEQUENCE, STEPPER_2_PINS),
-                StepperMotor(STEPS_PER_QUARTER_REV, STEP_DELAY, STEP_SEQUENCE, STEPPER_3_PINS),
-            ],
-        ]
+class InputManager:
+    """Handles UI input from keypad."""
 
-        self.lcd = LCDDisplay(
-            I2C_ADDR,
-            LCD_WIDTH,
-            LCD_LINE_1,
-            LCD_LINE_2,
-            LCD_CHR,
-            LCD_CMD,
-            LCD_BACKLIGHT,
-            LCD_ENABLE,
-            LCD_E_PULSE,
-            LCD_E_DELAY,
-        )
-
-        self.inv_man = inv_man
-
-        self.current_input_string = None
+    def __init__(self, layout: list[list[str]], rows: int, cols: int) -> None:
+        self.keypad = AsyncKeypad(layout, rows, cols)
 
     async def start(self) -> None:
-        self.keypad = AsyncKeypad(KEYPAD_LAYOUT, KEYPAD_ROW_PINS, KEYPAD_COL_PINS)
         await self.keypad.start()
 
-    async def read_keypad_input(self) -> str:
-        """Reads keyboard input and returns when a special case input has been detected.
+    async def get_key(self) -> str:
+        return await self.keypad.get_key()
 
-        Retrun:
-            str: str of user input.
-        """
-        # self.current_input_string = ""
-        while True:
-            return await self.keypad.get_key()
+    async def close(self) -> None:
+        await self.keypad.close()
+
+
+class DispenserManager:
+    """Handles running motors for item dispensing."""
+
+    def __init__(self, motor_grid: list[list[StepperMotor]]) -> None:
+        self.motors = motor_grid
+
+    async def dispense(self, row: int, col: int) -> None:
+        motor = self.motors[row][col]
+        print(motor.pins)
+        await motor.rotate_motor(4)
+
+
+class DisplayManager:
+    """Handles displaying text on LCD display."""
+
+    def __init__(self, lcd_config: dict) -> None:
+        self.lcd = LCDDisplay(**lcd_config)
+
+    async def start(self) -> None:
+        await self.lcd.init()
+
+    async def show_text(self, text: str, line: int) -> None:
+        await self.lcd.clear_line(line)
+        await self.lcd.write(text, line=line)
+
+    async def clear_text(self, line: int) -> None:
+        await self.lcd.clear_line(line)

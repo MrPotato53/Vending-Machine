@@ -11,3 +11,6 @@ class DisplayManager:
     async def show_text(self, text: str, line: int) -> None:
         await self.lcd.clear_line(line)
         await self.lcd.write(text, line=line)
+
+    async def clear_text(self, line: int) -> None:
+        await self.lcd.clear_line(line)

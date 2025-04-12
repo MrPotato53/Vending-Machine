@@ -105,7 +105,7 @@ class VendingMachine:
 
         # Ensure that the item that you're dispensing for free is ACTUALLY free.
         if item.get_cost() != 0:
-            raise ValueError("Cost of slot must be 0 to use this function.")
+            raise err.NotFreeItemError("Cost of slot must be 0 to use this function.")
 
         self.inv_man.set_mode(InventoryManagerMode.TRANSACTION)
         self.inv_man.change_stock(slot_name, -1)
@@ -134,6 +134,9 @@ class VendingMachine:
 
         self.inv_man.set_mode(InventoryManagerMode.IDLE)
         return out
+
+    def get_price(self, slot_name: str) -> float:
+        return self.inv_man.get_item(slot_name).get_cost()
 
     def reload_data(self):
         self.inv_man.sync_from_database()

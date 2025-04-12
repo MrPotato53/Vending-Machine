@@ -109,5 +109,8 @@ DELETE_KEY = "D"
 CARD_INFO_KEY = "C"
 """Simulates entering card info."""
 
+END_TRANSACTION_KEY = "B"
+"""Ends an existing transaction"""
+
 VALID_SLOT_KEYS = ["01", "02", "03"]
 """Valid slot numbers for the 3 vending machine slots."""

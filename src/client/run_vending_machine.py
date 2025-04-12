@@ -1,9 +1,13 @@
 import asyncio
+import json
+import sys
 
+import exceptions as err
 from customer.Hardware.hardware_constants import (
     CARD_INFO_KEY,
     DELETE_KEY,
     DISPENSE_KEY,
+    END_TRANSACTION_KEY,
     I2C_ADDR,
     KEYPAD_COL_PINS,
     KEYPAD_LAYOUT,
@@ -32,68 +36,162 @@ from display_manager import DisplayManager
 from input_manager import InputManager
 
 
-class VendingMachineHardware:
+class VendingMachineRunner:
     def __init__(
         self,
         input_mgr: InputManager,
         display_mgr: DisplayManager,
         dispenser_mgr: DispenserManager,
+        config_file: str,
     ) -> None:
         self.input = input_mgr
         self.display = display_mgr
         self.dispenser = dispenser_mgr
-        self.current_input_string = ""
+        self.input_string = ""
+        self.vending_machine: VendingMachine = None
+
+        with open(config_file) as file:  # noqa: PTH123
+            data = json.load(file)
+            row = data["rows"]
+            col = data["columns"]
+            hardware_id = data["hardware_id"]
+
+            try:
+                self.vending_machine = VendingMachine(row, col, hardware_id)
+            except err.InvalidDimensionsError as e:
+                print("Error: ", e)
+                sys.exit(1)
+            except err.QueryFailureError as e:
+                print("Error: ", e)
+                sys.exit(1)
+
 
     async def run(self):
         await self.input.start()
         await self.display.start()
-        await display_mgr.show_text("Choose a Slot:", LCD_LINE_1)
-        await display_mgr.show_text("", LCD_LINE_2)
         try:
-            while True:
-                key = await self.input.get_key()
-                print(f"Key: {key}")
-                if key == DISPENSE_KEY:
-                    slot = self.current_input_string
-                    await self.display.show_text(f"Trying: {slot}", line=LCD_LINE_2)
-
-                    if slot in VALID_SLOT_KEYS:
-                        row, col = self.slot_to_coords(slot)
-                        await self.display.show_text(f"Dispensing: {slot}", line=LCD_LINE_2)
-                        print(row, col)
-                        await self.dispenser.dispense(row, col)
-
-                    else:
-                        await self.display.show_text(
-                            "Invalid slot! Choose a valid Slot", line=LCD_LINE_2
-                        )
-
-                    self.current_input_string = ""
-
-                elif key == DELETE_KEY:
-                    self.current_input_string = self.current_input_string[:-1]
-
-                elif key == CARD_INFO_KEY:
-                    await self.display.show_text("Card mode", LCD_LINE_2)
-
-                else:
-                    self.current_input_string += key
-                    await self.display.show_text(self.current_input_string, LCD_LINE_2)
-
+            self.run_default_state()
         finally:
             await self.input.close()
 
-    def slot_to_coords(self, slot: str) -> tuple[int, int]:
-        # only 1 run for now can update to be int(slot[0])
-        row = 0
-        col = int(slot[1]) - 1
-        return (row, col)
+
+    async def run_default_state(self):
+        # Endlessly run default state and execute based on inputs accordingly
+        while True:
+            input_string = self.get_and_display_input(
+                f"CHOOSE SLOT OR {CARD_INFO_KEY}", "", {CARD_INFO_KEY})
+            if(input_string is CARD_INFO_KEY):
+                # Card info key is pressed, transaction start
+                self.vending_machine.start_transaction()
+            else:
+                try:
+                    # Free item is chosen, dispense
+                    self.dispense_free_item(input_string)
+                except err.NotFreeItemError:
+                    # Normal item is chosen, show price (can't dispense unless transaction start)
+                    self.display.show_text(self.vending_machine.get_price(input_string), LCD_LINE_1)
+                    asyncio.sleep(2)
+
+
+    async def dispense_free_item(self, selection: str):
+
+        try:
+            # Dispense item in software
+            dispensed_item = self.vending_machine.buy_free_item(selection)
+
+            # If successfully dispensed in software, dispense in hardware
+            self.display.show_text("Dispensing Item: " + selection, LCD_LINE_1)
+            row, col = self.vending_machine.inv_man.get_coordinates_from_slotname(selection)
+            self.dispense_free_item(row, col)
+            print("Dispensing Item: " + dispensed_item)
+        except err.NegativeStockError:
+            print("Item at this slot is out of stock, please try another.")
+            self.display.show_text("OUT OF STOCK", LCD_LINE_1)
+            asyncio.sleep(1)
+        except err.EmptySlotError as e:
+            self.display.show_text("OUT OF STOCK", LCD_LINE_1)
+            print("Error: ", e)
+            asyncio.sleep(1)
+        except err.InvalidSlotNameError as e:
+            self.display.show_text("INVALID SLOT", LCD_LINE_1)
+            print("Error: ", e)
+            asyncio.sleep(1)
+
+
+
+    async def perform_transaction(self):
+        self.display.show_text("ENTERING PAYMENT", LCD_LINE_1)
+
+        try:
+            self.vending_machine.start_transaction()
+            # All the stripe API payment stuff should happen inside here ^^
+        except err.InvalidModeError as e:
+            print("Error: " + str(e))
+            return
+
+        print("Payment Information Entered...")
+
+        # Endlessly ask user to input slot to dispense, or end transaction
+        while(True):
+            selection = self.input("ENTER SLOT OR " + END_TRANSACTION_KEY, "", {END_TRANSACTION_KEY})
+
+            # End transaction
+            if(selection is END_TRANSACTION_KEY):
+                try:
+                    charged_value = str(self.vending_machine.end_transaction())
+                    self.display.show_text(f"CHARGED {charged_value}", LCD_LINE_1)
+                    print(f"Payment method was charged {charged_value}")
+                except err.QueryFailureError as e:
+                    print("Error: ", e)
+                return
+
+            try:
+                # Dispense item in software
+                dispensed_item = self.vending_machine.buy_item(selection)
+
+                # Dispense item in hardware
+                self.display.show_text("Dispensing Item: " + dispensed_item, LCD_LINE_1)
+                row, col = self.vending_machine.inv_man.get_coordinates_from_slotname(selection)
+                self.dispenser.dispense(row, col)
+                print("Dispensing Item: " + dispensed_item)
+            except err.NegativeStockError:
+                print("Item at this slot is out of stock, please try another.")
+                self.display.show_text("OUT OF STOCK", LCD_LINE_1)
+                asyncio.sleep(1)
+            except err.EmptySlotError as e:
+                print("Error: ", e)
+                self.display.show_text("OUT OF STOCK", LCD_LINE_1)
+                asyncio.sleep(1)
+            except err.InvalidSlotNameError as e:
+                print("Error: ", e)
+                self.display.show_text("INVALID SLOT", LCD_LINE_1)
+                asyncio.sleep(1)
+
+
+    async def get_and_display_input(self, line1: str, line2: str, return_keys: list[str]) -> str:
+        await self.display.show_text(line1, LCD_LINE_1)
+        await self.display.show_text(line2, LCD_LINE_2)
+        input_string = ""
+
+        while True:
+            key = await self.input.get_key()
+            print(f"Key: {key}")
+            if key == DISPENSE_KEY:
+                return input_string
+
+            if key in return_keys:
+                return key
+
+            if key == DELETE_KEY:
+                self.input_string = self.input_string[:-1]
+
+            else:
+                self.input_string += key
+
+            await self.display.show_text(self.input_string, LCD_LINE_2)
 
 
 if __name__ == "__main__":
-    vending_machine = VendingMachine(rows=1, columns=3, hardware_id="REALVM", name="Physical_VM")
-    inv_manager = vending_machine.inv_man
-
     input_mgr = InputManager(KEYPAD_LAYOUT, KEYPAD_ROW_PINS, KEYPAD_COL_PINS)
     display_mgr = DisplayManager(
         {
@@ -120,5 +218,7 @@ if __name__ == "__main__":
         ],
     )
 
-    vm_hw = VendingMachineHardware(input_mgr, display_mgr, dispenser_mgr)
+    config_file = "customer/configuration.json"
+
+    vm_hw = VendingMachineRunner(input_mgr, display_mgr, dispenser_mgr, config_file)
     asyncio.run(vm_hw.run())
