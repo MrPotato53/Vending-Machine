@@ -85,6 +85,8 @@ class LCDDisplay:
             # Small delay to ensure I2C bus stability
             await asyncio.sleep(0.01)
 
+        await self.clear_line(line=line)
+
         # Now write the new message
         if len(message) <= self.LCD_WIDTH:
             await self._lcd_byte(line, self.LCD_CMD)
