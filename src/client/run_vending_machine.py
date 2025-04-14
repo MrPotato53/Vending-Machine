@@ -181,18 +181,19 @@ class VendingMachineRunner:
             key = await self.input.get_key()
             print(f"Key: {key}")
             if key == DISPENSE_KEY:
+                print(input_string)
                 return input_string
 
             if key in return_keys:
                 return key
 
             if key == DELETE_KEY:
-                self.input_string = self.input_string[:-1]
+                input_string = input_string[:-1]
 
             else:
-                self.input_string += key
+                input_string += key
 
-            await self.display.show_text(self.input_string, LCD_LINE_2)
+            await self.display.show_text(input_string, LCD_LINE_2)
 
 
 if __name__ == "__main__":
