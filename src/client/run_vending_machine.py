@@ -27,7 +27,6 @@ from customer.Hardware.hardware_constants import (
     STEPPER_2_PINS,
     STEPPER_3_PINS,
     STEPS_PER_QUARTER_REV,
-    VALID_SLOT_KEYS,
 )
 from customer.Hardware.stepper_motors import StepperMotor
 from customer.vending_machine import VendingMachine
@@ -65,7 +64,6 @@ class VendingMachineRunner:
                 print("Error: ", e)
                 sys.exit(1)
 
-
     async def run(self):
         await self.input.start()
         await self.display.start()
@@ -74,27 +72,27 @@ class VendingMachineRunner:
         finally:
             await self.input.close()
 
-
     async def run_default_state(self):
         # Endlessly run default state and execute based on inputs accordingly
         while True:
             input_string = await self.get_and_display_input(
-                f"CHOOSE SLOT OR {CARD_INFO_KEY}", "", {CARD_INFO_KEY})
-            if(input_string is CARD_INFO_KEY):
+                f"CHOOSE SLOT OR {CARD_INFO_KEY}", "", {CARD_INFO_KEY}
+            )
+            if input_string is CARD_INFO_KEY:
                 # Card info key is pressed, transaction start
                 self.vending_machine.start_transaction()
             else:
                 try:
                     # Free item is chosen, dispense
-                    self.dispense_free_item(input_string)
+                    await self.dispense_free_item(input_string)
                 except err.NotFreeItemError:
                     # Normal item is chosen, show price (can't dispense unless transaction start)
-                    await self.display.show_text(self.vending_machine.get_price(input_string), LCD_LINE_1)
+                    await self.display.show_text(
+                        self.vending_machine.get_price(input_string), LCD_LINE_1
+                    )
                     asyncio.sleep(2)
 
-
     async def dispense_free_item(self, selection: str):
-
         try:
             # Dispense item in software
             dispensed_item = self.vending_machine.buy_free_item(selection)
@@ -117,10 +115,8 @@ class VendingMachineRunner:
             print("Error: ", e)
             asyncio.sleep(1)
 
-
-
     async def perform_transaction(self):
-        self.display.show_text("ENTERING PAYMENT", LCD_LINE_1)
+        await self.display.show_text("ENTERING PAYMENT", LCD_LINE_1)
 
         try:
             self.vending_machine.start_transaction()
@@ -132,12 +128,13 @@ class VendingMachineRunner:
         print("Payment Information Entered...")
 
         # Endlessly ask user to input slot to dispense, or end transaction
-        while(True):
+        while True:
             selection = await self.get_and_display_input(
-                "ENTER SLOT OR " + END_TRANSACTION_KEY, "", {END_TRANSACTION_KEY})
+                "ENTER SLOT OR " + END_TRANSACTION_KEY, "", {END_TRANSACTION_KEY}
+            )
 
             # End transaction
-            if(selection is END_TRANSACTION_KEY):
+            if selection is END_TRANSACTION_KEY:
                 try:
                     charged_value = str(self.vending_machine.end_transaction())
                     await self.display.show_text(f"CHARGED {charged_value}", LCD_LINE_1)
@@ -167,7 +164,6 @@ class VendingMachineRunner:
                 print("Error: ", e)
                 await self.display.show_text("INVALID SLOT", LCD_LINE_1)
                 asyncio.sleep(1)
-
 
     async def get_and_display_input(self, line1: str, line2: str, return_keys: list[str]) -> str:
         await self.display.show_text(line1, LCD_LINE_1)
