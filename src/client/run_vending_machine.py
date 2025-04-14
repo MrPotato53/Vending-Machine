@@ -91,7 +91,7 @@ class VendingMachineRunner:
                 except err.NotFreeItemError:
                     # Normal item is chosen, show price (can't dispense unless transaction start)
                     await self.display.show_text(
-                        self.vending_machine.get_price(input_string),
+                        str(self.vending_machine.get_price(input_string)),
                         LCD_LINE_1,
                     )
                     await asyncio.sleep(2)
