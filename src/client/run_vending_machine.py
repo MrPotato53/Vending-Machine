@@ -70,7 +70,7 @@ class VendingMachineRunner:
         await self.input.start()
         await self.display.start()
         try:
-            self.run_default_state()
+            await self.run_default_state()
         finally:
             await self.input.close()
 
@@ -78,7 +78,7 @@ class VendingMachineRunner:
     async def run_default_state(self):
         # Endlessly run default state and execute based on inputs accordingly
         while True:
-            input_string = self.get_and_display_input(
+            input_string = await self.get_and_display_input(
                 f"CHOOSE SLOT OR {CARD_INFO_KEY}", "", {CARD_INFO_KEY})
             if(input_string is CARD_INFO_KEY):
                 # Card info key is pressed, transaction start
@@ -89,7 +89,7 @@ class VendingMachineRunner:
                     self.dispense_free_item(input_string)
                 except err.NotFreeItemError:
                     # Normal item is chosen, show price (can't dispense unless transaction start)
-                    self.display.show_text(self.vending_machine.get_price(input_string), LCD_LINE_1)
+                    await self.display.show_text(self.vending_machine.get_price(input_string), LCD_LINE_1)
                     asyncio.sleep(2)
 
 
@@ -100,20 +100,20 @@ class VendingMachineRunner:
             dispensed_item = self.vending_machine.buy_free_item(selection)
 
             # If successfully dispensed in software, dispense in hardware
-            self.display.show_text("Dispensing Item: " + selection, LCD_LINE_1)
+            await self.display.show_text("Dispensing Item: " + selection, LCD_LINE_1)
             row, col = self.vending_machine.inv_man.get_coordinates_from_slotname(selection)
-            self.dispense_free_item(row, col)
+            await self.dispenser.dispense(row, col)
             print("Dispensing Item: " + dispensed_item)
         except err.NegativeStockError:
             print("Item at this slot is out of stock, please try another.")
-            self.display.show_text("OUT OF STOCK", LCD_LINE_1)
+            await self.display.show_text("OUT OF STOCK", LCD_LINE_1)
             asyncio.sleep(1)
         except err.EmptySlotError as e:
-            self.display.show_text("OUT OF STOCK", LCD_LINE_1)
+            await self.display.show_text("OUT OF STOCK", LCD_LINE_1)
             print("Error: ", e)
             asyncio.sleep(1)
         except err.InvalidSlotNameError as e:
-            self.display.show_text("INVALID SLOT", LCD_LINE_1)
+            await self.display.show_text("INVALID SLOT", LCD_LINE_1)
             print("Error: ", e)
             asyncio.sleep(1)
 
@@ -133,13 +133,14 @@ class VendingMachineRunner:
 
         # Endlessly ask user to input slot to dispense, or end transaction
         while(True):
-            selection = self.input("ENTER SLOT OR " + END_TRANSACTION_KEY, "", {END_TRANSACTION_KEY})
+            selection = await self.get_and_display_input(
+                "ENTER SLOT OR " + END_TRANSACTION_KEY, "", {END_TRANSACTION_KEY})
 
             # End transaction
             if(selection is END_TRANSACTION_KEY):
                 try:
                     charged_value = str(self.vending_machine.end_transaction())
-                    self.display.show_text(f"CHARGED {charged_value}", LCD_LINE_1)
+                    await self.display.show_text(f"CHARGED {charged_value}", LCD_LINE_1)
                     print(f"Payment method was charged {charged_value}")
                 except err.QueryFailureError as e:
                     print("Error: ", e)
@@ -150,21 +151,21 @@ class VendingMachineRunner:
                 dispensed_item = self.vending_machine.buy_item(selection)
 
                 # Dispense item in hardware
-                self.display.show_text("Dispensing Item: " + dispensed_item, LCD_LINE_1)
+                await self.display.show_text("Dispensing Item: " + dispensed_item, LCD_LINE_1)
                 row, col = self.vending_machine.inv_man.get_coordinates_from_slotname(selection)
-                self.dispenser.dispense(row, col)
+                await self.dispenser.dispense(row, col)
                 print("Dispensing Item: " + dispensed_item)
             except err.NegativeStockError:
                 print("Item at this slot is out of stock, please try another.")
-                self.display.show_text("OUT OF STOCK", LCD_LINE_1)
+                await self.display.show_text("OUT OF STOCK", LCD_LINE_1)
                 asyncio.sleep(1)
             except err.EmptySlotError as e:
                 print("Error: ", e)
-                self.display.show_text("OUT OF STOCK", LCD_LINE_1)
+                await self.display.show_text("OUT OF STOCK", LCD_LINE_1)
                 asyncio.sleep(1)
             except err.InvalidSlotNameError as e:
                 print("Error: ", e)
-                self.display.show_text("INVALID SLOT", LCD_LINE_1)
+                await self.display.show_text("INVALID SLOT", LCD_LINE_1)
                 asyncio.sleep(1)
 
 
