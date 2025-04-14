@@ -180,6 +180,7 @@ class VendingMachineRunner:
             key = await self.input.get_key()
             print(f"Key: {key}")
             if key == DISPENSE_KEY:
+                print(input_string)
                 return input_string
 
             if key in return_keys:
