@@ -46,6 +46,7 @@ class VendingMachineRunner:
         self.input = input_mgr
         self.display = display_mgr
         self.dispenser = dispenser_mgr
+        self.input_string = ""
         self.vending_machine: VendingMachine = None
 
         with open(config_file) as file:  # noqa: PTH123
@@ -117,8 +118,6 @@ class VendingMachineRunner:
             await self.display.show_text("INVALID SLOT", LCD_LINE_1)
             print("Error: ", e)
             await asyncio.sleep(1)
-        except err.NotFreeItemError:
-            raise
 
     async def perform_transaction(self):
         await self.display.show_text("ENTERING PAYMENT", LCD_LINE_1)
