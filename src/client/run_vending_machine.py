@@ -80,6 +80,7 @@ class VendingMachineRunner:
         while True:
             input_string = await self.get_and_display_input(
                 f"CHOOSE SLOT OR {CARD_INFO_KEY}", "", {CARD_INFO_KEY})
+            print("input: ", input_string)
             if(input_string is CARD_INFO_KEY):
                 # Card info key is pressed, transaction start
                 self.vending_machine.start_transaction()
