@@ -80,6 +80,7 @@ class VendingMachineRunner:
                 "",
                 {CARD_INFO_KEY},
             )
+            print("input: ", input_string)
             if input_string is CARD_INFO_KEY:
                 # Card info key is pressed, transaction start
                 await self.perform_transaction()
