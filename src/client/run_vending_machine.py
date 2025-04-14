@@ -76,11 +76,13 @@ class VendingMachineRunner:
         # Endlessly run default state and execute based on inputs accordingly
         while True:
             input_string = await self.get_and_display_input(
-                f"CHOOSE SLOT OR {CARD_INFO_KEY}", "", {CARD_INFO_KEY}
+                f"CHOOSE SLOT OR {CARD_INFO_KEY}",
+                "",
+                {CARD_INFO_KEY},
             )
             if input_string is CARD_INFO_KEY:
                 # Card info key is pressed, transaction start
-                self.vending_machine.start_transaction()
+                await self.perform_transaction()
             else:
                 try:
                     # Free item is chosen, dispense
@@ -88,7 +90,8 @@ class VendingMachineRunner:
                 except err.NotFreeItemError:
                     # Normal item is chosen, show price (can't dispense unless transaction start)
                     await self.display.show_text(
-                        self.vending_machine.get_price(input_string), LCD_LINE_1
+                        self.vending_machine.get_price(input_string),
+                        LCD_LINE_1,
                     )
                     asyncio.sleep(2)
 
@@ -130,7 +133,9 @@ class VendingMachineRunner:
         # Endlessly ask user to input slot to dispense, or end transaction
         while True:
             selection = await self.get_and_display_input(
-                "ENTER SLOT OR " + END_TRANSACTION_KEY, "", {END_TRANSACTION_KEY}
+                "ENTER SLOT OR " + END_TRANSACTION_KEY,
+                "",
+                {END_TRANSACTION_KEY},
             )
 
             # End transaction
