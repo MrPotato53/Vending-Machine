@@ -93,7 +93,7 @@ class VendingMachineRunner:
                         self.vending_machine.get_price(input_string),
                         LCD_LINE_1,
                     )
-                    asyncio.sleep(2)
+                    await asyncio.sleep(2)
 
     async def dispense_free_item(self, selection: str):
         try:
@@ -108,15 +108,15 @@ class VendingMachineRunner:
         except err.NegativeStockError:
             print("Item at this slot is out of stock, please try another.")
             await self.display.show_text("OUT OF STOCK", LCD_LINE_1)
-            asyncio.sleep(1)
+            await asyncio.sleep(1)
         except err.EmptySlotError as e:
             await self.display.show_text("OUT OF STOCK", LCD_LINE_1)
             print("Error: ", e)
-            asyncio.sleep(1)
+            await asyncio.sleep(1)
         except err.InvalidSlotNameError as e:
             await self.display.show_text("INVALID SLOT", LCD_LINE_1)
             print("Error: ", e)
-            asyncio.sleep(1)
+            await asyncio.sleep(1)
 
     async def perform_transaction(self):
         await self.display.show_text("ENTERING PAYMENT", LCD_LINE_1)
@@ -160,15 +160,15 @@ class VendingMachineRunner:
             except err.NegativeStockError:
                 print("Item at this slot is out of stock, please try another.")
                 await self.display.show_text("OUT OF STOCK", LCD_LINE_1)
-                asyncio.sleep(1)
+                await asyncio.sleep(1)
             except err.EmptySlotError as e:
                 print("Error: ", e)
                 await self.display.show_text("OUT OF STOCK", LCD_LINE_1)
-                asyncio.sleep(1)
+                await asyncio.sleep(1)
             except err.InvalidSlotNameError as e:
                 print("Error: ", e)
                 await self.display.show_text("INVALID SLOT", LCD_LINE_1)
-                asyncio.sleep(1)
+                await asyncio.sleep(1)
 
     async def get_and_display_input(self, line1: str, line2: str, return_keys: list[str]) -> str:
         await self.display.show_text(line1, LCD_LINE_1)
