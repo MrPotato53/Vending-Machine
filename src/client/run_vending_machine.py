@@ -187,12 +187,12 @@ class VendingMachineRunner:
                 return key
 
             if key == DELETE_KEY:
-                self.input_string = self.input_string[:-1]
+                input_string = input_string[:-1]
 
             else:
-                self.input_string += key
+                input_string += key
 
-            await self.display.show_text(self.input_string, LCD_LINE_2)
+            await self.display.show_text(input_string, LCD_LINE_2)
 
 
 if __name__ == "__main__":
