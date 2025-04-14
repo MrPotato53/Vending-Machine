@@ -102,7 +102,7 @@ class VendingMachineRunner:
             dispensed_item = self.vending_machine.buy_free_item(selection)
 
             # If successfully dispensed in software, dispense in hardware
-            await self.display.show_text("Dispensing Item: " + selection, LCD_LINE_1)
+            await self.display.show_text("Dispensing " + selection, LCD_LINE_1)
             row, col = self.vending_machine.inv_man.get_coordinates_from_slotname(selection)
             await self.dispenser.dispense(row, col)
             print("Dispensing Item: " + dispensed_item)
@@ -154,7 +154,7 @@ class VendingMachineRunner:
                 dispensed_item = self.vending_machine.buy_item(selection)
 
                 # Dispense item in hardware
-                await self.display.show_text("Dispensing Item: " + dispensed_item, LCD_LINE_1)
+                await self.display.show_text("Dispensing " + selection, LCD_LINE_1)
                 row, col = self.vending_machine.inv_man.get_coordinates_from_slotname(selection)
                 await self.dispenser.dispense(row, col)
                 print("Dispensing Item: " + dispensed_item)
