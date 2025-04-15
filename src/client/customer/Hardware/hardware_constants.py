@@ -25,14 +25,14 @@ stepper driver, In1, In2, In3, In4 respectivity. The patterns energerizes the st
 individual coils in the correct sequence.
 """
 
-STEPPER_1_PINS = [17, 18, 27, 22]
-"""GPIO pins used on the pi to map to the inputs of the stepper motor (motor 1)."""
-
-STEPPER_2_PINS = [14, 15, 16, 20]
-"""GPIO pins used on the pi to map to the inputs of the stepper motor (motor 2)."""
-
-STEPPER_3_PINS = [21, 25, 7, 8]
-"""GPIO pins used on the pi to map to the inputs of the stepper motor (motor 3)."""
+"""GPIO pins used on the pi to map to the inputs of the stepper motors."""
+STEPPER_PINS = [
+    [   # Row 1
+        [17, 18, 27, 22],   # Motor 1
+        [14, 15, 16, 20],   # Motor 2
+        [21, 25, 7, 8],     # Motor 3
+    ],
+]
 
 ###################
 ##### Buttons  ####

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import exceptions as err
 from api_constants import BAD_REQUEST
-from customer.cardinfo import CardInfo
+
+# from customer.cardinfo import CardInfo  # noqa: ERA001
 from customer.mqtt import MQTTConnection
 from db_signal import Stripe, VendingMachines
 from enum_types import InventoryManagerMode
@@ -81,18 +82,19 @@ class VendingMachine:
         self.inv_man.set_mode(InventoryManagerMode.TRANSACTION)
 
         # Temporary function to get card info
-        card_number, exp_month, exp_year, cvc = CardInfo.get_card_info()
+        # card_number, exp_month, exp_year, cvc = CardInfo.get_card_info()  # noqa: ERA001
+        card_number, exp_month, exp_year, cvc = "","","",""
 
         # stripe API implementation to log user in and obtain API token
         self.__stripe_payment_token = Stripe.get_payment_token(
-            card_number, exp_month, exp_year, cvc
+            card_number, exp_month, exp_year, cvc,
         )
 
     def buy_item(self, slot_name: str) -> str:
         if self.inv_man.get_mode() is not InventoryManagerMode.TRANSACTION:
             raise err.InvalidModeError(
                 "buy_item() can only be called when transaction is "
-                "in progress. Call start_transaction() first"
+                "in progress. Call start_transaction() first",
             )
 
         purchase_price = self.inv_man.change_stock(slot_name, -1)
@@ -119,7 +121,7 @@ class VendingMachine:
         # we want to change to IDLE only AFTER all operations (api and variables reset) are done.
         if self.inv_man.get_mode() is not InventoryManagerMode.TRANSACTION:
             raise err.InvalidModeError(
-                "Transaction is not currently in progress, start a transaction first"
+                "Transaction is not currently in progress, start a transaction first",
             )
 
         # Use stripe API to charge self.transaction_price with self.stripe_payment_token
