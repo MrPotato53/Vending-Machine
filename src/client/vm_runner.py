@@ -124,8 +124,8 @@ class VendingMachineRunner:
             # End transaction
             if selection is END_TRANSACTION_KEY:
                 try:
-                    charged_value = str(self.vending_machine.end_transaction())
-                    await self.display.show_text(f"CHARGED {charged_value}", LCD_LINE_1)
+                    charged_value = self.vending_machine.end_transaction()
+                    await self.display.show_text(f"CHARGED ${charged_value:.2f}", LCD_LINE_1)
                     await asyncio.sleep(2)
                     print(f"Payment method was charged {charged_value}")
                 except err.QueryFailureError as e:
