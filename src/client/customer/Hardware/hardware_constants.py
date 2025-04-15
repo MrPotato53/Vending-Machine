@@ -111,6 +111,3 @@ CARD_INFO_KEY = "C"
 
 END_TRANSACTION_KEY = "B"
 """Ends an existing transaction"""
-
-VALID_SLOT_KEYS = ["01", "02", "03"]
-"""Valid slot numbers for the 3 vending machine slots."""
