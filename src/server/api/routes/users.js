@@ -155,19 +155,20 @@ router.get("/all", async (req, res) => {
 
 router.get("/:email", async (req, res) => {
     try {
-        const { u_email } = req.params;
 
-        if (!u_email) {
-            return res.status(400).json({ error: "No user ID provided" });
+        const { email } = req.params;
+
+        if (!email) {
+            return res.status(400).json({ error: "No user email provided" });
         }
 
         // Check if user exists
-        if (!(await users.userExist(u_email))) {
+        if (!(await users.userExist(email))) {
             return res.status(400).json({ error: "User does not exist" });
         }
 
         // Get the user's information
-        const [results] = await db.query("SELECT * FROM users WHERE email = ?", [u_email]);
+        const [results] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
 
 
         res.json(results[0]);
@@ -206,24 +207,11 @@ router.get("/:u_email/otp", async (req, res) => {
 router.patch("/:u_email/update", async (req, res) => {
 
     const { u_email } = req.params;
-    const { password, new_email, new_role, new_org, new_group } = req.body;
+    const { users_Changes} = req.body;
 
-    if(new_email!=email){
-        if(await users.userExist(new_email)){
-            return res.status(400).json({ error: "User does already exist" });
-        }
-        //update email
-    }
-    if(new_role){
-        //update name
-    }
-    if(new_org){
-        //update org
-    }
-    if(new_group){
-        //update group
-    }
+    return await users.updateUsers(users_Changes, u_email, res);
 
 });
 
 module.exports = router;
+
