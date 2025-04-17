@@ -69,8 +69,9 @@ const verifyCreds = async (u_email) => {
 
 //users: user : {u_email: "REQ", u_role: "", U_email: "", u_org: "", u_group: ""}
 const updateUsers = async (users, credentials, res) => {
-    
-    console.log("Update users:", );
+    console.log(typeof users);
+    console.log("users:", users);
+    console.log("Update users:");
 
     if (!(await verifyCreds(credentials))) {
         console.log("Credentials failed verification");
@@ -80,20 +81,38 @@ const updateUsers = async (users, credentials, res) => {
     }
 
     const users_log = { in: [], out: [] };
+    
+    user_list = Object.keys(users);
+    const length = user_list.length;
 
-    for (const user of Users.users) {
+    for (let i = 0; i < length; i++) {
+        const user = user_list[i];
+        if (!user) {
+            users_log.out.push({
+                Update: {
+                    status: "Failed",
+                    message: "User object is empty",
+                },
+            });
+            continue;
+        }
+
+
+        // Check for required fields
         const { n_role, n_org, n_grp, n_email, c_email, n_pwd } = user;
 
         if (!n_role && !n_org && !n_grp && !n_email && !n_pwd) {
             users_log.out.push({
                 Update: {
-                    c_email: c_email,
+                    "user": user,
                     status: "Failed",
                     message: "No fields to update",
                 },
             });
             continue;
         }
+
+        console.log("User:", user);
 
         users_log.in.push({
             User: { n_role, n_org, n_grp, n_email, n_pwd, c_email },
@@ -128,7 +147,7 @@ const updateUsers = async (users, credentials, res) => {
 
             if (n_org) {
                 await db.query("UPDATE users SET org_id = ? WHERE email = ?", [
-                    n_org,
+                    n_org+1000000,
                     c_email,
                 ]);
                 users_log.out.push({
@@ -149,7 +168,7 @@ const updateUsers = async (users, credentials, res) => {
                 users_log.out.push({
                     Update: {
                         c_email: c_email,
-                        n_grp: n_grp,
+                        n_grp: n_grp+3000000,
                         status: "Success",
                         message: "Group updated",
                     },
