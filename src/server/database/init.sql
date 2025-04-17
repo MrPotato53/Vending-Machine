@@ -10,7 +10,7 @@ ALTER TABLE orgs AUTO_INCREMENT = 1000001;
 
 CREATE TABLE IF NOT EXISTS users (
     u_id INT AUTO_INCREMENT PRIMARY KEY,
-    u_name CHAR(20) NOT NULL UNIQUE,
+    u_name CHAR(20) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE, -- Increased length for email
     u_role CHAR(12) DEFAULT 'maintainer', 
     org_id INT NOT NULL DEFAULT 1000001, 
