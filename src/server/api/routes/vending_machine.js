@@ -30,41 +30,67 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// Create a new vending machine
+// Create a new vending machine VENDOR ONLY
 router.post("/", async (req, res) => {
     try {
-        const { vm_id, vm_name, vm_row_count, vm_column_count, vm_mode, org_id, group_id } = req.body;
+
+        const { vm_id, vm_name, org_id } = req.body;
         if(await VM.vendingMachineExistsBool(vm_id, res)){
             res.status(400).json({ error: "Vending machine already exists" });
             return;
         } 
          
-        if (!vm_id || !vm_name || !vm_row_count || !vm_column_count || !org_id){
+
+        if (!vm_id || !org_id) {
             res.status(400).json({ error: "Missing required fields" });
             return;
         }
+        // TODO user posrt org_id, grp_id, and name
         
-        group_id = group_id || 3000001;
-
+      
         await db.query(
             `INSERT INTO vending_machines 
-            (vm_id, vm_name, vm_row_count, vm_column_count, vm_mode, org_id, group_id) 
-            VALUES (?, ?, ?, ?, ?)`, 
-            [vm_id, vm_name, vm_row_count, vm_column_count, vm_mode, org_id, group_id]
+            (vm_id, vm_name, org_id) 
+            VALUES (?, ?, ?)`, 
+            [vm_id, vm_name, org_id]
         );
+
         res.status(200).json({
             vm_id,
             vm_name,
-            vm_row_count,
-            vm_column_count,
-            vm_mode,
-            org_id,
-            group_id
+            org_id 
         });
 
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+
+//hardware ONLY
+route.patch("/:id/register", async (req, res) => {
+
+    const [ vm_id ] = req.params.id;
+
+    const [ vm_column_count, vm_row_count ] = req.body;
+
+    if(!await VM.vendingMachineExists(vendingMachineId, res)) return;
+     
+    try{ 
+
+        await db.query(
+            `UPDATE vending_machines 
+            SET vm_column_count = ?, vm_row_count = ? 
+            WHERE vm_id = ?`,
+            [vm_column_count, vm_row_count, vm_id]
+        );
+        res.status(200).json({ message: "success" });
+
+
+    }catch(err){
+        res.status(500).json({ error: err.message });
+    }
+
 });
 
 // Change mode of vending machine by ID
