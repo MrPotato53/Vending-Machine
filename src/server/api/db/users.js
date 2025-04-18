@@ -1,9 +1,8 @@
 const db = require("./db_connection");
 const login = require("../email/login");
 const argon = require("argon2");
-const { use } = require("../routes/users");
-const { get } = require("http");
-const { Certificate } = require("crypto");
+//for furture https 
+//const { Certificate } = require("crypto");
 
 const userExist = async (u_email, res) => {
     try {
@@ -60,7 +59,6 @@ const verifyCreds = async (u_email) => {
         return false;
     }
     const user = results[0];
-    console.log("User:", user);
     if (user.u_role !== "admin") {
         return false;
     }
@@ -69,9 +67,8 @@ const verifyCreds = async (u_email) => {
 
 //users: user : {u_email: "REQ", u_role: "", U_email: "", u_org: "", u_group: ""}
 const updateUsers = async (users, credentials, res) => {
-    console.log(typeof users);
     console.log("users:", users);
-    console.log("Update users:");
+    console.log("Updated users:");
 
     if (!(await verifyCreds(credentials))) {
         console.log("Credentials failed verification");
@@ -82,12 +79,16 @@ const updateUsers = async (users, credentials, res) => {
 
     const users_log = { in: [], out: [] };
     
-    user_list = Object.keys(users);
-    const length = user_list.length;
+    const length = Object.keys(users).length;
+    
 
     for (let i = 0; i < length; i++) {
-        const user = user_list[i];
-        if (!user) {
+        const c_email = Object.keys(users)[i];
+        //console.log("User:", c_email);
+        const userData = users[c_email];
+        //console.log("User data:", userData);
+          
+        if (!c_email) {
             users_log.out.push({
                 Update: {
                     status: "Failed",
@@ -99,7 +100,7 @@ const updateUsers = async (users, credentials, res) => {
 
 
         // Check for required fields
-        const { n_role, n_org, n_grp, n_email, c_email, n_pwd } = user;
+        const { n_role, n_org, n_grp, n_email, n_pwd } = userData
 
         if (!n_role && !n_org && !n_grp && !n_email && !n_pwd) {
             users_log.out.push({
@@ -112,7 +113,6 @@ const updateUsers = async (users, credentials, res) => {
             continue;
         }
 
-        console.log("User:", user);
 
         users_log.in.push({
             User: { n_role, n_org, n_grp, n_email, n_pwd, c_email },
@@ -128,7 +128,7 @@ const updateUsers = async (users, credentials, res) => {
             });
             continue;
         }
-
+        //org connection
         try {
             if (n_role) {
                 await db.query("UPDATE users SET u_role = ? WHERE email = ?", [
@@ -146,8 +146,9 @@ const updateUsers = async (users, credentials, res) => {
             }
 
             if (n_org) {
+                n_org += 10000000;
                 await db.query("UPDATE users SET org_id = ? WHERE email = ?", [
-                    n_org+1000000,
+                    n_org,
                     c_email,
                 ]);
                 users_log.out.push({
