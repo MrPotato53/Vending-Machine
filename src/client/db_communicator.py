@@ -89,6 +89,26 @@ class VMs:
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
+
+    # Register hardware side vending machine
+    @staticmethod
+    def register_machine(hardware_id:str, row:int, column: int) -> dict:
+        new_info = {
+            'vm_row_count':row,
+            'vm_column_count': column,
+        }
+
+        api_route = string_builder(BACKEND_HOST, MACHINES_ROUTE, hardware_id, "register")
+        try:
+            response = requests.patch(api_route, json=new_info, headers=REQUEST_HEADERS, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
+
+
     #Remove a specific machine based on it's UNIQUEID on the VM table
     @staticmethod
     def delete_machine(hardware_id:str) -> dict:

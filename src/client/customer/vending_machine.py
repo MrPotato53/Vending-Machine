@@ -60,7 +60,7 @@ class VendingMachine:
 
         # Check if vending machine exists in database, if not create it
         try:
-            VendingMachines.create_vending_machine(self.__hardware_id, rows, columns, name)
+            VendingMachines.register_vending_machine(self.__hardware_id, rows, columns, name)
         except err.QueryFailureError as e:
             # If error code is 400, vending machine exists so we ignore the error.
             if e.status_code != BAD_REQUEST:
