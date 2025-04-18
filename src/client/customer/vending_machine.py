@@ -59,12 +59,15 @@ class VendingMachine:
         self.inv_man = InventoryManager(rows, columns, hardware_id)
 
         # Check if vending machine exists in database, if not create it
-        try:
-            VendingMachines.register_vending_machine(self.__hardware_id, rows, columns)
-        except err.QueryFailureError as e:
-            # If error code is 400, vending machine exists so we ignore the error.
-            if e.status_code != BAD_REQUEST:
-                raise
+        vm_db = VendingMachines.get_vending_machine(self.__hardware_id)
+
+        if(vm_db["vm_row_count"] is None or vm_db["vm_column_count"] is None):
+            try:
+                VendingMachines.register_vending_machine(self.__hardware_id, rows, columns)
+            except err.QueryFailureError as e:
+                # If error code is 400, vending machine exists so we ignore the error.
+                if e.status_code != BAD_REQUEST:
+                    raise
 
         # Load data from database
         self.inv_man.sync_from_database()
