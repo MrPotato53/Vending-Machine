@@ -83,7 +83,7 @@ router.post("/", async (req, res) => {
 
 
 //hardware ONLY
-route.patch("/:id/register", async (req, res) => {
+router.patch("/:id/register", async (req, res) => {
 
     const [ vm_id ] = req.params.id;
 

@@ -42,3 +42,19 @@ route.post("/orgs", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+route.get("/orgs/:id/display", async (req, res) => {
+   const[users, vms, groups, credentials] = req.body
+
+   let jsonArray = [
+    { "users": await orgData.org_users(id, credentials) },
+    { "groups": await orgData.org_groups(id, credentials) },
+    { "vms": await orgData.orgvms(id, credentials) }
+];
+
+   if(users==1){
+    orgData.org_users(id, credentials);
+   }
+
+  
+});
