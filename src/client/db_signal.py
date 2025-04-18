@@ -46,10 +46,9 @@ class VendingMachines:
 
     @staticmethod
     @ping_endpoint_till_connect()
-    def create_vending_machine(
-        hardware_id:str, row_count:int, column_count:int, name:str | None = None, mode:str = "i",
-        ) -> (dict | None):
-        return db_communicator.VMs.post_machine(hardware_id,name, row_count, column_count, mode)
+    def register_vending_machine(
+        hardware_id:str, row_count:int, column_count:int) -> (dict | None):
+        return db_communicator.VMs.register_machine(hardware_id, row_count, column_count)
 
     @staticmethod
     @ping_endpoint_till_connect()
