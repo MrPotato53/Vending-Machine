@@ -207,9 +207,8 @@ router.get("/:u_email/otp", async (req, res) => {
 router.patch("/:u_email/update", async (req, res) => {
 
     const { u_email } = req.params;
-    const { users_Changes} = req.body;
-
-    return await users.updateUsers(users_Changes, u_email, res);
+    const { users_changes} = req.body;
+    return await users.updateUsers(users_changes, u_email, res);
 
 });
 
