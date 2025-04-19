@@ -1,41 +1,36 @@
 const express = require("express");
-const db = require("./db_connection");
-const orgData = requres("../db/orgs")
+const db = require("../db/db_connection");
+const orgData = require("../db/orgs");
+const users = require("../db/users");
 const router = express.Router({ mergeParams: true }); // params from parents
-const login = require("../email/login");
 
-route.get("orgs/:id", async(req, res) => {
+router.get("/:id", async(req, res) => {
 
     const { id } = req.params;
 
-   return orgData.get_org(id);
+   return orgData.get_org(id, res);
 
 
-})
+});
 
-route.post("/orgs", async (req, res) => {
+router.post("/", async (req, res) => {
     try { 
-        const { org_id, org_name, stripe_id } = req.body;
+        const { org_name } = req.body;
 
-        if (!org_id || !org_name || !stripe_id) {
+        if ( !org_name ) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
-        // Check if the organization already exists
-       if(await orgData.org_exist(org_id)){
-            return res.status(400).json({ error: "Organization already exists" });
-        }
+      
 
         // Insert the new organization into the database
         await db.query(
-            `INSERT INTO orgs (org_id, org_name, stripe_id) VALUES (?, ?, ?)`,
-            [org_id, org_name, stripe_id]
+            `INSERT INTO orgs ( org_name) VALUES ( ?)`,
+            [org_name]
         );
 
         res.status(200).json({
-            org_id,
             org_name,
-            org_type,
         });
     } catch (err) {
         console.error("Error creating organization:", err);
@@ -43,20 +38,29 @@ route.post("/orgs", async (req, res) => {
     }
 });
 
-router.get("/orgs/:id/display", async (req, res) => {
+router.get("/:id/display", async (req, res) => {
    
     const { id } = req.params;
     
-    const[ credentials ] = req.body
+    const{ password, u_email } = req.body;
 
-   let jsonArray = [
-    { "users": await orgData.org_users(id, credentials) },
-    { "groups": await orgData.org_groups(id, credentials) },
-    { "vms": await orgData.orgvms(id, credentials) }
-    ];
+    if(!await orgData.org_exist(id)) return res.status(404).json({ error: "No org found with id:", id});
 
-    res.json(jsonArray);
+    if(!await users.userVerify(password, u_email, res)) return; 
+    
+    const orgUsers = await orgData.org_users(id);
+    const orgVMs = await orgData.org_vm(id);
 
+    const orgGroups = await orgData.org_groups(id);
 
+    const orgDisplay = {
+        users: orgUsers,
+        groups: orgGroups,
+        vms: orgVMs
+    };
+    res.json(orgDisplay);
+   
   
 });
+
+module.exports = router;

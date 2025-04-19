@@ -4,6 +4,30 @@ const argon = require("argon2");
 //for furture https 
 //const { Certificate } = require("crypto");
 
+const parseEmail = async (email) => {
+    // Regular expression to validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Check if the email is valid
+    if (!emailRegex.test(email)) {
+        return { error: "Invalid email format" };
+    }
+
+    // Split the email into handle and domain
+    const [handle, domain] = email.split("@");
+
+    // Capitalize the handle (first letter uppercase, rest lowercase)
+    const name = handle.charAt(0).toUpperCase() + handle.slice(1).toLowerCase();
+
+    // Return the parsed name and domain
+    return {
+        name,
+        destination: domain
+    };
+}
+
+
+
 const userExist = async (u_email, res) => {
     try {
         const [results] = await db.query("SELECT * FROM users WHERE email = ?", [u_email]);
@@ -27,6 +51,7 @@ const userOTP = async (target, res) => {
 };
 
 const userVerify = async (password, u_email, res) => {
+    console.log("Verifying user:", u_email);
     const [results] = await db.query(
         "SELECT hash_p FROM users WHERE email = ?",
         [u_email]
@@ -120,6 +145,7 @@ const updateUsers = async (users, credentials, res) => {
 
         if (!(await userExist(c_email))) {
             users_log.out.push({
+                
                 Update: {
                     c_email: c_email,
                     status: "Failed",
@@ -146,7 +172,6 @@ const updateUsers = async (users, credentials, res) => {
             }
 
             if (n_org) {
-                n_org += 10000000;
                 await db.query("UPDATE users SET org_id = ? WHERE email = ?", [
                     n_org,
                     c_email,
@@ -169,7 +194,7 @@ const updateUsers = async (users, credentials, res) => {
                 users_log.out.push({
                     Update: {
                         c_email: c_email,
-                        n_grp: n_grp+3000000,
+                        n_grp: n_grp,
                         status: "Success",
                         message: "Group updated",
                     },
@@ -199,10 +224,22 @@ const updateUsers = async (users, credentials, res) => {
             }
 
             if (n_email) {
+                if (!userExist(n_email)) {
+                    users_log.out.push({
+                        Update: {
+                            c_email: c_email,
+                            status: "Failed",
+                            message: "New email already exists",
+                        },
+                    });
+                    continue;
+                }
+                
                 await db.query("UPDATE users SET email = ? WHERE email = ?", [
                     n_email,
                     c_email,
                 ]);
+                
                 users_log.out.push({
                     Update: {
                         c_email: c_email,
@@ -232,5 +269,5 @@ const updateUsers = async (users, credentials, res) => {
     return users_log;
 };
 
-module.exports = { userExist, userOTP, userVerify, updateUsers };
+module.exports = { userExist, userOTP, userVerify, updateUsers, parseEmail };
 

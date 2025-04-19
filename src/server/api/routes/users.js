@@ -23,6 +23,7 @@ router.post("/new", async (req, res) => {
     try {
         const { u_name, email, u_role, org_id,group_id, password } = req.body;
 
+        
        
         if (!u_name) {
             return res.status(400).json({ error: "No username provided" });
