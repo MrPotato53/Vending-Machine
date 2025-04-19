@@ -52,6 +52,7 @@ export const api = {
       body: { u_email }
     }),
 
+
   // —— Users (/users) ——
   createUser: (userData) =>
     apiFetch(`/users/new`, {
@@ -92,6 +93,7 @@ export const api = {
       body: { group_id, admin_email },
     }),
 
+
   // —— Vending Machines (/vending-machines) ——
   getAllVendingMachines: () =>
     apiFetch(`/vending-machines`),
@@ -128,6 +130,22 @@ export const api = {
       method: 'DELETE'
     }),
 
+
+  // —— VM ↔ Groups (/vending-machines/:id/groups) ——
+  getVmGroups: (vmId) =>
+    apiFetch(`/vending-machines/${vmId}/groups`),
+
+  addVmToGroup: (vmId, groupId) =>
+    apiFetch(`/vending-machines/${vmId}/groups/${groupId}`, {
+      method: 'POST'
+    }),
+
+  removeVmFromGroup: (vmId, groupId) =>
+    apiFetch(`/vending-machines/${vmId}/groups/${groupId}`, {
+      method: 'DELETE'
+    }),
+
+
   // —— Inventory Items (/vending-machines/:id/inventory) ——
   getInventory: (vmId) =>
     apiFetch(`/vending-machines/${vmId}/inventory`),
@@ -155,9 +173,11 @@ export const api = {
       body: rows
     }),
 
+
   // —— Items (/items) ——
   getAllItems: () =>
     apiFetch(`/items`),
+
 
   // —— Stripe Payments (/stripes/pay) ——
   makePayment: (amount) =>
