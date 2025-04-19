@@ -9,6 +9,7 @@ services:
     volumes:
       - vendingmachinedat:/var/lib/mysql   # Persistent database storage
       - ./database/:/docker-entrypoint-initdb.d/  # Run init script on startup
+      - /app/node_modules
     ports:
       - "3333:3306"
     healthcheck:

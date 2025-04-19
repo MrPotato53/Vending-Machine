@@ -1,6 +1,7 @@
 const db = require("./db_connection");
-const login = require("../email/login");
-const argon = require("argon2");
+const email = require("./emails");  
+
+const argon = require("argon2");``
 //for furture https 
 //const { Certificate } = require("crypto");
 
@@ -39,11 +40,9 @@ const userExist = async (u_email, res) => {
 
 const userOTP = async (target, res) => {
     try {
-        if (!userExist(target)) {
-            return res.status(400).json({ error: "User does not exist" });
-        }
+       
         //sent otp to the user
-        otp = await login.email(target);
+        otp = await email.OTP(target);
         return otp;
     } catch (err) {
         res.status(500).json({ error: err.message });

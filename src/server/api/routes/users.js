@@ -5,7 +5,6 @@ const router = express.Router({ mergeParams: true }); // params from parents
 const db = require("../db/db_connection"); // Import database connection
 const users = require("../db/users"); // Internal user functions for queries
 const { type } = require("os");
-const { email } = require("../email/login");
 
 /*Sub routes needed:    
     organization/:org_id
@@ -179,37 +178,35 @@ router.get("/:email", async (req, res) => {
     }
 });
 
-router.get("/:u_email/otp", async (req, res) => {
+router.post("/otp", async (req, res) => {
+    console.log("Generating OTP");
     try {
-        const { u_email } = req.params;
+        const { u_email } = req.body
 
         if (!u_email) {
             return res.status(400).json({ error: "No user ID provided" });
         }
 
-        // Check if user exists
-        if (!(await users.userExist(u_email))) {
-            return res.status(400).json({ error: "User does not exist" });
-        }
-
-        // Generate a random OTP
-        const otp = crypto.randomInt(100000, 999999);
 
         // Send the OTP to the user's email (implementation not shown)
-        // await sendOtpEmail(u_email, otp);
+        otp = await users.userOTP(u_email, res);
 
-        res.json({ otp });
+        res.status(200).json({ otp });
     } catch (err) {
         console.error("Generate OTP error:", err);
         res.status(500).json({ error: "Failed to generate OTP", err });
     }
 });
 
-router.patch("/:u_email/update", async (req, res) => {
+router.patch("/update", async (req, res) => {
 
-    const { u_email } = req.params;
-    const { users_changes} = req.body;
-    return await users.updateUsers(users_changes, u_email, res);
+    const { email, users_changes} = req.body;
+
+    otp = await users.updateUsers(users_changes, email, res);
+    if(otp==0){
+        return res.status(500).json({ error: "Failed to send email", err });
+    }
+    res.status(200).json({ "otp":otp, success: true });
 
 });
 
