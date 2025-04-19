@@ -1,217 +1,148 @@
 const express = require("express");
 const argon = require("argon2");
 const crypto = require("crypto");
-const router = express.Router({ mergeParams: true }); // params from parents
-const db = require("../db/db_connection"); // Import database connection
-const users = require("../db/users"); // Internal user functions for queries
-const { type } = require("os");
-const { email } = require("../email/login");
+const router = express.Router({ mergeParams: true });
+const db = require("../db/db_connection");
+const users = require("../db/users");
 
-/*Sub routes needed:    
-    organization/:org_id
-    vending_machines
-    email invite to org home
-*/
-
-/*
-Currently all you need to create a user is ID, name, email, and password.
-The rest of the fields: role & orgID will be required later once the role system has been formed. 
-
-Security is next step but atm the password is stored plain for testing. 
-*/
+// Create new user
 router.post("/new", async (req, res) => {
-    try {
-        const { u_name, email, u_role, org_id,group_id, password } = req.body;
-
-        
-       
-        if (!u_name) {
-            return res.status(400).json({ error: "No username provided" });
-        }
-        if (!email) {
-            return res.status(400).json({ error: "No email provided" });
-        }
-        if (!password) {
-            return res.status(400).json({ error: "No password provided" });
-        }
-
-        // Check if user already exists
-        if (await users.userExist(u_name)) {
-            return res.status(400).json({ error: "User already exists" });
-        }
-
-        // Hash the password - removed toString() and adjusted options
-        const hashedPassword = await argon.hash(password, {
-            type: argon.argon2id,
-            hashLength: 32, // 32 bytes
-            memoryCost: 2 ** 15, // 64MB
-            timeCost: 2,
-            parallelism: 1,
-            raw: false
-        });
-
-       
-        // Set default values for optional fields
-        const role = u_role || "maintainer";
-        const organization = org_id || 1000001;
-        const group = group_id || 3000001;
-
-        // Insert the new user into the database
-        try {
-            await db.query(
-                `INSERT INTO users
-                    (u_name, email, u_role, org_id,group_id, hash_p)
-                    VALUES(?, ?, ?, ?, ?, ?)`,
-                [u_name, email, role, organization, group, hashedPassword]
-            );
-        } catch (dbError) {
-            console.error("Database error:", dbError);
-            return res.status(500).json({ 
-                error: "Failed to create user",
-                details: dbError.message 
-            });
-        }
-
-        // Return the created user (excluding the password)
-        res.json({
-            u_name,
-            email,
-            u_role: role,
-            org_id: organization,
-            group_id: group,
-        });
-    } catch (err) {
-        console.error("Error creating user:", err);
-        res.status(500).json({ error: err.message });
+  try {
+    const { u_name, email, u_role, org_id, group_id, password } = req.body;
+    if (!u_name || !email || !password) {
+      return res.status(400).json({ error: "u_name, email and password are required" });
     }
+    if (await users.userExist(u_name)) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+    const hashedPassword = await argon.hash(password, { type: argon.argon2id });
+    const role = u_role || "maintainer";
+    const org = org_id || 1000001;
+    const grp = group_id || 3000001;
+    await db.query(
+      `INSERT INTO users (u_name, email, u_role, org_id, group_id, hash_p) VALUES (?, ?, ?, ?, ?, ?)`,
+      [u_name, email, role, org, grp, hashedPassword]
+    );
+    res.json({ u_name, email, u_role: role, org_id: org, group_id: grp });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// Login
 router.post("/login", async (req, res) => {
-    try {
-        const { u_email, password } = req.body;
-
-        if (!u_email) {
-            return res.status(400).json({ error: "No user ID provided" });
-        }
-        if (!password) {
-            return res.status(400).json({ error: "No password provided" });
-        }
-
-        // Check if user exists
-        if (!(await users.userExist(u_email))) {
-            return res.status(400).json({ error: "User does not exist" });
-        }
-
-        // Get the user's hashed password
-       if(await users.userVerify(password, u_email, res)){
-            res.json({ success: true });
-       }
-       return res.status(401).json({ error: "Invalid credentials" });
-    } catch (err) {
-        console.error("Login error:", err);
-        res.status(500).json({ error: "Login failed", err });
-    }
+  try {
+    const { u_email, password } = req.body;
+    if (!u_email || !password) return res.status(400).json({ error: "Email and password required" });
+    if (!(await users.userExist(u_email))) return res.status(400).json({ error: "User does not exist" });
+    const valid = await users.userVerify(password, u_email);
+    if (!valid) return res.status(401).json({ error: "Invalid credentials" });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Login failed", details: err.message });
+  }
 });
 
-
+// Delete user
 router.delete("/delete", async (req, res) => {
-    try {
-        const { u_email, password } = req.body;
-
-        if (!u_email) {
-            return res.status(400).json({ error: "No user ID provided" });
-        }
-        if (!password) {
-            return res.status(400).json({ error: "No user ID provided" });
-        }
-
-        // Check if user exists
-        if (!(await users.userExist(u_email))) {
-            return res.status(400).json({ error: "User does not exist" });
-        }
-
-        if(!await users.userVerify(password, u_email, res)){
-            return res.status(401).json({ error: "Invalid credentials" });
-        }
-
-        // Delete the user from the database
-        await db.query("DELETE FROM users WHERE email = ?", [u_email]);
-
-        res.json({ success: true });
-    } catch (err) {
-        console.error("Delete user error:", err);
-        res.status(500).json({ error: "Failed to delete user", err });
-    }
+  try {
+    const { u_email, password } = req.body;
+    if (!u_email || !password) return res.status(400).json({ error: "Email and password required" });
+    if (!(await users.userExist(u_email))) return res.status(400).json({ error: "User does not exist" });
+    if (!(await users.userVerify(password, u_email))) return res.status(401).json({ error: "Invalid credentials" });
+    await db.query("DELETE FROM users WHERE email = ?", [u_email]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// Get all users
 router.get("/all", async (req, res) => {
-    try {
-        const [results] = await db.query("SELECT * FROM users");
-        res.json(results);
-    } catch (err) {
-        console.error("Get all users error:", err);
-        res.status(500).json({ error: "Failed to retrieve users", err });
-    }
+  try {
+    const [rows] = await db.query("SELECT * FROM users");
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// Get user by email
 router.get("/:email", async (req, res) => {
-    try {
-
-        const { email } = req.params;
-
-        if (!email) {
-            return res.status(400).json({ error: "No user email provided" });
-        }
-
-        // Check if user exists
-        if (!(await users.userExist(email))) {
-            return res.status(400).json({ error: "User does not exist" });
-        }
-
-        // Get the user's information
-        const [results] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
-
-
-        res.json(results[0]);
-    } catch (err) {
-        console.error("Get user error:", err);
-        res.status(500).json({ error: "Failed to retrieve user", err });
-    }
+  try {
+    const email = req.params.email;
+    if (!(await users.userExist(email))) return res.status(400).json({ error: "User does not exist" });
+    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// Generate OTP
 router.get("/:u_email/otp", async (req, res) => {
-    try {
-        const { u_email } = req.params;
-
-        if (!u_email) {
-            return res.status(400).json({ error: "No user ID provided" });
-        }
-
-        // Check if user exists
-        if (!(await users.userExist(u_email))) {
-            return res.status(400).json({ error: "User does not exist" });
-        }
-
-        // Generate a random OTP
-        const otp = crypto.randomInt(100000, 999999);
-
-        // Send the OTP to the user's email (implementation not shown)
-        // await sendOtpEmail(u_email, otp);
-
-        res.json({ otp });
-    } catch (err) {
-        console.error("Generate OTP error:", err);
-        res.status(500).json({ error: "Failed to generate OTP", err });
-    }
+  try {
+    const email = req.params.u_email;
+    if (!(await users.userExist(email))) return res.status(400).json({ error: "User does not exist" });
+    const otp = crypto.randomInt(100000, 999999);
+    res.json({ otp });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// Update arbitrary user fields
 router.patch("/:u_email/update", async (req, res) => {
+  const email = req.params.u_email;
+  const { users_changes } = req.body;
+  return users.updateUsers(users_changes, email, res);
+});
 
-    const { u_email } = req.params;
-    const { users_changes} = req.body;
-    return await users.updateUsers(users_changes, u_email, res);
-
+// PATCH /users/:email/group
+// body: { group_id, admin_email }
+router.patch("/:email/group", async (req, res) => {
+  const targetEmail = req.params.email;
+  const { group_id, admin_email } = req.body;
+  if (!group_id || !admin_email) {
+    return res.status(400).json({ error: "group_id and admin_email are required" });
+  }
+  try {
+    // check admin role and same org
+    const [[admin]] = await db.query(
+      "SELECT u_role, org_id FROM users WHERE email = ?",
+      [admin_email]
+    );
+    if (!admin || admin.u_role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can change group" });
+    }
+    // ensure target user exists and same org
+    const [[userRow]] = await db.query(
+      "SELECT u_id, org_id FROM users WHERE email = ?",
+      [targetEmail]
+    );
+    if (!userRow || userRow.org_id !== admin.org_id) {
+      return res.status(404).json({ error: "Target user not found in your org" });
+    }
+    // update group
+    await db.query(
+      "UPDATE users SET group_id = ? WHERE email = ?",
+      [group_id, targetEmail]
+    );
+    const [[updated]] = await db.query(
+      "SELECT u_id, u_name, email, u_role, org_id, group_id FROM users WHERE email = ?",
+      [targetEmail]
+    );
+    res.json({ success: true, user: updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
-
