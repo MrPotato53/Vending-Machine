@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Dimensions } from 'react-native';
 import { Layout, Input, Button, Text } from '@ui-kitten/components';
-import { api } from './apiCommunicator';
+import api from './apiCommunicator';
 
 const { width } = Dimensions.get('window');
 const quarterWidth = width * 0.25;

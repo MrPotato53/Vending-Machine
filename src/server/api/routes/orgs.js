@@ -11,7 +11,9 @@ router.get("/by-name/:org_name", async (req, res) => {
       "SELECT org_id FROM orgs WHERE org_name = ?",
       [org_name]
     );
-    if (!rows.length) return res.status(404).json({ error: "Organization not found" });
+    if (!rows.length) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
     res.json({ org_id: rows[0].org_id });
   } catch (err) {
     console.error(err);
@@ -21,9 +23,31 @@ router.get("/by-name/:org_name", async (req, res) => {
 
 // GET /orgs/:id
 router.get("/:id", async (req, res) => {
-  const org = await orgData.get_org(req.params.id);
-  if (!org) return res.status(404).json({ error: "Organization not found" });
-  res.json(org);
+  try {
+    // orgData.get_org sends the JSON or 404 directly
+    await orgData.get_org(req.params.id, res);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /orgs/:id/name
+router.get("/:id/name", async (req, res) => {
+  const orgId = req.params.id;
+  try {
+    const [rows] = await db.query(
+      "SELECT org_name FROM orgs WHERE org_id = ?",
+      [orgId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+    res.json({ org_name: rows[0].org_name });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /orgs
@@ -45,6 +69,7 @@ router.post("/", async (req, res) => {
       [newOrgId, u_email]
     );
     if (!upd.affectedRows) {
+      // rollback if user not found
       await db.query("DELETE FROM orgs WHERE org_id = ?", [newOrgId]);
       return res.status(404).json({ error: `User not found: ${u_email}` });
     }
@@ -68,7 +93,7 @@ router.post("/:id/groups", async (req, res) => {
   if (!group_name || !u_email) {
     return res.status(400).json({ error: "group_name and u_email are required" });
   }
-  if (!await orgData.org_exist(orgId)) {
+  if (!(await orgData.org_exist(orgId))) {
     return res.status(404).json({ error: `No org found with id ${orgId}` });
   }
 
@@ -77,7 +102,7 @@ router.post("/:id/groups", async (req, res) => {
       "SELECT u_role FROM users WHERE email = ? AND org_id = ?",
       [u_email, orgId]
     );
-    if (!users.length || users[0].u_role !== 'admin') {
+    if (!users.length || users[0].u_role !== "admin") {
       return res.status(403).json({ error: "Only admins can create groups" });
     }
 
@@ -86,10 +111,10 @@ router.post("/:id/groups", async (req, res) => {
       [group_name, orgId]
     );
     const newGroupId = insert.insertId;
-    res.status(201).json({ group_id: newGroupId, group_name, org_id: parseInt(orgId) });
+    res.status(201).json({ group_id: newGroupId, group_name, org_id: parseInt(orgId, 10) });
   } catch (err) {
     console.error(err);
-    if (err.code === 'ER_DUP_ENTRY') {
+    if (err.code === "ER_DUP_ENTRY") {
       return res.status(409).json({ error: "Group name already exists" });
     }
     res.status(500).json({ error: err.message });
@@ -104,7 +129,7 @@ router.post("/:id/leave", async (req, res) => {
   if (!u_email) {
     return res.status(400).json({ error: "u_email is required" });
   }
-  if (!await orgData.org_exist(orgId)) {
+  if (!(await orgData.org_exist(orgId))) {
     return res.status(404).json({ error: `No org found with id ${orgId}` });
   }
   try {
@@ -115,7 +140,7 @@ router.post("/:id/leave", async (req, res) => {
     if (!upd.affectedRows) {
       return res.status(404).json({ error: `User not found in org: ${u_email}` });
     }
-    res.json({ success: true, org_id: 1000001, u_role: 'maintainer' });
+    res.json({ success: true, org_id: 1000001, u_role: "maintainer" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -125,18 +150,64 @@ router.post("/:id/leave", async (req, res) => {
 // GET /orgs/:id/display
 router.get("/:id/display", async (req, res) => {
   const id = req.params.id;
-  if (!await orgData.org_exist(id)) {
+  if (!(await orgData.org_exist(id))) {
     return res.status(404).json({ error: `No org found with id ${id}` });
   }
   try {
     const users = await orgData.org_users(id);
-    const vms   = await orgData.org_vm(id);
-    const grps  = await orgData.org_groups(id);
+    const vms = await orgData.org_vm(id);
+    const grps = await orgData.org_groups(id);
     res.json({ users, groups: grps, vms });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
+});
+
+router.post('/:id/add-user', async (req, res) => {
+    const orgId = req.params.id;
+    const { u_email, admin_email } = req.body;
+  
+    if (!u_email || !admin_email) {
+      return res.status(400).json({ error: 'u_email and admin_email required' });
+    }
+  
+    try {
+      // 1) check org exists
+      const [orgRows] = await db.query('SELECT * FROM orgs WHERE org_id = ?', [orgId]);
+      if (orgRows.length === 0) {
+        return res.status(404).json({ error: `Org ${orgId} not found` });
+      }
+  
+      // 2) verify caller is admin of that org
+      const [adminRows] = await db.query(
+        'SELECT u_role, org_id FROM users WHERE email = ?',
+        [admin_email]
+      );
+      if (!adminRows.length || adminRows[0].u_role !== 'admin' || adminRows[0].org_id != orgId) {
+        return res.status(403).json({ error: 'Only admins of this org can invite members' });
+      }
+  
+      // 3) check target user exists
+      const [userRows] = await db.query('SELECT * FROM users WHERE email = ?', [u_email]);
+      if (!userRows.length) {
+        return res.status(404).json({ error: `User not found: ${u_email}` });
+      }
+  
+      // 4) update their org_id
+      await db.query('UPDATE users SET org_id = ? WHERE email = ?', [orgId, u_email]);
+  
+      // 5) return updated user
+      const [updated] = await db.query(
+        'SELECT u_id, u_name, email, u_role, org_id, group_id FROM users WHERE email = ?',
+        [u_email]
+      );
+      res.json({ success: true, user: updated[0] });
+  
+    } catch (err) {
+      console.error('Error inviting user:', err);
+      res.status(500).json({ error: err.message });
+    }
 });
 
 module.exports = router;
