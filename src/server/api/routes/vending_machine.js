@@ -18,6 +18,24 @@ router.get("/", async (req, res) => {
   }
 });
 
+// GET /vending-machines/org/:org_id/group/:group_id
+// Returns all vending machine IDs and names in that org and group.
+router.get("/org/:org_id/group/:group_id", async (req, res) => {
+  const { org_id, group_id } = req.params;
+  try {
+    const [rows] = await db.query(
+      `SELECT vm.vm_id, vm.vm_name
+       FROM vending_machines AS vm
+       JOIN grpjoin           AS gj ON vm.vm_id = gj.vm_id
+       WHERE vm.org_id = ? AND gj.group_id = ?`,
+      [org_id, group_id]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get vending machine by ID
 router.get("/:id", async (req, res) => {
   try {
@@ -130,8 +148,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-
-// —— New Group‐assignment routes ——
+// —— New Group‑assignment routes ——
 // List all groups this VM belongs to
 router.get("/:id/groups", async (req, res) => {
   const vm_id = req.params.id;
@@ -161,7 +178,6 @@ router.post("/:id/groups/:group_id", async (req, res) => {
     );
     res.status(201).json({ vm_id, group_id });
   } catch (err) {
-    // duplicate key or FK violation
     res.status(400).json({ error: err.message });
   }
 });

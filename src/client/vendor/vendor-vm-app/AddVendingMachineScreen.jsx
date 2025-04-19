@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Layout, Input, Button, Text } from '@ui-kitten/components';
-import { api } from './apiCommunicator';
+import api from './apiCommunicator';
 
 export default function AddVendingMachineScreen({ route, navigation }) {
   const { user } = route.params;

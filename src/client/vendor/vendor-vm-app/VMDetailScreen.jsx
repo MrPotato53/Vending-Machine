@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { Layout, Text, Input, Button, List, ListItem } from '@ui-kitten/components';
-import apiCommunicator from './apiCommunicator';
+import api from './apiCommunicator';
 
 export default function VMDetailScreen({ route }) {
   const { vm, user } = route.params;

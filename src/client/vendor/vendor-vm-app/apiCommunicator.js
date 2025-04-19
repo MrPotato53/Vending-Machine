@@ -23,166 +23,119 @@ async function apiFetch(endpoint, { method = 'GET', body } = {}) {
   return ct.includes('application/json') ? res.json() : null;
 }
 
-export const api = {
+const api = {
   // —— Organizations (/orgs) ——
-  getOrganization: (id) =>
-    apiFetch(`/orgs/${id}`),
-
+  getOrganization: (id) => apiFetch(`/orgs/${id}`),
   createOrganization: (org_name, u_email) =>
-    apiFetch(`/orgs`, {
-      method: 'POST',
-      body: { org_name, u_email }
-    }),
-
-  getOrgDisplay: (id) =>
-    apiFetch(`/orgs/${id}/display`),
-
+    apiFetch(`/orgs`, { method: 'POST', body: { org_name, u_email } }),
+  getOrgDisplay: (id) => apiFetch(`/orgs/${id}/display`),
   getOrgByName: (org_name) =>
     apiFetch(`/orgs/by-name/${encodeURIComponent(org_name)}`),
-
   createGroup: (org_id, group_name, u_email) =>
     apiFetch(`/orgs/${org_id}/groups`, {
       method: 'POST',
-      body: { group_name, u_email }
+      body: { group_name, u_email },
     }),
-
   leaveOrganization: (org_id, u_email) =>
     apiFetch(`/orgs/${org_id}/leave`, {
       method: 'POST',
-      body: { u_email }
+      body: { u_email },
     }),
-
+  addUserToOrg: (orgId, u_email, admin_email) =>
+    apiFetch(`/orgs/${orgId}/add-user`, {
+      method: 'POST',
+      body: { u_email, admin_email },
+    }),
 
   // —— Users (/users) ——
   createUser: (userData) =>
-    apiFetch(`/users/new`, {
-      method: 'POST',
-      body: userData
-    }),
-
+    apiFetch(`/users/new`, { method: 'POST', body: userData }),
   loginUser: (credentials) =>
-    apiFetch(`/users/login`, {
-      method: 'POST',
-      body: credentials
-    }),
-
+    apiFetch(`/users/login`, { method: 'POST', body: credentials }),
   deleteUser: (credentials) =>
-    apiFetch(`/users/delete`, {
-      method: 'DELETE',
-      body: credentials
-    }),
-
-  getAllUsers: () =>
-    apiFetch(`/users/all`),
-
-  getUser: (email) =>
-    apiFetch(`/users/${encodeURIComponent(email)}`),
-
+    apiFetch(`/users/delete`, { method: 'DELETE', body: credentials }),
+  getAllUsers: () => apiFetch(`/users/all`),
+  getUser: (email) => apiFetch(`/users/${encodeURIComponent(email)}`),
   getUserOtp: (email) =>
     apiFetch(`/users/${encodeURIComponent(email)}/otp`),
-
   updateUser: (email, users_changes) =>
     apiFetch(`/users/${encodeURIComponent(email)}/update`, {
       method: 'PATCH',
       body: { users_changes },
     }),
-
   assignUserToGroup: (email, group_id, admin_email) =>
     apiFetch(`/users/${encodeURIComponent(email)}/group`, {
       method: 'PATCH',
       body: { group_id, admin_email },
     }),
 
-
   // —— Vending Machines (/vending-machines) ——
-  getAllVendingMachines: () =>
-    apiFetch(`/vending-machines`),
-
-  getVendingMachine: (id) =>
-    apiFetch(`/vending-machines/${id}`),
-
+  getAllVendingMachines: () => apiFetch(`/vending-machines`),
+  getVendingMachine: (id) => apiFetch(`/vending-machines/${id}`),
   createVendingMachine: (data) =>
-    apiFetch(`/vending-machines`, {
-      method: 'POST',
-      body: data
-    }),
-
+    apiFetch(`/vending-machines`, { method: 'POST', body: data }),
   registerVendingMachine: (id, column_row) =>
     apiFetch(`/vending-machines/${id}/register`, {
       method: 'PATCH',
-      body: column_row
+      body: column_row,
     }),
-
   updateVendingMachineMode: (id, vm_mode) =>
     apiFetch(`/vending-machines/${id}/mode`, {
       method: 'PATCH',
-      body: { vm_mode }
+      body: { vm_mode },
     }),
-
   updateVendingMachineName: (id, vm_name) =>
     apiFetch(`/vending-machines/${id}/name`, {
       method: 'PATCH',
-      body: { vm_name }
+      body: { vm_name },
     }),
-
   deleteVendingMachine: (id) =>
-    apiFetch(`/vending-machines/${id}`, {
-      method: 'DELETE'
-    }),
-
+    apiFetch(`/vending-machines/${id}`, { method: 'DELETE' }),
 
   // —— VM ↔ Groups (/vending-machines/:id/groups) ——
-  getVmGroups: (vmId) =>
-    apiFetch(`/vending-machines/${vmId}/groups`),
-
+  getVmGroups: (vmId) => apiFetch(`/vending-machines/${vmId}/groups`),
   addVmToGroup: (vmId, groupId) =>
     apiFetch(`/vending-machines/${vmId}/groups/${groupId}`, {
-      method: 'POST'
+      method: 'POST',
     }),
-
   removeVmFromGroup: (vmId, groupId) =>
     apiFetch(`/vending-machines/${vmId}/groups/${groupId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     }),
 
+  // —— VMs by Org & Group ——
+  // only machines in your group (for your dashboard and adding inventory)
+  getVendingMachinesByGroup: (orgId, groupId) =>
+    apiFetch(`/vending-machines/org/${orgId}/group/${groupId}`),
 
   // —— Inventory Items (/vending-machines/:id/inventory) ——
-  getInventory: (vmId) =>
-    apiFetch(`/vending-machines/${vmId}/inventory`),
-
+  getInventory: (vmId) => apiFetch(`/vending-machines/${vmId}/inventory`),
   addItemToSlot: (vmId, slot_name, itemData) =>
     apiFetch(`/vending-machines/${vmId}/inventory/${slot_name}`, {
       method: 'POST',
-      body: itemData
+      body: itemData,
     }),
-
   updateItemInSlot: (vmId, slot_name, itemData) =>
     apiFetch(`/vending-machines/${vmId}/inventory/${slot_name}`, {
       method: 'PATCH',
-      body: itemData
+      body: itemData,
     }),
-
   deleteItemFromSlot: (vmId, slot_name) =>
     apiFetch(`/vending-machines/${vmId}/inventory/${slot_name}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     }),
-
   batchUpdateInventory: (vmId, rows) =>
     apiFetch(`/vending-machines/${vmId}/inventory`, {
       method: 'POST',
-      body: rows
+      body: rows,
     }),
 
-
   // —— Items (/items) ——
-  getAllItems: () =>
-    apiFetch(`/items`),
-
+  getAllItems: () => apiFetch(`/items`),
 
   // —— Stripe Payments (/stripes/pay) ——
   makePayment: (amount) =>
-    apiFetch(`/stripes/pay`, {
-      method: 'POST',
-      body: { amount }
-    }),
+    apiFetch(`/stripes/pay`, { method: 'POST', body: { amount } }),
 };
+
+export default api;
