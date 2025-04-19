@@ -1,273 +1,143 @@
-const db = require("./db_connection");
-const login = require("../email/login");
-const argon = require("argon2");
-//for furture https 
-//const { Certificate } = require("crypto");
+const db     = require("./db_connection");
+const login  = require("../email/login");
+const argon  = require("argon2");
 
+//— Helpers —//
+
+// Parse an email into a human name + domain
 const parseEmail = async (email) => {
-    // Regular expression to validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // Check if the email is valid
-    if (!emailRegex.test(email)) {
-        return { error: "Invalid email format" };
-    }
-
-    // Split the email into handle and domain
-    const [handle, domain] = email.split("@");
-
-    // Capitalize the handle (first letter uppercase, rest lowercase)
-    const name = handle.charAt(0).toUpperCase() + handle.slice(1).toLowerCase();
-
-    // Return the parsed name and domain
-    return {
-        name,
-        destination: domain
-    };
-}
-
-
-
-const userExist = async (u_email, res) => {
-    try {
-        const [results] = await db.query("SELECT * FROM users WHERE email = ?", [u_email]);
-        return results.length > 0;
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { error: "Invalid email format" };
+  }
+  const [handle, domain] = email.split("@");
+  const name = handle.charAt(0).toUpperCase() + handle.slice(1).toLowerCase();
+  return { name, destination: domain };
 };
 
-const userOTP = async (target, res) => {
-    try {
-        if (!userExist(target)) {
-            return res.status(400).json({ error: "User does not exist" });
-        }
-        //sent otp to the user
-        otp = await login.email(target);
-        return otp;
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+// Check existence
+const userExist = async (email) => {
+  const [rows] = await db.query(
+    "SELECT 1 FROM users WHERE email = ?",
+    [email]
+  );
+  return rows.length > 0;
 };
 
-const userVerify = async (password, u_email, res) => {
-    console.log("Verifying user:", u_email);
-    const [results] = await db.query(
-        "SELECT hash_p FROM users WHERE email = ?",
-        [u_email]
-    );
-
-    if (!results || results.length === 0) {
-        return res.status(404).json({ error: "User not found" });
-    }
-
-    const hashedPassword = results[0].hash_p;
-    console.log("Hashed password:", hashedPassword);
-    // Verify the password with better error handling
-    try {
-        if (!await argon.verify(hashedPassword, password)) {
-            return false;
-        }
-    } catch (verifyError) {
-        console.error("Password verification error:", verifyError);
-        return false;
-    }
-    return true;
+// Send OTP
+const userOTP = async (email, res) => {
+  if (!await userExist(email)) {
+    return res.status(404).json({ error: "User does not exist" });
+  }
+  const otp = await login.email(email);
+  return otp;
 };
 
-const verifyCreds = async (u_email) => {
-    
-        
-    const [results] = await db.query("SELECT * FROM users WHERE email = ?", [u_email]);
-   
-    if (!results || results.length === 0) {
-        return false;
-    }
-    const user = results[0];
-    if (user.u_role !== "admin") {
-        return false;
-    }
-    return true;
+// Verify password
+const userVerify = async (password, email, res) => {
+  const [rows] = await db.query(
+    "SELECT hash_p FROM users WHERE email = ?",
+    [email]
+  );
+  if (!rows.length) {
+    return res.status(404).json({ error: "User not found" });
+  }
+  const hash = rows[0].hash_p;
+  try {
+    return await argon.verify(hash, password);
+  } catch {
+    return false;
+  }
 };
 
-//users: user : {u_email: "REQ", u_role: "", U_email: "", u_org: "", u_group: ""}
-const updateUsers = async (users, credentials, res) => {
-    console.log("users:", users);
-    console.log("Updated users:");
+// Check admin role
+const verifyAdmin = async (email) => {
+  const [rows] = await db.query(
+    "SELECT u_role FROM users WHERE email = ?",
+    [email]
+  );
+  return rows.length && rows[0].u_role === "admin";
+};
 
-    if (!(await verifyCreds(credentials))) {
-        console.log("Credentials failed verification");
-        console.log("Access use:", credentials);
-        console.log("Attempted update:", JSON.stringify(users));
-        return res.status(403).json({ error: "Access denied" });
+//— Bulk update (PATCH /users/:u_email/update) —//
+// `changes` is an object keyed by target‐email, with sub‐fields
+// If `credentials === target`, only `org_id` update is allowed.
+
+const updateUsers = async (changes, credentials, res) => {
+  const isAdmin = await verifyAdmin(credentials);
+  const log = { in: [], out: [] };
+
+  for (const targetEmail of Object.keys(changes)) {
+    const { n_role, n_org, n_grp, n_email, n_pwd } = changes[targetEmail];
+    log.in.push({ targetEmail, changes: { n_role, n_org, n_grp, n_email, n_pwd } });
+
+    // Must exist
+    if (!await userExist(targetEmail)) {
+      log.out.push({ targetEmail, status: "Failed", message: "User not found" });
+      continue;
     }
 
-    const users_log = { in: [], out: [] };
-    
-    const length = Object.keys(users).length;
-    
-
-    for (let i = 0; i < length; i++) {
-        const c_email = Object.keys(users)[i];
-        //console.log("User:", c_email);
-        const userData = users[c_email];
-        //console.log("User data:", userData);
-          
-        if (!c_email) {
-            users_log.out.push({
-                Update: {
-                    status: "Failed",
-                    message: "User object is empty",
-                },
-            });
-            continue;
-        }
-
-
-        // Check for required fields
-        const { n_role, n_org, n_grp, n_email, n_pwd } = userData
-
-        if (!n_role && !n_org && !n_grp && !n_email && !n_pwd) {
-            users_log.out.push({
-                Update: {
-                    "user": user,
-                    status: "Failed",
-                    message: "No fields to update",
-                },
-            });
-            continue;
-        }
-
-
-        users_log.in.push({
-            User: { n_role, n_org, n_grp, n_email, n_pwd, c_email },
-        });
-
-        if (!(await userExist(c_email))) {
-            users_log.out.push({
-                
-                Update: {
-                    c_email: c_email,
-                    status: "Failed",
-                    message: "User does not exist",
-                },
-            });
-            continue;
-        }
-        //org connection
+    // Self‐service path
+    if (!isAdmin && credentials === targetEmail) {
+      if (n_org) {
         try {
-            if (n_role) {
-                await db.query("UPDATE users SET u_role = ? WHERE email = ?", [
-                    n_role,
-                    c_email,
-                ]);
-                users_log.out.push({
-                    Update: {
-                        c_email: c_email,
-                        n_role: n_role,
-                        status: "Success",
-                        message: "Role updated",
-                    },
-                });
-            }
-
-            if (n_org) {
-                await db.query("UPDATE users SET org_id = ? WHERE email = ?", [
-                    n_org,
-                    c_email,
-                ]);
-                users_log.out.push({
-                    Update: {
-                        c_email: c_email,
-                        n_org: n_org,
-                        status: "Success",
-                        message: "Organization updated",
-                    },
-                });
-            }
-
-            if (n_grp) {
-                await db.query(
-                    "UPDATE users SET group_id = ? WHERE email = ?",
-                    [n_grp, c_email]
-                );
-                users_log.out.push({
-                    Update: {
-                        c_email: c_email,
-                        n_grp: n_grp,
-                        status: "Success",
-                        message: "Group updated",
-                    },
-                });
-            }
-
-            if (n_pwd) {
-                const hashedPassword = await argon.hash(n_pwd, {
-                    type: argon.argon2id,
-                    hashLength: 32,
-                    memoryCost: 2 ** 15,
-                    timeCost: 2,
-                    parallelism: 1,
-                });
-
-                await db.query(
-                    "UPDATE users SET hash_p = ? WHERE email = ?",
-                    [hashedPassword, c_email]
-                );
-                users_log.out.push({
-                    Update: {
-                        c_email: c_email,
-                        status: "Success",
-                        message: "Password updated",
-                    },
-                });
-            }
-
-            if (n_email) {
-                if (!userExist(n_email)) {
-                    users_log.out.push({
-                        Update: {
-                            c_email: c_email,
-                            status: "Failed",
-                            message: "New email already exists",
-                        },
-                    });
-                    continue;
-                }
-                
-                await db.query("UPDATE users SET email = ? WHERE email = ?", [
-                    n_email,
-                    c_email,
-                ]);
-                
-                users_log.out.push({
-                    Update: {
-                        c_email: c_email,
-                        n_email: n_email,
-                        status: "Success",
-                        message: "Email updated",
-                    },
-                });
-            }
+          await db.query("UPDATE users SET org_id = ? WHERE email = ?", [n_org, targetEmail]);
+          log.out.push({ targetEmail, status: "Success", message: "Organization updated" });
         } catch (err) {
-            console.error("Error updating user:", err);
-            users_log.out.push({
-                Update: {
-                    c_email: c_email,
-                    status: "Failed",
-                    message: "Error updating user",
-                },
-            });
+          log.out.push({ targetEmail, status: "Failed", message: err.message });
         }
+      } else {
+        log.out.push({ targetEmail, status: "Failed", message: "Not allowed" });
+      }
+      continue;
     }
 
-    res.status(200).json({
-        message: "User updated",
-        log: users_log,
-    });
-    console.log("User updated:", users_log);
-    return users_log;
+    // Otherwise must be admin
+    if (!isAdmin) {
+      log.out.push({ targetEmail, status: "Failed", message: "Access denied" });
+      continue;
+    }
+
+    // Admin updates
+    try {
+      if (n_role) {
+        await db.query("UPDATE users SET u_role = ? WHERE email = ?", [n_role, targetEmail]);
+        log.out.push({ targetEmail, status: "Success", message: "Role updated" });
+      }
+      if (n_org) {
+        await db.query("UPDATE users SET org_id = ? WHERE email = ?", [n_org, targetEmail]);
+        log.out.push({ targetEmail, status: "Success", message: "Organization updated" });
+      }
+      if (n_grp) {
+        await db.query("UPDATE users SET group_id = ? WHERE email = ?", [n_grp, targetEmail]);
+        log.out.push({ targetEmail, status: "Success", message: "Group updated" });
+      }
+      if (n_pwd) {
+        const newHash = await argon.hash(n_pwd, { type: argon.argon2id });
+        await db.query("UPDATE users SET hash_p = ? WHERE email = ?", [newHash, targetEmail]);
+        log.out.push({ targetEmail, status: "Success", message: "Password updated" });
+      }
+      if (n_email) {
+        // ensure new email not taken
+        if (await userExist(n_email)) {
+          log.out.push({ targetEmail, status: "Failed", message: "Email already in use" });
+        } else {
+          await db.query("UPDATE users SET email = ? WHERE email = ?", [n_email, targetEmail]);
+          log.out.push({ targetEmail, status: "Success", message: "Email updated" });
+        }
+      }
+    } catch (err) {
+      log.out.push({ targetEmail, status: "Failed", message: err.message });
+    }
+  }
+
+  res.status(200).json({ message: "Update complete", log });
 };
 
-module.exports = { userExist, userOTP, userVerify, updateUsers, parseEmail };
-
+module.exports = {
+  parseEmail,
+  userExist,
+  userOTP,
+  userVerify,
+  updateUsers
+};
