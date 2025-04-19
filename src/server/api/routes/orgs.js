@@ -1,66 +1,142 @@
 const express = require("express");
 const db = require("../db/db_connection");
 const orgData = require("../db/orgs");
-const users = require("../db/users");
-const router = express.Router({ mergeParams: true }); // params from parents
+const router = express.Router();
 
-router.get("/:id", async(req, res) => {
-
-    const { id } = req.params;
-
-   return orgData.get_org(id, res);
-
-
+// GET /orgs/by-name/:org_name
+router.get("/by-name/:org_name", async (req, res) => {
+  try {
+    const { org_name } = req.params;
+    const [rows] = await db.query(
+      "SELECT org_id FROM orgs WHERE org_name = ?",
+      [org_name]
+    );
+    if (!rows.length) return res.status(404).json({ error: "Organization not found" });
+    res.json({ org_id: rows[0].org_id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// GET /orgs/:id
+router.get("/:id", async (req, res) => {
+  const org = await orgData.get_org(req.params.id);
+  if (!org) return res.status(404).json({ error: "Organization not found" });
+  res.json(org);
+});
+
+// POST /orgs
+// body: { org_name, u_email }
 router.post("/", async (req, res) => {
-    try { 
-        const { org_name } = req.body;
+  const { org_name, u_email } = req.body;
+  if (!org_name || !u_email) {
+    return res.status(400).json({ error: "org_name and u_email are required" });
+  }
+  try {
+    const [insert] = await db.query(
+      "INSERT INTO orgs (org_name) VALUES (?)",
+      [org_name]
+    );
+    const newOrgId = insert.insertId;
 
-        if ( !org_name ) {
-            return res.status(400).json({ error: "Missing required fields" });
-        }
-
-      
-
-        // Insert the new organization into the database
-        await db.query(
-            `INSERT INTO orgs ( org_name) VALUES ( ?)`,
-            [org_name]
-        );
-
-        res.status(200).json({
-            org_name,
-        });
-    } catch (err) {
-        console.error("Error creating organization:", err);
-        res.status(500).json({ error: err.message });
+    const [upd] = await db.query(
+      "UPDATE users SET org_id = ?, u_role = 'admin' WHERE email = ?",
+      [newOrgId, u_email]
+    );
+    if (!upd.affectedRows) {
+      await db.query("DELETE FROM orgs WHERE org_id = ?", [newOrgId]);
+      return res.status(404).json({ error: `User not found: ${u_email}` });
     }
+
+    const [[adminUser]] = await db.query(
+      "SELECT u_id, u_name, email, u_role, org_id, group_id FROM users WHERE email = ?",
+      [u_email]
+    );
+    res.status(201).json({ org_id: newOrgId, org_name, admin_user: adminUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// POST /orgs/:id/groups
+// body: { group_name, u_email }
+router.post("/:id/groups", async (req, res) => {
+  const orgId = req.params.id;
+  const { group_name, u_email } = req.body;
+  if (!group_name || !u_email) {
+    return res.status(400).json({ error: "group_name and u_email are required" });
+  }
+  if (!await orgData.org_exist(orgId)) {
+    return res.status(404).json({ error: `No org found with id ${orgId}` });
+  }
+
+  try {
+    const [users] = await db.query(
+      "SELECT u_role FROM users WHERE email = ? AND org_id = ?",
+      [u_email, orgId]
+    );
+    if (!users.length || users[0].u_role !== 'admin') {
+      return res.status(403).json({ error: "Only admins can create groups" });
+    }
+
+    const [insert] = await db.query(
+      "INSERT INTO grp (group_name, org_id) VALUES (?, ?)",
+      [group_name, orgId]
+    );
+    const newGroupId = insert.insertId;
+    res.status(201).json({ group_id: newGroupId, group_name, org_id: parseInt(orgId) });
+  } catch (err) {
+    console.error(err);
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: "Group name already exists" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /orgs/:id/leave
+// body: { u_email }
+router.post("/:id/leave", async (req, res) => {
+  const orgId = req.params.id;
+  const { u_email } = req.body;
+  if (!u_email) {
+    return res.status(400).json({ error: "u_email is required" });
+  }
+  if (!await orgData.org_exist(orgId)) {
+    return res.status(404).json({ error: `No org found with id ${orgId}` });
+  }
+  try {
+    const [upd] = await db.query(
+      "UPDATE users SET org_id = 1000001, u_role = 'maintainer', group_id = 3000001 WHERE email = ? AND org_id = ?",
+      [u_email, orgId]
+    );
+    if (!upd.affectedRows) {
+      return res.status(404).json({ error: `User not found in org: ${u_email}` });
+    }
+    res.json({ success: true, org_id: 1000001, u_role: 'maintainer' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /orgs/:id/display
 router.get("/:id/display", async (req, res) => {
-   
-    const { id } = req.params;
-    
-    const{ password, u_email } = req.body;
-
-    if(!await orgData.org_exist(id)) return res.status(404).json({ error: "No org found with id:", id});
-
-    if(!await users.userVerify(password, u_email, res)) return; 
-    
-    const orgUsers = await orgData.org_users(id);
-    const orgVMs = await orgData.org_vm(id);
-
-    const orgGroups = await orgData.org_groups(id);
-
-    const orgDisplay = {
-        users: orgUsers,
-        groups: orgGroups,
-        vms: orgVMs
-    };
-    res.json(orgDisplay);
-   
-  
+  const id = req.params.id;
+  if (!await orgData.org_exist(id)) {
+    return res.status(404).json({ error: `No org found with id ${id}` });
+  }
+  try {
+    const users = await orgData.org_users(id);
+    const vms   = await orgData.org_vm(id);
+    const grps  = await orgData.org_groups(id);
+    res.json({ users, groups: grps, vms });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
