@@ -139,5 +139,6 @@ module.exports = {
   userExist,
   userOTP,
   userVerify,
+  verifyAdmin,
   updateUsers
 };

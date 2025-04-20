@@ -68,7 +68,24 @@ const get_org = async(org_id, res) => {
         return res.status(500).json({error: "Server error getting orgs."});
     }
 }
-``
-module.exports = {get_org, org_exist, org_users, org_vm, org_groups};
+
+const delete_org_empty = async(org_id) => {
+    
+    members = await org_users(org_id);
+    if (members.length > 0){
+        return false;
+    }
+
+    try {
+        const [results] = await db.query("DELETE FROM orgs WHERE org_id = ?", [org_id]);
+        return results; 
+    } catch (err) {
+        console.error(err);
+        throw new Error("Error deleting organization");
+    }
+
+}
+
+module.exports = {get_org, org_exist, org_users, org_vm, org_groups, delete_org_empty};
 
 

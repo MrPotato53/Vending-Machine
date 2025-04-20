@@ -71,7 +71,13 @@ router.delete("/delete", async (req, res) => {
     if (!await userVerify(password, u_email, res)) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
+    
+    const org_id = await db.query("SELECT org_id FROM users WHERE email = ?", [u_email]);
+
+    orgdata.delete_org_empty(org_id);
+    
     await db.query("DELETE FROM users WHERE email = ?", [u_email]);
+
     res.json({ success: true });
   } catch (err) {
     console.error(err);
