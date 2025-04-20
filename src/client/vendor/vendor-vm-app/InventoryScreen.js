@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  ScrollView,
+  FlatList,
   StyleSheet,
   View,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   SafeAreaView,
 } from 'react-native';
-import { Layout, Text, Input, Button } from '@ui-kitten/components';
+import { Layout, Text, Input, Button, Modal, Card } from '@ui-kitten/components';
 import api from './apiCommunicator';
 
 export default function InventoryScreen({ route, navigation }) {
@@ -19,6 +18,10 @@ export default function InventoryScreen({ route, navigation }) {
   const [editedItems, setEditedItems] = useState({});
   const [newItems, setNewItems] = useState({});
   const [deleteSlots, setDeleteSlots] = useState({});
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [orderedSlots, setOrderedSlots] = useState([]);
 
   const vmIsRegistered = Boolean(vm.vm_row_count && vm.vm_column_count);
 
@@ -35,57 +38,87 @@ export default function InventoryScreen({ route, navigation }) {
       );
       const { isOnline } = await api.isVMOnline(vm.vm_id);
       setOnlineStatus(isOnline);
-    } catch {}
+    } catch (error) {
+      showError(`Failed to fetch inventory: ${error.message}`);
+    }
   }, [vm.vm_id]);
+
+  // Generate slots in column-first order
+  useEffect(() => {
+    if (vmIsRegistered) {
+      const slots = [];
+      // Column first (outer loop is column, inner loop is row)
+      for (let r = 0; r < (vm.vm_row_count || 0); r++) {
+        for (let c = 0; c < (vm.vm_column_count || 0); c++) {
+          slots.push(`${r}${c}`); // Creates 01, 11, 21, 02, 12, 22 etc.
+        }
+      }
+      setOrderedSlots(slots);
+    }
+  }, [vm.vm_column_count, vm.vm_row_count, vmIsRegistered]);
 
   useEffect(() => {
     fetchInventory();
   }, [fetchInventory]);
 
+  const showError = (message) => {
+    setErrorMessage(message);
+    setShowErrorModal(true);
+  };
 
   const deleteVm = async () => {
     try {
       await api.deleteVendingMachine(vm.vm_id);
       navigation.navigate('Dashboard', { user });
     } catch (e) {
-      Alert.alert('Error', `Could not delete: ${e.message}`);
+      showError(`Could not delete: ${e.message}`);
     }
   };
 
   const startRestock = async () => {
     if (!vmIsRegistered) return;
-    await api.updateVendingMachineMode(vm.vm_id, 'r');
-    setIsRestockMode(true);
+    
+    try {
+      await api.updateVendingMachineMode(vm.vm_id, 'r');
+      setIsRestockMode(true);
 
-    const items = {};
-    const newSlots = {};
-    const deletes = {};
-    vmInventory.forEach(i => {
-      items[i.slot] = {
-        itemName: i.itemName,
-        price: i.price.toString(),
-        stock: i.stock.toString()
-      };
-      deletes[i.slot] = false;
-    });
+      const items = {};
+      const newSlots = {};
+      const deletes = {};
+      vmInventory.forEach(i => {
+        items[i.slot] = {
+          itemName: i.itemName,
+          price: i.price.toString(),
+          stock: i.stock.toString()
+        };
+        deletes[i.slot] = false;
+      });
 
-    for (let r = 0; r < (vm.vm_row_count || 0); r++) {
       for (let c = 0; c < (vm.vm_column_count || 0); c++) {
-        const slot = `${r}${c}`;
-        if (!items[slot]) newSlots[slot] = { itemName: '', price: '', stock: '' };
+        for (let r = 0; r < (vm.vm_row_count || 0); r++) {
+          const slot = `${r}${c}`;
+          if (!items[slot]) newSlots[slot] = { itemName: '', price: '', stock: '' };
+        }
       }
+      
+      setEditedItems(items);
+      setNewItems(newSlots);
+      setDeleteSlots(deletes);
+    } catch (error) {
+      showError(`Could not enter restock mode: ${error.message}`);
     }
-    setEditedItems(items);
-    setNewItems(newSlots);
-    setDeleteSlots(deletes);
   };
 
   const cancelRestock = async () => {
-    await api.updateVendingMachineMode(vm.vm_id, 'i');
-    setIsRestockMode(false);
-    setEditedItems({});
-    setNewItems({});
-    setDeleteSlots({});
+    try {
+      await api.updateVendingMachineMode(vm.vm_id, 'i');
+      setIsRestockMode(false);
+      setEditedItems({});
+      setNewItems({});
+      setDeleteSlots({});
+    } catch (error) {
+      showError(`Could not cancel restock: ${error.message}`);
+    }
   };
 
   const submitRestock = async () => {
@@ -111,7 +144,7 @@ export default function InventoryScreen({ route, navigation }) {
       setIsRestockMode(false);
       fetchInventory();
     } catch (e) {
-      Alert.alert('Error', `Could not save changes: ${e.message}`);
+      showError(`Could not save changes: ${e.message}`);
     }
   };
 
@@ -147,6 +180,127 @@ export default function InventoryScreen({ route, navigation }) {
     setDeleteSlots(p => ({ ...p, [slot]: !p[slot] }));
   };
 
+  const renderItemRow = ({ item: slot }) => {
+    const item = vmInventory.find(i => i.slot === slot);
+    const stock = item ? item.stock : null;
+
+    let statusColor = '#aaa';
+    if (stock === 0) statusColor = '#f44336';
+    else if (stock !== null && stock < 5) statusColor = '#ffeb3b';
+    else if (stock !== null) statusColor = '#4caf50';
+
+    return (
+      <View style={styles.itemRow}>
+        <View style={styles.slotIndicator}>
+          <Text category="c1" style={styles.slotText}>{slot}</Text>
+          <View style={[styles.statusIndicator, { backgroundColor: statusColor }]} />
+        </View>
+
+        {item && !isRestockMode && (
+          <>
+            <View style={styles.nameSection}>
+              <Text category="p2" numberOfLines={1}>{item.itemName}</Text>
+            </View>
+            <View style={styles.priceSection}>
+              <Text category="p2">${item.price.toFixed(2)}</Text>
+            </View>
+            <View style={styles.stockSection}>
+              <Text category="p2">Stock: {stock}</Text>
+            </View>
+          </>
+        )}
+
+        {item && isRestockMode && !deleteSlots[slot] && (
+          <>
+            <View style={styles.nameSection}>
+              <Input
+                style={styles.input}
+                value={editedItems[slot]?.itemName}
+                onChangeText={v => handleItemChange(slot, 'itemName', v)}
+                maxLength={15}
+                placeholder="Item name"
+              />
+            </View>
+            <View style={styles.priceSection}>
+              <Input
+                style={styles.input}
+                placeholder="Price"
+                keyboardType="numeric"
+                value={editedItems[slot]?.price}
+                onChangeText={v => handleItemChange(slot, 'price', v)}
+              />
+            </View>
+            <View style={styles.stockSection}>
+              <Input
+                style={styles.input}
+                placeholder="Stock"
+                keyboardType="numeric"
+                value={editedItems[slot]?.stock}
+                onChangeText={v => handleItemChange(slot, 'stock', v)}
+              />
+            </View>
+            <Button 
+              size="tiny"
+              status="basic"
+              onPress={() => toggleDeleteSlot(slot)}
+            >
+              Delete
+            </Button>
+          </>
+        )}
+
+        {item && isRestockMode && deleteSlots[slot] && (
+          <>
+            <View style={styles.nameSection}>
+              <Text category="p2" style={styles.deleted} numberOfLines={1}>{item.itemName}</Text>
+            </View>
+            <View style={styles.priceSection}>
+              <Text category="p2" style={styles.deleted}>${item.price.toFixed(2)}</Text>
+            </View>
+            <View style={styles.stockSection}>
+              <Text category="p2" style={styles.deleted}>Stock: {stock}</Text>
+            </View>
+            <Button size="tiny" status="danger" onPress={() => toggleDeleteSlot(slot)}>
+              Undo
+            </Button>
+          </>
+        )}
+
+        {isRestockMode && !item && (
+          <>
+            <View style={styles.nameSection}>
+              <Input
+                style={styles.input}
+                placeholder="Item name"
+                value={newItems[slot]?.itemName}
+                onChangeText={v => handleNewItemChange(slot, 'itemName', v)}
+                maxLength={15}
+              />
+            </View>
+            <View style={styles.priceSection}>
+              <Input
+                style={styles.input}
+                placeholder="Price"
+                keyboardType="numeric"
+                value={newItems[slot]?.price}
+                onChangeText={v => handleNewItemChange(slot, 'price', v)}
+              />
+            </View>
+            <View style={styles.stockSection}>
+              <Input
+                style={styles.input}
+                placeholder="Stock"
+                keyboardType="numeric"
+                value={newItems[slot]?.stock}
+                onChangeText={v => handleNewItemChange(slot, 'stock', v)}
+              />
+            </View>
+          </>
+        )}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -158,7 +312,7 @@ export default function InventoryScreen({ route, navigation }) {
           <View style={styles.headerRow}>
             <Text category="h5">Inventory: {vm.vm_name}</Text>
             <View style={styles.actionsRow}>
-              <Button status="danger" size="tiny" onPress={deleteVm}>
+              <Button status="danger" size="tiny" onPress={() => setShowDeleteConfirm(true)}>
                 Delete VM
               </Button>
               <Button appearance="ghost" size="tiny" onPress={() => navigation.goBack()}>
@@ -175,113 +329,38 @@ export default function InventoryScreen({ route, navigation }) {
             </Text>
           </View>
 
-          <ScrollView 
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
+          {/* Fixed header outside of FlatList */}
+          <View style={styles.listHeaderRow}>
+            <View style={styles.slotIndicator}>
+              <Text category="s2">Slot</Text>
+            </View>
+            <View style={styles.nameSection}>
+              <Text category="s2">Name</Text>
+            </View>
+            <View style={styles.priceSection}>
+              <Text category="s2">Price</Text>
+            </View>
+            <View style={styles.stockSection}>
+              <Text category="s2">Stock</Text>
+            </View>
+            {isRestockMode && <View style={{ width: 70 }} />}
+          </View>
+
+          {/* Using FlatList instead of ScrollView for guaranteed scrolling */}
+          <FlatList
+            data={orderedSlots}
+            keyExtractor={(item) => item}
+            renderItem={renderItemRow}
+            style={styles.flatList}
+            contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={true}
-          >
-            <View style={styles.gridContainer}>
-              {Array.from({ length: vm.vm_row_count || 0 }).map((_, r) => (
-                <View style={styles.row} key={r}>
-                  {Array.from({ length: vm.vm_column_count || 0 }).map((_, c) => {
-                    const slot = `${r}${c}`;
-                    const item = vmInventory.find(i => i.slot === slot);
-                    const stock = item ? item.stock : null;
-
-                    let borderColor = '#aaa';
-                    if (stock === 0) borderColor = 'red';
-                    else if (stock !== null && stock < 5) borderColor = 'yellow';
-
-                    return (
-                      <View key={slot} style={[styles.cell, { borderColor }]}>                    
-                        <Text category="c2" style={styles.slotLabel}>{slot}</Text>
-
-                        {item && !isRestockMode && (
-                          <>
-                            <Text category="c1" style={styles.cellText} numberOfLines={1}>{item.itemName}</Text>
-                            <Text category="s2" style={styles.stockText}>{stock}</Text>
-                          </>
-                        )}
-
-                        {item && isRestockMode && !deleteSlots[slot] && (
-                          <>
-                            <Input
-                              style={styles.nameInput}
-                              value={editedItems[slot]?.itemName}
-                              onChangeText={v => handleItemChange(slot, 'itemName', v)}
-                              maxLength={10}
-                            />
-                            <View style={styles.newRow}>
-                              <Input
-                                style={styles.priceInput}
-                                placeholder="$"
-                                keyboardType="numeric"
-                                value={editedItems[slot]?.price}
-                                onChangeText={v => handleItemChange(slot, 'price', v)}
-                              />
-                              <Input
-                                style={styles.stockInput}
-                                placeholder="#"
-                                keyboardType="numeric"
-                                value={editedItems[slot]?.stock}
-                                onChangeText={v => handleItemChange(slot, 'stock', v)}
-                              />
-                            </View>
-                            <Button 
-                              size="tiny"
-                              status="basic"
-                              style={{ marginTop: 6 }}
-                              onPress={() => toggleDeleteSlot(slot)}
-                            >
-                              Del
-                            </Button>
-                          </>
-                        )}
-
-                        {item && isRestockMode && deleteSlots[slot] && (
-                          <>
-                            <Text category="c1" style={[styles.cellText, styles.deleted]} numberOfLines={1}>{item.itemName}</Text>
-                            <Button size="tiny" status="danger" onPress={() => toggleDeleteSlot(slot)}>
-                              Undo
-                            </Button>
-                          </>
-                        )}
-
-                        {isRestockMode && !item && (
-                          <>
-                            <Input
-                              style={styles.nameInput}
-                              placeholder="Name"
-                              value={newItems[slot]?.itemName}
-                              onChangeText={v => handleNewItemChange(slot, 'itemName', v)}
-                              maxLength={10}
-                            />
-                            <View style={styles.newRow}>
-                              <Input
-                                style={styles.priceInput}
-                                placeholder="$"
-                                keyboardType="numeric"
-                                value={newItems[slot]?.price}
-                                onChangeText={v => handleNewItemChange(slot, 'price', v)}
-                              />
-                              <Input
-                                style={styles.stockInput}
-                                placeholder="#"
-                                keyboardType="numeric"
-                                value={newItems[slot]?.stock}
-                                onChangeText={v => handleNewItemChange(slot, 'stock', v)}
-                              />
-                            </View>
-                          </>
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
-              ))}
-            </View>
-          </ScrollView>
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text>No inventory slots available</Text>
+              </View>
+            }
+          />
           
           <View style={styles.buttonRow}>
             {!isRestockMode ? (
@@ -296,6 +375,37 @@ export default function InventoryScreen({ route, navigation }) {
             )}
           </View>
         </Layout>
+
+        <Modal
+          visible={showErrorModal}
+          backdropStyle={styles.backdrop}
+          onBackdropPress={() => setShowErrorModal(false)}
+        >
+          <Card>
+            <Text category="h6">Error</Text>
+            <Text style={styles.modalText}>{errorMessage}</Text>
+            <Button onPress={() => setShowErrorModal(false)}>OK</Button>
+          </Card>
+        </Modal>
+
+        <Modal
+          visible={showDeleteConfirm}
+          backdropStyle={styles.backdrop}
+          onBackdropPress={() => setShowDeleteConfirm(false)}
+        >
+          <Card>
+            <Text category="h6">Confirm Delete</Text>
+            <Text style={styles.modalText}>Are you sure you want to delete this vending machine?</Text>
+            <View style={styles.modalButtons}>
+              <Button status="basic" onPress={() => setShowDeleteConfirm(false)}>
+                Cancel
+              </Button>
+              <Button status="danger" onPress={deleteVm}>
+                Delete
+              </Button>
+            </View>
+          </Card>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -311,91 +421,103 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1,
     padding: 16,
-    display: 'flex',
-    flexDirection: 'column',
   },
-  scrollView: {
-    flex: 1,
+  flatList: {
+    flex: 1, // This is crucial for scrolling to work
   },
-  scrollContent: {
+  listContent: {
     paddingBottom: 20,
   },
   headerRow: {
-    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  actionsRow: { flexDirection: 'row', alignItems: 'center' },
+  actionsRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
   },
-  statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 6 },
-  greenDot: { backgroundColor: '#4caf50' },
-  redDot: { backgroundColor: '#f44336' },
-  registeredTag: { color: '#2e7d32', marginLeft: 12 },
-  unregisteredTag: { color: '#d32f2f', marginLeft: 12 },
-  gridContainer: { 
-    alignItems: 'center', 
+  statusDot: { 
+    width: 10, 
+    height: 10, 
+    borderRadius: 5, 
+    marginRight: 6 
+  },
+  statusIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  greenDot: { 
+    backgroundColor: '#4caf50' 
+  },
+  redDot: { 
+    backgroundColor: '#f44336' 
+  },
+  registeredTag: { 
+    color: '#2e7d32', 
+    marginLeft: 12 
+  },
+  unregisteredTag: { 
+    color: '#d32f2f', 
+    marginLeft: 12 
+  },
+  listHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#f5f5f5',
+    marginBottom: 1,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  slotIndicator: {
+    width: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingLeft: 8,
+  },
+  slotText: {
+    fontWeight: 'bold',
+  },
+  nameSection: {
+    flex: 3,
+    paddingHorizontal: 8,
+  },
+  priceSection: {
+    flex: 1,
+    paddingHorizontal: 8,
+    alignItems: 'flex-start',
+  },
+  stockSection: {
+    flex: 1,
+    paddingHorizontal: 8,
+    alignItems: 'flex-start',
+  },
+  input: {
+    borderRadius: 4,
+    backgroundColor: '#f5f5f5',
     width: '100%',
   },
-  row: { flexDirection: 'row' },
-  cell: {
-    width: 80,
-    height: 120,
-    borderWidth: 2,
-    margin: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    position: 'relative',
-  },
-  slotLabel: {
-    position: 'absolute',
-    top: 2,
-    right: 4,
-    fontSize: 10,
-    color: '#444',
-  },
-  cellText: { fontSize: 12, textAlign: 'center', color: '#000', marginTop: 16 },
-  stockText: { fontSize: 10, marginTop: 4, color: '#000' },
   deleted: { 
     textDecorationLine: 'line-through',
     color: '#888'
   },
-  nameInput: {
-    width: 60,
-    marginTop: 4,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 4,
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-    fontSize: 10,
-  },
-  priceInput: {
-    width: 30,
-    height: 24,
-    marginHorizontal: 2,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 4,
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-    fontSize: 10,
-  },
-  stockInput: {
-    width: 30,
-    height: 24,
-    marginHorizontal: 2,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 4,
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-    fontSize: 10,
-  },
-  newRow: { flexDirection: 'row', marginTop: 2 },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -406,5 +528,22 @@ const styles = StyleSheet.create({
   button: { 
     flex: 1, 
     marginHorizontal: 4,
+  },
+  backdrop: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalText: {
+    marginVertical: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
   },
 });
