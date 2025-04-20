@@ -117,6 +117,8 @@ export default function DashboardScreen({ route, navigation }) {
         {/* Add VM button at bottom of list */}
         <Button
           style={styles.addButton}
+          disabled={!isAdmin}
+          appearance={isAdmin ? 'filled' : 'outline'}
           onPress={() => navigation.navigate('AddVendingMachine', { user })}
         >
           Add Vending Machine
