@@ -42,16 +42,6 @@ export default function InventoryScreen({ route, navigation }) {
     fetchInventory();
   }, [fetchInventory]);
 
-  const confirmDeleteVm = () => {
-    Alert.alert(
-      'Delete Vending Machine',
-      `Are you sure you want to delete "${vm.vm_name}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: deleteVm },
-      ]
-    );
-  };
 
   const deleteVm = async () => {
     try {
@@ -168,7 +158,7 @@ export default function InventoryScreen({ route, navigation }) {
           <View style={styles.headerRow}>
             <Text category="h5">Inventory: {vm.vm_name}</Text>
             <View style={styles.actionsRow}>
-              <Button status="danger" size="tiny" onPress={confirmDeleteVm}>
+              <Button status="danger" size="tiny" onPress={deleteVm}>
                 Delete VM
               </Button>
               <Button appearance="ghost" size="tiny" onPress={() => navigation.goBack()}>
