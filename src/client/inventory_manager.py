@@ -54,7 +54,7 @@ class InventoryManager:
         Sets a new cost for a given slot
     def get_item(self, slot_name) -> Item
         Returns the item at a slot
-    def __get_coordinates_from_slotname(self, slot_name) -> tuple[int, int]
+    def get_coordinates_from_slotname(self, slot_name) -> tuple[int, int]
         Given a slot_name in the form of a string, returns the coordinates in items
 
     """
@@ -112,7 +112,7 @@ class InventoryManager:
         inventory: list[dict] = Inventory.get_inventory_of_vending_machine(self.hardware_id)
 
         for item in inventory:
-            row, col = self.__get_coordinates_from_slotname(item["slot_name"])
+            row, col = self.get_coordinates_from_slotname(item["slot_name"])
             self.__items[row][col] = Item(
                 item["item_name"], float(item["price"]), int(item["stock"]))
 
@@ -183,7 +183,7 @@ class InventoryManager:
 
 
     def change_stock(self, slot_name: str, item_stock: int) -> float:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
         if item is None:
@@ -198,20 +198,20 @@ class InventoryManager:
 
 
     def add_item(self, slot_name: str, item_name: str, item_stock: int, item_cost: float) -> None:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
         new_item: Item = Item(item_name, item_cost, item_stock)
         self.__items[itemrow][itemcol] = new_item
         self.__change_log[slot_name] = new_item
 
 
     def clear_slot(self, slot_name: str) -> None:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
         self.__items[itemrow][itemcol] = None
         self.__change_log[slot_name] = None
 
 
     def set_cost(self, slot_name: str, new_cost: float) -> None:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
         if item is None:
@@ -222,7 +222,7 @@ class InventoryManager:
 
 
     def get_item(self, slot_name: str) -> Item:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
         if item is None:
@@ -231,7 +231,7 @@ class InventoryManager:
         return item
 
 
-    def __get_coordinates_from_slotname(self, slot_name: str) -> tuple[int, int]:
+    def get_coordinates_from_slotname(self, slot_name: str) -> tuple[int, int]:
         if len(slot_name) != self.SLOTNAMELENGTH:
             raise err.InvalidSlotNameError("Slot name must be 2 characters long")
         row: int = ord(slot_name[0]) - ord("0")

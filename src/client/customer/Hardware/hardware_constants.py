@@ -25,8 +25,14 @@ stepper driver, In1, In2, In3, In4 respectivity. The patterns energerizes the st
 individual coils in the correct sequence.
 """
 
-STEPPER_1_PINS = [17, 18, 27, 22]
-"""GPIO pins used on the pi to map to the inputs of the stepper motor."""
+"""GPIO pins used on the pi to map to the inputs of the stepper motors."""
+STEPPER_PINS = [
+    [   # Row 1
+        [17, 18, 27, 22],   # Motor 1
+        [14, 15, 16, 20],   # Motor 2
+        [21, 25, 7, 8],     # Motor 3
+    ],
+]
 
 ###################
 ##### Buttons  ####
@@ -88,3 +94,20 @@ KEYPAD_ROW_PINS = [5, 6, 13, 19]
 
 KEYPAD_COL_PINS = [4, 12, 26, 24]
 """Pins associated with the cols of the keypad."""
+
+
+###################
+#######  UI  ######
+###################
+
+DISPENSE_KEY = "*"
+"""Key to intiate dispensing of item."""
+
+DELETE_KEY = "D"
+"""Deltes last user inputted key."""
+
+CARD_INFO_KEY = "C"
+"""Simulates entering card info."""
+
+END_TRANSACTION_KEY = "B"
+"""Ends an existing transaction"""

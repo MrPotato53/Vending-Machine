@@ -34,7 +34,7 @@ class LCDDisplay:
             e_pulse (float): Enable timing for flip flop to be enabled to store updated characters
             e_delay (float): Delay before and after for enabling flip flops for characters
 
-        """  # noqa: D401
+        """
         # Device constants
         self.I2C_ADDR = i2c_addr
         self.LCD_WIDTH = width
@@ -68,10 +68,26 @@ class LCDDisplay:
 
     async def write(self, message: str, line: int, scroll_delay: float = 0.3) -> None:
         """Write a message to the LCD. If it's too long, scroll it indefinitely until cleared."""
-        # Cancel any existing scroll task for this line
+        # First, ensure any existing scrolling task for this line is properly canceled
         if line in self._scrolling_tasks:
             self._scrolling_tasks[line].cancel()
+            try:  # noqa: SIM105
+                await self._scrolling_tasks[line]
+            except asyncio.CancelledError:
+                pass
+            del self._scrolling_tasks[line]
 
+            # Clean the line before writing new content
+            await self._lcd_byte(line, self.LCD_CMD)
+            for _ in range(self.LCD_WIDTH):
+                await self._lcd_byte(ord(" "), self.LCD_CHR)
+
+            # Small delay to ensure I2C bus stability
+            await asyncio.sleep(0.01)
+
+        await self.clear_line(line=line)
+
+        # Now write the new message
         if len(message) <= self.LCD_WIDTH:
             await self._lcd_byte(line, self.LCD_CMD)
             message = message.ljust(self.LCD_WIDTH, " ")
@@ -79,6 +95,7 @@ class LCDDisplay:
                 await self._lcd_byte(ord(char), self.LCD_CHR)
         else:
             # Launch a new task to scroll indefinitely
+            await self._lcd_byte(line, self.LCD_CMD)  # Reset cursor position
             task = asyncio.create_task(self._scroll_loop(message, line, scroll_delay))
             self._scrolling_tasks[line] = task
 
@@ -93,8 +110,15 @@ class LCDDisplay:
                         await self._lcd_byte(ord(char), self.LCD_CHR)
                     await asyncio.sleep(scroll_delay)
         except asyncio.CancelledError:
-            # Exit cleanly when the task is canceled
-            pass
+            # Clear the line when canceled to avoid partial text
+            try:
+                await self._lcd_byte(line, self.LCD_CMD)
+                for _ in range(self.LCD_WIDTH):
+                    await self._lcd_byte(ord(" "), self.LCD_CHR)
+            except Exception:
+                # Ignore any errors during cleanup
+                pass
+            raise  # Re-raise to properly handle task cancellation
 
     async def clear_line(self, line: int) -> None:
         """Clear a specific line and cancel any scrolling task on it."""

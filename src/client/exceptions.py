@@ -40,3 +40,7 @@ class QueryFailureError(Exception):
 
     def __str__(self):
         return self.message + "; Status code: " + str(self.status_code)
+
+class NotFreeItemError(Exception):
+    """Thrown when tring to dispense free item that is not free."""
+    pass
