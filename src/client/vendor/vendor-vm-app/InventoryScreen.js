@@ -35,37 +35,33 @@ export default function InventoryScreen({ route, navigation }) {
       );
       const { isOnline } = await api.isVMOnline(vm.vm_id);
       setOnlineStatus(isOnline);
-    } catch (e) {
-      console.error('Fetch inventory error:', e);
-    }
+    } catch {}
   }, [vm.vm_id]);
 
   useEffect(() => {
     fetchInventory();
   }, [fetchInventory]);
 
-  // delete handlers
-  const deleteVm = useCallback(async () => {
-    console.log('Deleting VM:', vm.vm_id);
-    try {
-      await api.deleteVendingMachine(vm.vm_id);
-      navigation.replace('Dashboard', { user });
-    } catch (e) {
-      console.error('Delete VM error:', e);
-      Alert.alert('Error', `Could not delete VM: ${e.message}`);
-    }
-  }, [vm.vm_id, navigation, user]);
-
-  const confirmDeleteVm = useCallback(() => {
+  // delete machine
+  const confirmDeleteVm = () => {
     Alert.alert(
       'Delete Vending Machine',
-      `Are you sure you want to delete \"${vm.vm_name}\"?`,
+      `Are you sure you want to delete "${vm.vm_name}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: deleteVm },
       ]
     );
-  }, [vm.vm_name, deleteVm]);
+  };
+
+  const deleteVm = async () => {
+    try {
+      await api.deleteVendingMachine(vm.vm_id);
+      navigation.navigate('Dashboard', { user });
+    } catch (e) {
+      Alert.alert('Error', `Could not delete: ${e.message}`);
+    }
+  };
 
   // restock mode controls
   const startRestock = async () => {
@@ -114,21 +110,20 @@ export default function InventoryScreen({ route, navigation }) {
           <View style={styles.actionsRow}>
             <Button
               status="danger"
-              onPress={confirmDeleteVm}
-              style={styles.deleteBtn}
+              size="tiny"
+              onPress={deleteVm}
             >
               Delete VM
             </Button>
             <Button
               appearance="ghost"
+              size="tiny"
               onPress={() => navigation.goBack()}
-              style={styles.backBtn}
             >
               Back
             </Button>
           </View>
         </View>
-
         <View style={styles.statusRow}>
           <View
             style={[
@@ -137,13 +132,11 @@ export default function InventoryScreen({ route, navigation }) {
             ]}
           />
           <Text category="p2">{onlineStatus ? 'Online' : 'Offline'}</Text>
-          <Text
-            style={
-              vmIsRegistered ? styles.registeredTag : styles.unregisteredTag
-            }
-          >
-            {vmIsRegistered ? 'Registered' : 'Unregistered'}
-          </Text>
+          {vmIsRegistered ? (
+            <Text style={styles.registeredTag}>Registered</Text>
+          ) : (
+            <Text style={styles.unregisteredTag}>Unregistered</Text>
+          )}
         </View>
 
         <ScrollView contentContainerStyle={styles.gridContainer}>
@@ -152,12 +145,15 @@ export default function InventoryScreen({ route, navigation }) {
               {Array.from({ length: vm.vm_column_count || 0 }).map((_, c) => {
                 const slot = `${String.fromCharCode(65 + c)}${r + 1}`;
                 const item = vmInventory.find(i => i.slot === slot);
-                const stock = item?.stock ?? null;
+                const stock = item ? item.stock : null;
                 let borderColor = '#aaa';
                 if (stock === 0) borderColor = 'red';
                 else if (stock !== null && stock < 5) borderColor = 'yellow';
                 return (
-                  <View key={slot} style={[styles.cell, { borderColor }]}>  
+                  <View
+                    key={slot}
+                    style={[styles.cell, { borderColor }]}
+                  >
                     <Text category="c1" style={styles.cellText} numberOfLines={1}>
                       {item?.itemName || ''}
                     </Text>
@@ -215,9 +211,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  actionsRow: { flexDirection: 'row' },
-  deleteBtn: { marginRight: 8 },
-  backBtn: {},
+  actionsRow: { flexDirection: 'row', alignItems: 'center' },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -256,4 +250,5 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   button: { flex: 1, marginHorizontal: 4 },
+  backButton: { marginTop: 16 },
 });
