@@ -164,50 +164,44 @@ router.get("/:id/display", async (req, res) => {
   }
 });
 
+// POST /orgs/:id/add-user
+// body: { u_email, admin_email, role, group_id }
 router.post('/:id/add-user', async (req, res) => {
     const orgId = req.params.id;
-    const { u_email, admin_email } = req.body;
+    const { u_email, admin_email, role, group_id } = req.body;
   
-    if (!u_email || !admin_email) {
-      return res.status(400).json({ error: 'u_email and admin_email required' });
+    if (!u_email || !admin_email || !role || !group_id) {
+      return res.status(400).json({ error: 'u_email, admin_email, role and group_id are required' });
     }
-  
+    if (!['admin', 'maintainer'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be either "admin" or "maintainer"' });
+    }
     try {
-      // 1) check org exists
-      const [orgRows] = await db.query('SELECT * FROM orgs WHERE org_id = ?', [orgId]);
-      if (orgRows.length === 0) {
-        return res.status(404).json({ error: `Org ${orgId} not found` });
-      }
+      const [orgRows] = await db.query('SELECT org_id FROM orgs WHERE org_id = ?', [orgId]);
+      if (!orgRows.length) return res.status(404).json({ error: `Org ${orgId} not found` });
   
-      // 2) verify caller is admin of that org
-      const [adminRows] = await db.query(
-        'SELECT u_role, org_id FROM users WHERE email = ?',
-        [admin_email]
-      );
-      if (!adminRows.length || adminRows[0].u_role !== 'admin' || adminRows[0].org_id != orgId) {
+      const [callerRows] = await db.query('SELECT u_role, org_id FROM users WHERE email = ?', [admin_email]);
+      if (!callerRows.length || callerRows[0].u_role !== 'admin' || callerRows[0].org_id != orgId) {
         return res.status(403).json({ error: 'Only admins of this org can invite members' });
       }
   
-      // 3) check target user exists
       const [userRows] = await db.query('SELECT * FROM users WHERE email = ?', [u_email]);
-      if (!userRows.length) {
-        return res.status(404).json({ error: `User not found: ${u_email}` });
-      }
+      if (!userRows.length) return res.status(404).json({ error: `User not found: ${u_email}` });
   
-      // 4) update their org_id
-      await db.query('UPDATE users SET org_id = ? WHERE email = ?', [orgId, u_email]);
-  
-      // 5) return updated user
+      await db.query(
+        'UPDATE users SET org_id = ?, u_role = ?, group_id = ? WHERE email = ?',
+        [orgId, role, group_id, u_email]
+      );
       const [updated] = await db.query(
         'SELECT u_id, u_name, email, u_role, org_id, group_id FROM users WHERE email = ?',
         [u_email]
       );
       res.json({ success: true, user: updated[0] });
-  
     } catch (err) {
-      console.error('Error inviting user:', err);
+      console.error(err);
       res.status(500).json({ error: err.message });
     }
-});
+  });
+  
 
 module.exports = router;

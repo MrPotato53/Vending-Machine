@@ -29,6 +29,7 @@ const api = {
   createOrganization: (org_name, u_email) =>
     apiFetch(`/orgs`, { method: 'POST', body: { org_name, u_email } }),
   getOrgDisplay: (id) => apiFetch(`/orgs/${id}/display`),
+  getOrgName: (id) => apiFetch(`/orgs/${id}/name`),
   getOrgByName: (org_name) =>
     apiFetch(`/orgs/by-name/${encodeURIComponent(org_name)}`),
   createGroup: (org_id, group_name, u_email) =>
@@ -41,11 +42,17 @@ const api = {
       method: 'POST',
       body: { u_email },
     }),
-  addUserToOrg: (orgId, u_email, admin_email) =>
+  addUserToOrg: (orgId, u_email, admin_email, role, group_id) =>
     apiFetch(`/orgs/${orgId}/add-user`, {
       method: 'POST',
-      body: { u_email, admin_email },
+      body: { u_email, admin_email, role, group_id },
     }),
+  
+  // —— Health (MQTT) ——
+  isVMOnline: (vmId) =>
+    apiFetch(`/mqtt/health/${encodeURIComponent(vmId)}`),
+  notifyRestock: (vmId) =>
+    apiFetch(`/mqtt/restock/${encodeURIComponent(vmId)}`, { method: 'POST' }),
 
   // —— Users (/users) ——
   createUser: (userData) =>
@@ -104,7 +111,7 @@ const api = {
     }),
 
   // —— VMs by Org & Group ——
-  // only machines in your group (for your dashboard and adding inventory)
+  // Returns vm_id, vm_name, vm_row_count and vm_column_count for machines in that org & group.
   getVendingMachinesByGroup: (orgId, groupId) =>
     apiFetch(`/vending-machines/org/${orgId}/group/${groupId}`),
 
