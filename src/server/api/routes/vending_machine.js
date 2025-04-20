@@ -20,21 +20,25 @@ router.get("/", async (req, res) => {
 
 // GET /vending-machines/org/:org_id/group/:group_id
 // Returns all vending machine IDs and names in that org and group.
-router.get("/org/:org_id/group/:group_id", async (req, res) => {
-  const { org_id, group_id } = req.params;
-  try {
-    const [rows] = await db.query(
-      `SELECT vm.vm_id, vm.vm_name
-       FROM vending_machines AS vm
-       JOIN grpjoin           AS gj ON vm.vm_id = gj.vm_id
-       WHERE vm.org_id = ? AND gj.group_id = ?`,
-      [org_id, group_id]
-    );
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.get('/org/:org_id/group/:group_id', async (req, res) => {
+    const { org_id, group_id } = req.params;
+    try {
+      const [rows] = await db.query(
+        `SELECT vm.vm_id,
+                vm.vm_name,
+                vm.vm_row_count,
+                vm.vm_column_count
+         FROM vending_machines AS vm
+         JOIN grpjoin           AS gj ON vm.vm_id = gj.vm_id
+         WHERE vm.org_id = ? AND gj.group_id = ?`,
+        [org_id, group_id]
+      );
+      res.json(rows);
+    } catch (err) {
+      console.error('Error fetching vending machines by org & group:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
 
 // Get vending machine by ID
 router.get("/:id", async (req, res) => {

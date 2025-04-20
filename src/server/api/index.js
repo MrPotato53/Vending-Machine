@@ -23,12 +23,14 @@ const itemsRoutes          = require("./routes/items");
 const userRoutes           = require("./routes/users");
 const orgRoutes            = require("./routes/orgs");
 const stripeRoutes         = require("./routes/stripe_routes");
+const mqttRoutes           = require("./routes/mqtt");
 
 app.use("/vending-machines", vendingMachinesRoutes);
 app.use("/items",           itemsRoutes);
 app.use("/stripes",         stripeRoutes);
 app.use("/users",           userRoutes);
 app.use("/orgs",            orgRoutes);
+app.use("/mqtt",            mqttRoutes);
 
 console.log('Registered routes:');
 app._router.stack
