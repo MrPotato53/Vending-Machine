@@ -33,6 +33,17 @@ export default function DashboardScreen({ route, navigation }) {
 
   // Load machines
   const fetchMachines = useCallback(async () => {
+    const DEFAULT_ORG  = 1000001;
+    const DEFAULT_GROUP = 3000001;
+    const groupId = user.group_id ?? user.groupId;
+  
+    // if we’re in the “default” org+group, don’t fetch anything
+    if (user.org_id === DEFAULT_ORG && groupId === DEFAULT_GROUP) {
+      setVendingMachines([]);
+      setOnlineStatus({});
+      return;
+    }
+    
     let vms = [];
     if (isAdmin) {
       const display = await api.getOrgDisplay(user.org_id);
