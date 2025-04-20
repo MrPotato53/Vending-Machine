@@ -61,7 +61,7 @@ class VendingMachine:
         # Check if vending machine exists in database, if not create it
         vm_db = VendingMachines.get_vending_machine(self.__hardware_id)
 
-        if(vm_db["vm_row_count"] is None or vm_db["vm_column_count"] is None):
+        if(vm_db["vm_row_count"] == 0 or vm_db["vm_column_count"] == 0):
             try:
                 VendingMachines.register_vending_machine(self.__hardware_id, rows, columns)
             except err.QueryFailureError as e:

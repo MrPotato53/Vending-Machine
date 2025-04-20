@@ -158,14 +158,14 @@ export default function DashboardScreen({ route, navigation }) {
     const slot = slotInput.toUpperCase();
     setSlotError('');
     if (!selectedVM?.vm_row_count || !selectedVM?.vm_column_count) return;
-    const match = slot.match(/^([A-Z])(\d+)$/);
+    const match = slot.match(/^(\d)(\d)$/);
     if (!match) {
-      setSlotError('Slot format must be like A1');
+      setSlotError('Slot format must be like 00');
       return;
     }
-    const col = match[1].charCodeAt(0) - 65;
-    const row = parseInt(match[2], 10) - 1;
-    if (col >= selectedVM.vm_column_count || row >= selectedVM.vm_row_count) {
+    const row = parseInt(match[1], 10);
+    const col = parseInt(match[2], 10);
+    if (col >= selectedVM.vm_column_count || col < 0 || row >= selectedVM.vm_row_count || row < 0) {
       setSlotError(
         `Out of range. Max columns: ${selectedVM.vm_column_count}, rows: ${selectedVM.vm_row_count}`
       );
@@ -322,7 +322,7 @@ export default function DashboardScreen({ route, navigation }) {
               <Layout style={styles.form}>
                 <Input
                   label="Slot"
-                  placeholder="e.g., A1"
+                  placeholder="e.g., 00"
                   value={newItem.slot}
                   onChangeText={val => handleNewItemChange('slot', val)}
                   style={styles.input}

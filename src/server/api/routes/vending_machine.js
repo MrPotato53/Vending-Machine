@@ -111,7 +111,7 @@ router.post("/", async (req, res) => {
 // Hardware registration
 router.patch("/:id/register", async (req, res) => {
   const vm_id = req.params.id;
-  const [vm_column_count, vm_row_count] = req.body;
+  const {vm_column_count, vm_row_count} = req.body;
   if (!(await VM.vendingMachineExistsBool(vm_id, res))) return;
   try {
     await db.query(
