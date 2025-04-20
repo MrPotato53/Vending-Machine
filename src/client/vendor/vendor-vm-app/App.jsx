@@ -8,7 +8,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from './LoginScreen';
 import RegisterScreen from './RegisterScreen';
 import DashboardScreen from './DashboardScreen';
-import VMDetailScreen from './VMDetailScreen';
+import InventoryScreen from './InventoryScreen';
 import OrganizationScreen from './OrganizationScreen';
 import AddVendingMachineScreen from './AddVendingMachineScreen';
 
@@ -28,13 +28,24 @@ export default function App() {
       <IconRegistry icons={EvaIconsPack} />
       <ApplicationProvider {...eva} theme={customTheme}>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+          <Stack.Navigator
+            initialRouteName="Login"
+            screenOptions={{ headerShown: false }}
+          >
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
-            <Stack.Screen name="VMDetail" component={VMDetailScreen} options={{ title: 'Vending Machine Details' }} />
+            <Stack.Screen
+              name="Inventory"
+              component={InventoryScreen}
+              options={{ title: 'Manage Inventory' }}
+            />
             <Stack.Screen name="Organization" component={OrganizationScreen} />
-            <Stack.Screen name="AddVendingMachine" component={AddVendingMachineScreen} options={{ title: 'Register Vending Machine' }} />
+            <Stack.Screen
+              name="AddVendingMachine"
+              component={AddVendingMachineScreen}
+              options={{ title: 'Register Vending Machine' }}
+            />
           </Stack.Navigator>
         </NavigationContainer>
       </ApplicationProvider>
