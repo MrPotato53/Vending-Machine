@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../db/db_connection");
 const orgData = require("../db/orgs");
+const users = require("../db/users");
 const router = express.Router();
 
 // GET /orgs/by-name/:org_name
@@ -90,28 +91,31 @@ router.post("/", async (req, res) => {
 router.post("/:id/groups", async (req, res) => {
   const orgId = req.params.id;
   const { group_name, u_email } = req.body;
-  if (!group_name || !u_email) {
-    return res.status(400).json({ error: "group_name and u_email are required" });
-  }
-  if (!(await orgData.org_exist(orgId))) {
-    return res.status(404).json({ error: `No org found with id ${orgId}` });
-  }
+  try{
 
-  try {
-    const [users] = await db.query(
-      "SELECT u_role FROM users WHERE email = ? AND org_id = ?",
-      [u_email, orgId]
-    );
-    if (!users.length || users[0].u_role !== "admin") {
-      return res.status(403).json({ error: "Only admins can create groups" });
+    if (!group_name || !u_email) {
+      return res.status(400).json({ error: "group_name and u_email are required" });
+    }
+    if (!(await orgData.org_exist(orgId))) {
+      return res.status(404).json({ error: `No org found with id ${orgId}` });
     }
 
-    const [insert] = await db.query(
-      "INSERT INTO grp (group_name, org_id) VALUES (?, ?)",
-      [group_name, orgId]
-    );
-    const newGroupId = insert.insertId;
-    res.status(201).json({ group_id: newGroupId, group_name, org_id: parseInt(orgId, 10) });
+    if(!await users.userExist(u_email)) {
+      return res.status(404).json({ error: `User not found: ${u_email}` });
+    }
+    if(!users.verifyAdmin(u_email)) {
+      return res.status(403).json({ error: `User is not an admin: ${u_email}` });
+    }
+
+      const [insert] = await db.query(
+        "INSERT INTO grp (group_name, org_id) VALUES (?, ?)",
+        [group_name, orgId]
+      );
+
+      const newGroupId = insert.insertId;
+      
+      res.status(201).json({ group_id: newGroupId, group_name, org_id: parseInt(orgId, 10) });
+
   } catch (err) {
     console.error(err);
     if (err.code === "ER_DUP_ENTRY") {
@@ -137,9 +141,12 @@ router.post("/:id/leave", async (req, res) => {
       "UPDATE users SET org_id = 1000001, u_role = 'maintainer', group_id = 3000001 WHERE email = ? AND org_id = ?",
       [u_email, orgId]
     );
+
     if (!upd.affectedRows) {
       return res.status(404).json({ error: `User not found in org: ${u_email}` });
     }
+
+    orgData.delete_org_empty(orgId);
     res.json({ success: true, org_id: 1000001, u_role: "maintainer" });
   } catch (err) {
     console.error(err);
@@ -164,34 +171,35 @@ router.get("/:id/display", async (req, res) => {
   }
 });
 
-// POST /orgs/:id/add-user
-// body: { u_email, admin_email, role, group_id }
 router.post('/:id/add-user', async (req, res) => {
     const orgId = req.params.id;
-    const { u_email, admin_email, role, group_id } = req.body;
+    const { u_email, admin_email } = req.body;
   
-    if (!u_email || !admin_email || !role || !group_id) {
-      return res.status(400).json({ error: 'u_email, admin_email, role and group_id are required' });
+    if (!u_email || !admin_email) {
+      return res.status(400).json({ error: 'u_email and admin_email required' });
     }
-    if (!['admin', 'maintainer'].includes(role)) {
-      return res.status(400).json({ error: 'Role must be either "admin" or "maintainer"' });
-    }
+  
     try {
-      const [orgRows] = await db.query('SELECT org_id FROM orgs WHERE org_id = ?', [orgId]);
-      if (!orgRows.length) return res.status(404).json({ error: `Org ${orgId} not found` });
-  
-      const [callerRows] = await db.query('SELECT u_role, org_id FROM users WHERE email = ?', [admin_email]);
-      if (!callerRows.length || callerRows[0].u_role !== 'admin' || callerRows[0].org_id != orgId) {
-        return res.status(403).json({ error: 'Only admins of this org can invite members' });
+      // 1) check org exists
+      const [orgRows] = await db.query('SELECT * FROM orgs WHERE org_id = ?', [orgId]);
+      if (orgRows.length === 0) {
+        return res.status(404).json({ error: `Org ${orgId} not found` });
       }
   
-      const [userRows] = await db.query('SELECT * FROM users WHERE email = ?', [u_email]);
-      if (!userRows.length) return res.status(404).json({ error: `User not found: ${u_email}` });
+      // 2) verify caller is admin of that org
+      if(users.verifyAdmin(admin_email) === false) {
+        return res.status(403).json({ error: 'Only admins can invite members' });
+      }
   
-      await db.query(
-        'UPDATE users SET org_id = ?, u_role = ?, group_id = ? WHERE email = ?',
-        [orgId, role, group_id, u_email]
-      );
+      // 3) check target user exists
+      if(users.userExist(u_email) === false) {
+        return res.status(404).json({ error: `User ${u_email} not found` });
+      }
+  
+      // 4) update their org_id
+      await db.query('UPDATE users SET org_id = ? WHERE email = ?', [orgId, u_email]);
+  
+      // 5) return updated user
       const [updated] = await db.query(
         'SELECT u_id, u_name, email, u_role, org_id, group_id FROM users WHERE email = ?',
         [u_email]

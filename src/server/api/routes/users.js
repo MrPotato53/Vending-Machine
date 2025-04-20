@@ -3,6 +3,7 @@ const argon = require("argon2");
 const crypto = require("crypto");
 const router = express.Router({ mergeParams: true });
 const db = require("../db/db_connection");
+const orgdata = require("../db/orgs");
 const {
   parseEmail,
   userExist,
@@ -68,10 +69,20 @@ router.delete("/delete", async (req, res) => {
     if (!await userExist(u_email)) {
       return res.status(404).json({ error: "User does not exist" });
     }
+
+    const org_id = await db.query("SELECT org_id FROM users WHERE email = ?", [u_email]);
+    console.log("org_id", org_id);
     if (!await userVerify(password, u_email, res)) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
+    
+   
+
+
     await db.query("DELETE FROM users WHERE email = ?", [u_email]);
+
+    await orgdata.delete_org_empty(org_id.org_id);
+
     res.json({ success: true });
   } catch (err) {
     console.error(err);
