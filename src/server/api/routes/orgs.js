@@ -6,7 +6,7 @@ const router = express.Router();
 
 // GET /orgs/by-name/:org_name
 router.get("/by-name/:org_name", async (req, res) => {
-  try {d
+  try {
     const { org_name } = req.params;
     const [rows] = await db.query(
       "SELECT org_id FROM orgs WHERE org_name = ?",
@@ -91,28 +91,31 @@ router.post("/", async (req, res) => {
 router.post("/:id/groups", async (req, res) => {
   const orgId = req.params.id;
   const { group_name, u_email } = req.body;
-  if (!group_name || !u_email) {
-    return res.status(400).json({ error: "group_name and u_email are required" });
-  }
-  if (!(await orgData.org_exist(orgId))) {
-    return res.status(404).json({ error: `No org found with id ${orgId}` });
-  }
+  try{
 
-  try {
-    const [users] = await db.query(
-      "SELECT u_role FROM users WHERE email = ? AND org_id = ?",
-      [u_email, orgId]
-    );
-    if (!users.length || users[0].u_role !== "admin") {
-      return res.status(403).json({ error: "Only admins can create groups" });
+    if (!group_name || !u_email) {
+      return res.status(400).json({ error: "group_name and u_email are required" });
+    }
+    if (!(await orgData.org_exist(orgId))) {
+      return res.status(404).json({ error: `No org found with id ${orgId}` });
     }
 
-    const [insert] = await db.query(
-      "INSERT INTO grp (group_name, org_id) VALUES (?, ?)",
-      [group_name, orgId]
-    );
-    const newGroupId = insert.insertId;
-    res.status(201).json({ group_id: newGroupId, group_name, org_id: parseInt(orgId, 10) });
+    if(!await users.userExist(u_email)) {
+      return res.status(404).json({ error: `User not found: ${u_email}` });
+    }
+    if(!users.verifyAdmin(u_email)) {
+      return res.status(403).json({ error: `User is not an admin: ${u_email}` });
+    }
+
+      const [insert] = await db.query(
+        "INSERT INTO grp (group_name, org_id) VALUES (?, ?)",
+        [group_name, orgId]
+      );
+
+      const newGroupId = insert.insertId;
+      
+      res.status(201).json({ group_id: newGroupId, group_name, org_id: parseInt(orgId, 10) });
+
   } catch (err) {
     console.error(err);
     if (err.code === "ER_DUP_ENTRY") {
@@ -138,7 +141,7 @@ router.post("/:id/leave", async (req, res) => {
       "UPDATE users SET org_id = 1000001, u_role = 'maintainer', group_id = 3000001 WHERE email = ? AND org_id = ?",
       [u_email, orgId]
     );
-    
+
     if (!upd.affectedRows) {
       return res.status(404).json({ error: `User not found in org: ${u_email}` });
     }
