@@ -172,44 +172,85 @@ router.get("/:id/display", async (req, res) => {
 });
 
 router.post('/:id/add-user', async (req, res) => {
-    const orgId = req.params.id;
-    const { u_email, admin_email } = req.body;
-  
-    if (!u_email || !admin_email) {
-      return res.status(400).json({ error: 'u_email and admin_email required' });
+  const orgId = req.params.id;
+  const { u_email, admin_email } = req.body;
+
+  if (!u_email || !admin_email) {
+    return res.status(400).json({ error: 'u_email and admin_email required' });
+  }
+
+  try {
+    // 1) check org exists
+    const [orgRows] = await db.query(
+      'SELECT * FROM orgs WHERE org_id = ?',
+      [orgId]
+    );
+    if (orgRows.length === 0) {
+      return res.status(404).json({ error: `Org ${orgId} not found` });
     }
-  
-    try {
-      // 1) check org exists
-      const [orgRows] = await db.query('SELECT * FROM orgs WHERE org_id = ?', [orgId]);
-      if (orgRows.length === 0) {
-        return res.status(404).json({ error: `Org ${orgId} not found` });
-      }
-  
-      // 2) verify caller is admin of that org
-      if(users.verifyAdmin(admin_email) === false) {
-        return res.status(403).json({ error: 'Only admins can invite members' });
-      }
-  
-      // 3) check target user exists
-      if(users.userExist(u_email) === false) {
-        return res.status(404).json({ error: `User ${u_email} not found` });
-      }
-  
-      // 4) update their org_id
-      await db.query('UPDATE users SET org_id = ? WHERE email = ?', [orgId, u_email]);
-  
-      // 5) return updated user
-      const [updated] = await db.query(
-        'SELECT u_id, u_name, email, u_role, org_id, group_id FROM users WHERE email = ?',
-        [u_email]
-      );
-      res.json({ success: true, user: updated[0] });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: err.message });
+
+    // 2) verify caller is admin of that org
+    const isAdmin = await users.verifyAdmin(admin_email);
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Only admins can invite members' });
     }
-  });
+
+    // 3) check target user exists
+    const exists = await users.userExist(u_email);
+    if (!exists) {
+      return res.status(404).json({ error: `User ${u_email} not found` });
+    }
+
+    // 4) update their org_id
+    await db.query(
+      'UPDATE users SET org_id = ? WHERE email = ?',
+      [orgId, u_email]
+    );
+
+    // 5) return updated user
+    const [updated] = await db.query(
+      `SELECT u_id, u_name, email, u_role, org_id, group_id
+         FROM users WHERE email = ?`,
+      [u_email]
+    );
+    res.json({ success: true, user: updated[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
   
+  // GET /orgs
+// returns an array of all orgs, each with its users, groups, and vms
+router.get("/", async (req, res) => {
+  try {
+    // 1) fetch every org
+    const [orgRows] = await db.query(
+      "SELECT org_id, org_name FROM orgs"
+    );
+
+    // 2) for each org, load its related data
+    const allOrgs = await Promise.all(orgRows.map(async (org) => {
+      const [users]  = await orgData.org_users(org.org_id);
+      const [groups] = await orgData.org_groups(org.org_id);
+      const [vms]    = await orgData.org_vm(org.org_id);
+
+      return {
+        org_id:   org.org_id,
+        org_name: org.org_name,
+        users,
+        groups,
+        vms
+      };
+    }));
+
+    res.json(allOrgs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 module.exports = router;
