@@ -47,7 +47,7 @@ const api = {
       method: 'POST',
       body: { u_email, admin_email, role, group_id },
     }),
-  
+
   // —— Health (MQTT) ——
   isVMOnline: (vmId) =>
     apiFetch(`/mqtt/health/${encodeURIComponent(vmId)}`),
@@ -70,6 +70,8 @@ const api = {
       method: 'PATCH',
       body: { users_changes },
     }),
+
+  // —— Group assignment ——
   assignUserToGroup: (email, group_id, admin_email) =>
     apiFetch(`/users/${encodeURIComponent(email)}/group`, {
       method: 'PATCH',
@@ -111,7 +113,6 @@ const api = {
     }),
 
   // —— VMs by Org & Group ——
-  // Returns vm_id, vm_name, vm_row_count and vm_column_count for machines in that org & group.
   getVendingMachinesByGroup: (orgId, groupId) =>
     apiFetch(`/vending-machines/org/${orgId}/group/${groupId}`),
 

@@ -36,6 +36,7 @@ export default function UserManagementScreen({ route, navigation }) {
       const { users: u, groups: g } = await api.getOrgDisplay(orgId);
       setUsers(u);
       setGroups(g);
+      setError('');
     } catch (e) {
       setError(e.message);
     } finally {
@@ -88,11 +89,12 @@ export default function UserManagementScreen({ route, navigation }) {
   };
 
   // Reassign an existing member to a group
-  const assignMember = async (email, role, idxPath) => {
+  const assignMember = async (email, idxPath) => {
+    if (!idxPath || idxPath.row < 0) return;
     setError('');
     try {
       const groupId = groups[idxPath.row].group_id;
-      await api.addUserToOrg(orgId, email, user.email, role, groupId);
+      await api.assignUserToGroup(email, groupId, user.email);
       await loadDisplay();
       onUsersUpdated?.();
       Alert.alert('Success', `${email} moved to ${groups[idxPath.row].group_name}`);
@@ -171,7 +173,7 @@ export default function UserManagementScreen({ route, navigation }) {
             const idxPath = currentGroupIdx !== -1 ? new IndexPath(currentGroupIdx) : null;
 
             return (
-              <React.Fragment key={userIdx}>
+              <React.Fragment key={u.email}>
                 <Layout style={styles.userRow}>
                   <Layout style={styles.userInfo}>
                     <Text category="s1">{u.u_name || u.email}</Text>
@@ -180,7 +182,7 @@ export default function UserManagementScreen({ route, navigation }) {
                   <Select
                     selectedIndex={idxPath}
                     value={idxPath !== null ? groupNames[idxPath.row] : 'No Group'}
-                    onSelect={idx => assignMember(u.email, u.u_role, idx)}
+                    onSelect={idx => assignMember(u.email, idx)}
                     style={styles.groupSelect}
                   >
                     {groupNames.map((name, i) => (
