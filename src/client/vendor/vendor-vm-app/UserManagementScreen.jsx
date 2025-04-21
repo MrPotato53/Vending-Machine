@@ -1,21 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Alert, ScrollView } from 'react-native';
-import { Layout, Select, SelectItem, IndexPath, Button, Text, Input, List, ListItem, Card, Divider } from '@ui-kitten/components';
+import { StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { 
+  Layout,
+  Select,
+  SelectItem,
+  IndexPath,
+  Button,
+  Text,
+  Input,
+  Card,
+  Divider
+} from '@ui-kitten/components';
 import api from './apiCommunicator';
 
 export default function UserManagementScreen({ route, navigation }) {
-  const { user, orgId, groups, users: initialUsers, onUsersUpdated } = route.params;
-  const [users, setUsers] = useState(initialUsers);
-  const [inviteEmail, setInviteEmail] = useState('');
+  const { user, orgId, onUsersUpdated } = route.params;
+
+  const [loading, setLoading]       = useState(true);
+  const [error,   setError]         = useState('');
+  const [users,   setUsers]         = useState([]);
+  const [groups,  setGroups]        = useState([]);
+
+  // Invite form state
+  const [inviteEmail,    setInviteEmail]    = useState('');
   const [inviteGroupIdx, setInviteGroupIdx] = useState(null);
-  const [inviteRoleIdx, setInviteRoleIdx] = useState(new IndexPath(1)); // Default: maintainer
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [inviteRoleIdx,  setInviteRoleIdx]  = useState(new IndexPath(1));
 
-  // Check if user is admin
-  const isAdmin = user.u_role === 'admin';
+  const groupNames = groups.map(g => g.group_name);
+  const isAdmin    = user.u_role === 'admin';
 
-  // Redirect non-admin users back to organization screen
+  // Fetch users + groups via /orgs/:id/display
+  const loadDisplay = async () => {
+    try {
+      setLoading(true);
+      const { users: u, groups: g } = await api.getOrgDisplay(orgId);
+      setUsers(u);
+      setGroups(g);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // On mount, redirect non-admins or load data
   useEffect(() => {
     if (!isAdmin) {
       Alert.alert(
@@ -24,94 +52,78 @@ export default function UserManagementScreen({ route, navigation }) {
         [{ text: 'OK', onPress: () => navigation.goBack() }],
         { cancelable: false }
       );
+    } else {
+      loadDisplay();
     }
-  }, [isAdmin, navigation]);
+  }, [isAdmin, orgId]);
 
-  // If not admin, don't render the content
-  if (!isAdmin) {
-    return (
-      <Layout style={styles.container}>
-        <Text status="danger">Access Denied. Redirecting...</Text>
-      </Layout>
-    );
-  }
-
-  const groupNames = groups.map(g => g.group_name);
-
-  // Invite member
+  // Invite new member
   const inviteMember = async () => {
     if (!inviteEmail.trim()) {
       setError('Please enter a valid email address');
       return;
     }
-    
     if (inviteGroupIdx === null) {
       setError('Please select a group for the new member');
       return;
     }
 
-    setLoading(true);
     setError('');
-    
     try {
-      const role = inviteRoleIdx.row === 0 ? 'admin' : 'maintainer';
+      const role    = inviteRoleIdx.row === 0 ? 'admin' : 'maintainer';
       const groupId = groups[inviteGroupIdx.row].group_id;
-      
+
       await api.addUserToOrg(orgId, inviteEmail.trim(), user.email, role, groupId);
-      
-      // Update local state
-      const newUser = {
-        email: inviteEmail.trim(),
-        u_name: inviteEmail.trim().split('@')[0], // Simple placeholder
-        u_role: role,
-        group_id: groupId
-      };
-      
-      setUsers(prev => [...prev, newUser]);
+      await loadDisplay();
+      onUsersUpdated?.();
+      Alert.alert('Success', `${inviteEmail.trim()} added as ${role}`);
+
+      // Reset form
       setInviteEmail('');
       setInviteGroupIdx(null);
-      
-      Alert.alert('Success', `${inviteEmail} added as ${role}`);
-      
-      // Callback to refresh parent
-      if (onUsersUpdated) onUsersUpdated();
+      setInviteRoleIdx(new IndexPath(1));
     } catch (e) {
       setError(e.message);
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Assign member to group
-  const assignMember = async (email, role, userIdx, groupIdx) => {
-    setLoading(true);
+  // Reassign an existing member to a group
+  const assignMember = async (email, role, idxPath) => {
+    setError('');
     try {
-      const groupId = groups[groupIdx.row].group_id;
+      const groupId = groups[idxPath.row].group_id;
       await api.addUserToOrg(orgId, email, user.email, role, groupId);
-      
-      // Update local state
-      const updatedUsers = [...users];
-      updatedUsers[userIdx].group_id = groupId;
-      setUsers(updatedUsers);
-      
-      Alert.alert('Success', `${email} assigned to ${groups[groupIdx.row].group_name}`);
-      
-      // Callback to refresh parent
-      if (onUsersUpdated) onUsersUpdated();
+      await loadDisplay();
+      onUsersUpdated?.();
+      Alert.alert('Success', `${email} moved to ${groups[idxPath.row].group_name}`);
     } catch (e) {
       setError(e.message);
-    } finally {
-      setLoading(false);
     }
   };
+
+  // Render
+  if (!isAdmin) {
+    return (
+      <Layout style={styles.container}>
+        <Text status="danger">Access Denied. Redirecting…</Text>
+      </Layout>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Layout style={styles.container}>
+        <ActivityIndicator size="large" />
+      </Layout>
+    );
+  }
 
   return (
     <Layout style={styles.container}>
       <Text category="h4">Manage Organization Users</Text>
-      
       {error ? <Text status="danger" style={styles.error}>{error}</Text> : null}
-      
-      {/* Add New User Section */}
+
+      {/* Invite New Member Section */}
       <Card style={styles.card}>
         <Text category="h6" style={styles.cardHeader}>Invite New Member</Text>
         <Input
@@ -141,15 +153,15 @@ export default function UserManagementScreen({ route, navigation }) {
           <SelectItem title="admin" />
           <SelectItem title="maintainer" />
         </Select>
-        <Button 
-          onPress={inviteMember} 
+        <Button
+          onPress={inviteMember}
           disabled={loading || !inviteEmail.trim() || inviteGroupIdx === null}
           style={styles.button}
         >
           Add Member
         </Button>
       </Card>
-      
+
       {/* Existing Users Section */}
       <Card style={styles.card}>
         <Text category="h6" style={styles.cardHeader}>Organization Members</Text>
@@ -157,7 +169,7 @@ export default function UserManagementScreen({ route, navigation }) {
           {users.map((u, userIdx) => {
             const currentGroupIdx = groups.findIndex(g => g.group_id === u.group_id);
             const idxPath = currentGroupIdx !== -1 ? new IndexPath(currentGroupIdx) : null;
-            
+
             return (
               <React.Fragment key={userIdx}>
                 <Layout style={styles.userRow}>
@@ -166,14 +178,13 @@ export default function UserManagementScreen({ route, navigation }) {
                     <Text appearance="hint">Role: {u.u_role}</Text>
                   </Layout>
                   <Select
-                    label="Group"
                     selectedIndex={idxPath}
                     value={idxPath !== null ? groupNames[idxPath.row] : 'No Group'}
-                    onSelect={idx => assignMember(u.email, u.u_role, userIdx, idx)}
+                    onSelect={idx => assignMember(u.email, u.u_role, idx)}
                     style={styles.groupSelect}
                   >
-                    {groupNames.map((name, index) => (
-                      <SelectItem key={index} title={name} />
+                    {groupNames.map((name, i) => (
+                      <SelectItem key={i} title={name} />
                     ))}
                   </Select>
                 </Layout>
@@ -183,7 +194,7 @@ export default function UserManagementScreen({ route, navigation }) {
           })}
         </ScrollView>
       </Card>
-      
+
       <Button appearance="ghost" onPress={() => navigation.goBack()} style={styles.button}>
         Back
       </Button>
@@ -225,5 +236,5 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     maxHeight: 300,
-  }
+  },
 });
