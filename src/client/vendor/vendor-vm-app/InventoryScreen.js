@@ -180,6 +180,8 @@ export default function InventoryScreen({ route, navigation }) {
     setDeleteSlots(p => ({ ...p, [slot]: !p[slot] }));
   };
 
+  const isMaintainer = user.u_role === 'maintainer';
+
   const renderItemRow = ({ item: slot }) => {
     const item = vmInventory.find(i => i.slot === slot);
     const stock = item ? item.stock : null;
@@ -312,7 +314,8 @@ export default function InventoryScreen({ route, navigation }) {
           <View style={styles.headerRow}>
             <Text category="h5">Inventory: {vm.vm_name}</Text>
             <View style={styles.actionsRow}>
-              <Button status="danger" size="tiny" onPress={() => setShowDeleteConfirm(true)}>
+              
+              <Button status="danger" size="tiny" disabled={isMaintainer} onPress={() => setShowDeleteConfirm(true)}>
                 Delete VM
               </Button>
               <Button appearance="ghost" size="tiny" onPress={() => navigation.goBack()}>
