@@ -15,6 +15,30 @@ export default function GroupManagementScreen({ route, navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [tempVmSelections, setTempVmSelections] = useState([]);
 
+  // Check if user is admin
+  const isAdmin = user.u_role === 'admin';
+
+  // Redirect non-admin users back to organization screen
+  useEffect(() => {
+    if (!isAdmin) {
+      Alert.alert(
+        'Access Denied',
+        'Only administrators can manage groups.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }],
+        { cancelable: false }
+      );
+    }
+  }, [isAdmin, navigation]);
+
+  // If not admin, don't render the content
+  if (!isAdmin) {
+    return (
+      <Layout style={styles.container}>
+        <Text status="danger">Access Denied. Redirecting...</Text>
+      </Layout>
+    );
+  }
+
   // Load vending machines for the organization
   useEffect(() => {
     const fetchVms = async () => {

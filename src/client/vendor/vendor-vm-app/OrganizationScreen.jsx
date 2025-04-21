@@ -12,6 +12,9 @@ export default function OrganizationScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Determine if user is admin
+  const isAdmin = user.u_role === 'admin';
+
   // Fetch organization name
   const fetchOrgName = useCallback(async () => {
     try {
@@ -147,13 +150,19 @@ export default function OrganizationScreen({ route, navigation }) {
           }}
           style={styles.list}
         />
-        <Button 
-          onPress={navigateToUserManagement} 
-          style={styles.button}
-          status='primary'
-        >
-          Manage Users
-        </Button>
+        {isAdmin ? (
+          <Button 
+            onPress={navigateToUserManagement} 
+            style={styles.button}
+            status='primary'
+          >
+            Manage Users
+          </Button>
+        ) : (
+          <Text appearance='hint' style={styles.hintText}>
+            Only admins can manage users
+          </Text>
+        )}
       </Card>
 
       {/* Groups Section */}
@@ -168,13 +177,19 @@ export default function OrganizationScreen({ route, navigation }) {
           )}
           style={styles.list}
         />
-        <Button 
-          onPress={navigateToGroupManagement} 
-          style={styles.button}
-          status='primary'
-        >
-          Manage Groups
-        </Button>
+        {isAdmin ? (
+          <Button 
+            onPress={navigateToGroupManagement} 
+            style={styles.button}
+            status='primary'
+          >
+            Manage Groups
+          </Button>
+        ) : (
+          <Text appearance='hint' style={styles.hintText}>
+            Only admins can manage groups
+          </Text>
+        )}
       </Card>
 
       <Button 
@@ -225,5 +240,10 @@ const styles = StyleSheet.create({
   },
   error: {
     marginBottom: 10,
+  },
+  hintText: {
+    textAlign: 'center',
+    marginVertical: 10,
+    fontStyle: 'italic'
   }
 });
