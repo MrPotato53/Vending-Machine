@@ -11,6 +11,8 @@ import DashboardScreen from './DashboardScreen';
 import InventoryScreen from './InventoryScreen';
 import OrganizationScreen from './OrganizationScreen';
 import AddVendingMachineScreen from './AddVendingMachineScreen';
+import UserManagementScreen from './UserManagementScreen';
+import GroupManagementScreen from './GroupManagementScreen';
 
 const Stack = createStackNavigator();
 
@@ -41,6 +43,16 @@ export default function App() {
               options={{ title: 'Manage Inventory' }}
             />
             <Stack.Screen name="Organization" component={OrganizationScreen} />
+            <Stack.Screen
+              name="UserManagement"
+              component={UserManagementScreen}
+              options={{ title: 'Manage Users' }}
+            />
+            <Stack.Screen
+              name="GroupManagement"
+              component={GroupManagementScreen}
+              options={{ title: 'Manage Groups' }}
+            />
             <Stack.Screen
               name="AddVendingMachine"
               component={AddVendingMachineScreen}
