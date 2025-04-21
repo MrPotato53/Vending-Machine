@@ -8,13 +8,13 @@ ALTER TABLE orgs AUTO_INCREMENT = 1000001;
 
 CREATE TABLE IF NOT EXISTS users (
     u_id INT AUTO_INCREMENT PRIMARY KEY,
-    u_name VARCHAR(255) NOT NULL, 
+    u_name VARCHAR(20) NOT NULL, 
     email VARCHAR(255) NOT NULL UNIQUE,
     u_role VARCHAR(12) DEFAULT 'maintainer', 
     org_id INT NOT NULL DEFAULT 1000001, 
     group_id INT NOT NULL DEFAULT 3000001,
     hash_p VARCHAR(255) NOT NULL,
-    FOREIGN KEY (org_id) REFERENCES orgs(org_id)
+    FOREIGN KEY (org_id) REFERENCES orgs(org_id) ON DELETE CASCADE
 );
 ALTER TABLE users AUTO_INCREMENT = 2000001;
 
@@ -68,9 +68,7 @@ CREATE TABLE IF NOT EXISTS inventory_join_table (
 );
 
 INSERT INTO orgs (org_name) VALUES
-('Org1'), 
-('Org2'), 
-('Org3'); -- org id 1000001, 1000002, 1000003
+('Org1'); 
 
 INSERT INTO grp (group_name, org_id) VALUES
 ('Group1', 1000001); -- grp id 3000001

@@ -43,6 +43,19 @@ export default function OrganizationScreen({ route, navigation }) {
     }
   }, [user.org_id, fetchOrgName]);
 
+  /* -----------------------------------------------------------
+   * Force‑refresh the org name + users + groups in one shot
+   * --------------------------------------------------------- */
+  const refreshDisplay = useCallback(async () => {
+    if (user.org_id && user.org_id !== 1000001) {
+      await fetchOrg();           // fetchOrg already calls fetchOrgName inside
+    } else {
+      // clear everything when the user no longer belongs to an org
+      setOrgName('');
+      setData({ users: [], groups: [] });
+    }
+  }, [user.org_id, fetchOrg]);
+
   useEffect(() => {
     if (user.org_id && user.org_id !== 1000001) {
       fetchOrg();
@@ -67,10 +80,9 @@ export default function OrganizationScreen({ route, navigation }) {
       } else {
         await api.leaveOrganization(user.org_id, user.email);
         setUser(u => ({ ...u, org_id: 1000001, u_role: 'maintainer' }));
-        setData({ users: [], groups: [] });
-        setOrgName('');
       }
-      await fetchOrg();
+      /* make sure what we show matches the DB */
+      await refreshDisplay();
     } catch (e) {
       setError(e.message);
     } finally {
@@ -84,7 +96,7 @@ export default function OrganizationScreen({ route, navigation }) {
       orgId: user.org_id,
       groups: data.groups,
       users: data.users,
-      onUsersUpdated: fetchOrg
+      onUsersUpdated: refreshDisplay
     });
   };
 
@@ -93,7 +105,7 @@ export default function OrganizationScreen({ route, navigation }) {
       user,
       orgId: user.org_id,
       groups: data.groups,
-      onGroupsUpdated: fetchOrg
+      onGroupsUpdated: refreshDisplay
     });
   };
 
