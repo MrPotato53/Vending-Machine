@@ -55,8 +55,8 @@ services:
     restart: always
     working_dir: /app
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      # - ./frontend:/app
+      # - /app/node_modules
     ports:
       - "80:8081"
     depends_on:
