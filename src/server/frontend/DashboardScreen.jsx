@@ -43,7 +43,7 @@ export default function DashboardScreen({ route, navigation }) {
       setOnlineStatus({});
       return;
     }
-    
+
     let vms = [];
     if (isAdmin) {
       const display = await api.getOrgDisplay(user.org_id);
@@ -71,7 +71,7 @@ export default function DashboardScreen({ route, navigation }) {
   // Initial load & polling
   useEffect(() => {
     fetchMachines();
-    const id = setInterval(fetchMachines, 5000);
+    const id = setInterval(fetchMachines, 1000);
     return () => clearInterval(id);
   }, [fetchMachines]);
 
