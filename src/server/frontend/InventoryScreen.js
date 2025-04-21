@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, isValidElement } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -331,9 +331,11 @@ export default function InventoryScreen({ route, navigation }) {
           <View style={styles.headerRow}>
             <Text category="h5">Inventory: {vm.vm_name}</Text>
             <View style={styles.actionsRow}>
-              <Button status="danger" size="tiny" disabled={isMaintainer} onPress={() => setShowDeleteConfirm(true)}>
-                Delete VM
-              </Button>
+              {!isMaintainer && (
+                <Button status="danger" size="tiny" disabled={isMaintainer} onPress={() => setShowDeleteConfirm(true)}>
+                  Delete VM
+                </Button>
+              )}
               <Button appearance="ghost" size="tiny" onPress={goBack}>
                 Back
               </Button>
