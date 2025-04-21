@@ -36,6 +36,7 @@ export default function UserManagementScreen({ route, navigation }) {
       const { users: u, groups: g } = await api.getOrgDisplay(orgId);
       setUsers(u);
       setGroups(g);
+      setError('');
     } catch (e) {
       setError(e.message);
     } finally {
@@ -153,18 +154,11 @@ const assignMember = async (email, role, userIdx, groupIdx) => {
           style={styles.input}
         />
         <Select
-          label="Group"
-          selectedIndex={idxPath}
-          value={idxPath !== null ? groupNames[idxPath.row] : 'No Group'}
-          onSelect={(index) => {
-            // Make sure index is a valid IndexPath object
-            if (index && typeof index.row === 'number') {
-              assignMember(u.email, u.u_role, userIdx, index);
-            } else {
-              setError('Invalid group selection');
-            }
-          }}
-          style={styles.groupSelect}
+          placeholder="Select Group"
+          selectedIndex={inviteGroupIdx}
+          value={inviteGroupIdx !== null ? groupNames[inviteGroupIdx.row] : 'Select Group'}
+          onSelect={setInviteGroupIdx}
+          style={styles.input}
         >
           {groupNames.map((name, index) => (
             <SelectItem key={index} title={name} />
@@ -198,7 +192,7 @@ const assignMember = async (email, role, userIdx, groupIdx) => {
             const idxPath = currentGroupIdx !== -1 ? new IndexPath(currentGroupIdx) : null;
 
             return (
-              <React.Fragment key={userIdx}>
+              <React.Fragment key={u.email}>
                 <Layout style={styles.userRow}>
                   <Layout style={styles.userInfo}>
                     <Text category="s1">{u.u_name || u.email}</Text>
@@ -207,7 +201,7 @@ const assignMember = async (email, role, userIdx, groupIdx) => {
                   <Select
                     selectedIndex={idxPath}
                     value={idxPath !== null ? groupNames[idxPath.row] : 'No Group'}
-                    onSelect={idx => assignMember(u.email, u.u_role, idx)}
+                    onSelect={idx => assignMember(u.email, idx)}
                     style={styles.groupSelect}
                   >
                     {groupNames.map((name, i) => (

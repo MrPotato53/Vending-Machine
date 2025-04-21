@@ -138,59 +138,72 @@ router.patch("/:u_email/update", async (req, res) => {
 
 // Assign a user to a group (admin only)
 router.patch('/:email/group', async (req, res) => {
-    const target = req.params.email;
-    const { group_id, admin_email } = req.body;
-    if (!group_id || !admin_email) {
-      return res.status(400).json({ error: 'group_id and admin_email are required' });
+  const targetEmail = req.params.email;
+  const { group_id, admin_email } = req.body;
+
+  if (!group_id || !admin_email) {
+    return res.status(400).json({ 
+      error: 'Both group_id and admin_email are required' 
+    });
+  }
+
+  try {
+    // 1) make sure target exists
+    const [[ targetUser ]] = await db.query(
+      `SELECT u_id, org_id 
+         FROM users 
+        WHERE email = ?`,
+      [ targetEmail ]
+    );
+    if (!targetUser) {
+      return res
+        .status(404)
+        .json({ error: `User not found: ${targetEmail}` });
     }
-  
-    try {
-      // 0) ensure target is not already in an org
-      const [[targetUser]] = await db.query(
-        "SELECT org_id FROM users WHERE email = ?",
-        [target]
-      );
-      if (!targetUser) {
-        return res.status(404).json({ error: `User not found: ${target}` });
-      }
-      if (targetUser.org_id !== 1000001) {
-        return res
-          .status(400)
-          .json({ error: 'User already belongs to an organization; they must leave first' });
-      }
-  
-      // 1) verify caller is admin
-      const [[admin]] = await db.query(
-        "SELECT u_role, org_id FROM users WHERE email = ?",
-        [admin_email]
-      );
-      if (!admin || admin.u_role !== 'admin') {
-        return res.status(403).json({ error: 'Only admins can change group' });
-      }
-  
-      // 2) confirm target is in same org (should both be default at this point)
-      if (targetUser.org_id !== admin.org_id) {
-        return res.status(403).json({ error: 'Cannot assign groups across organizations' });
-      }
-  
-      // 3) do the update
-      await db.query(
-        "UPDATE users SET group_id = ?, org_id = ? WHERE email = ?",
-        [group_id, admin.org_id, target]
-      );
-  
-      // 4) return updated record
-      const [[updated]] = await db.query(
-        `SELECT u_id, u_name, email, u_role, org_id, group_id
-         FROM users WHERE email = ?`,
-        [target]
-      );
-  
-      res.json({ success: true, user: updated });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: err.message });
+
+    // 2) verify caller is an admin
+    const [[ adminUser ]] = await db.query(
+      `SELECT u_role, org_id 
+         FROM users 
+        WHERE email = ?`,
+      [ admin_email ]
+    );
+    if (!adminUser || adminUser.u_role !== 'admin') {
+      return res
+        .status(403)
+        .json({ error: 'Only admins can change group' });
     }
+
+    // 3) enforce same‐org
+    if (targetUser.org_id !== adminUser.org_id) {
+      return res
+        .status(403)
+        .json({ error: 'Cannot assign groups across organizations' });
+    }
+
+    // 4) do the update (only group_id)
+    await db.query(
+      `UPDATE users 
+          SET group_id = ? 
+        WHERE email = ?`,
+      [ group_id, targetEmail ]
+    );
+
+    // 5) return the updated user
+    const [[ updatedUser ]] = await db.query(
+      `SELECT u_id, u_name, email, u_role, org_id, group_id
+         FROM users 
+        WHERE email = ?`,
+      [ targetEmail ]
+    );
+
+    return res.json({ success: true, user: updatedUser });
+  }
+  catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: err.message });
+  }
 });
+
 
 module.exports = router;
