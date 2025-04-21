@@ -68,13 +68,13 @@ export default function InventoryScreen({ route, navigation }) {
 
   const deleteVm = async () => {
     try {
+      setShowDeleteConfirm(false); // Close the confirmation modal first
       await api.deleteVendingMachine(vm.vm_id);
       navigation.navigate('Dashboard', { user });
     } catch (e) {
       showError(`Could not delete: ${e.message}`);
     }
   };
-
   const startRestock = async () => {
     if (!vmIsRegistered) return;
     
