@@ -79,6 +79,18 @@ export default function InventoryScreen({ route, navigation }) {
     if (!vmIsRegistered) return;
     
     try {
+       const vmDb = await api.getVendingMachine(vm.vm_id);
+    
+       if (vmDb.vm_mode !== 'i') {
+         showError('Vending machine is not idle – cannot enter restock mode.');
+         return;                                             // bail out early
+       }
+       /* … continue with restock … */
+     } catch (err) {
+       showError(`Could not enter restock mode: ${err.message}`);
+     }
+    
+    try {
       await api.updateVendingMachineMode(vm.vm_id, 'r');
       setIsRestockMode(true);
 
@@ -120,6 +132,11 @@ export default function InventoryScreen({ route, navigation }) {
       showError(`Could not cancel restock: ${error.message}`);
     }
   };
+
+  const goBack = async() => {
+    cancelRestock();
+    navigation.goBack();
+  }
 
   const submitRestock = async () => {
     const updates = vmInventory.map(item => ({
@@ -317,7 +334,7 @@ export default function InventoryScreen({ route, navigation }) {
               <Button status="danger" size="tiny" disabled={isMaintainer} onPress={() => setShowDeleteConfirm(true)}>
                 Delete VM
               </Button>
-              <Button appearance="ghost" size="tiny" onPress={() => navigation.goBack()}>
+              <Button appearance="ghost" size="tiny" onPress={goBack}>
                 Back
               </Button>
             </View>
