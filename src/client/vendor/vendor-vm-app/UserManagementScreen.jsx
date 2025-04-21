@@ -88,39 +88,20 @@ export default function UserManagementScreen({ route, navigation }) {
     }
   };
 
-// Assign member to group
-const assignMember = async (email, role, userIdx, groupIdx) => {
-  // Check if groupIdx is valid
-  if (!groupIdx || typeof groupIdx.row !== 'number') {
-    setError('Invalid group selection');
-    return;
-  }
-  
-  setLoading(true);
-  try {
-    const groupId = groups[groupIdx.row].group_id;
-    await api.addUserToOrg(orgId, email, user.email, role, groupId);
-    
-    // Update local state with proper structure
-    const updatedUsers = [...users];
-    if (updatedUsers[userIdx]) {
-      updatedUsers[userIdx] = {
-        ...updatedUsers[userIdx],
-        group_id: groupId
-      };
-      setUsers(updatedUsers);
+  // Reassign an existing member to a group
+  const assignMember = async (email, idxPath) => {
+    if (!idxPath || idxPath.row < 0) return;
+    setError('');
+    try {
+      const groupId = groups[idxPath.row].group_id;
+      await api.assignUserToGroup(email, groupId, user.email);
+      await loadDisplay();
+      onUsersUpdated?.();
+      Alert.alert('Success', `${email} moved to ${groups[idxPath.row].group_name}`);
+    } catch (e) {
+      setError(e.message);
     }
-    
-    Alert.alert('Success', `${email} assigned to ${groups[groupIdx.row].group_name}`);
-    
-    // Callback to refresh parent
-    if (onUsersUpdated) onUsersUpdated();
-  } catch (e) {
-    setError(e.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Render
   if (!isAdmin) {
