@@ -87,19 +87,39 @@ export default function UserManagementScreen({ route, navigation }) {
     }
   };
 
-  // Reassign an existing member to a group
-  const assignMember = async (email, role, idxPath) => {
-    setError('');
-    try {
-      const groupId = groups[idxPath.row].group_id;
-      await api.addUserToOrg(orgId, email, user.email, role, groupId);
-      await loadDisplay();
-      onUsersUpdated?.();
-      Alert.alert('Success', `${email} moved to ${groups[idxPath.row].group_name}`);
-    } catch (e) {
-      setError(e.message);
+// Assign member to group
+const assignMember = async (email, role, userIdx, groupIdx) => {
+  // Check if groupIdx is valid
+  if (!groupIdx || typeof groupIdx.row !== 'number') {
+    setError('Invalid group selection');
+    return;
+  }
+  
+  setLoading(true);
+  try {
+    const groupId = groups[groupIdx.row].group_id;
+    await api.addUserToOrg(orgId, email, user.email, role, groupId);
+    
+    // Update local state with proper structure
+    const updatedUsers = [...users];
+    if (updatedUsers[userIdx]) {
+      updatedUsers[userIdx] = {
+        ...updatedUsers[userIdx],
+        group_id: groupId
+      };
+      setUsers(updatedUsers);
     }
-  };
+    
+    Alert.alert('Success', `${email} assigned to ${groups[groupIdx.row].group_name}`);
+    
+    // Callback to refresh parent
+    if (onUsersUpdated) onUsersUpdated();
+  } catch (e) {
+    setError(e.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Render
   if (!isAdmin) {
@@ -133,11 +153,18 @@ export default function UserManagementScreen({ route, navigation }) {
           style={styles.input}
         />
         <Select
-          placeholder="Select Group"
-          selectedIndex={inviteGroupIdx}
-          value={inviteGroupIdx !== null ? groupNames[inviteGroupIdx.row] : 'Select Group'}
-          onSelect={setInviteGroupIdx}
-          style={styles.input}
+          label="Group"
+          selectedIndex={idxPath}
+          value={idxPath !== null ? groupNames[idxPath.row] : 'No Group'}
+          onSelect={(index) => {
+            // Make sure index is a valid IndexPath object
+            if (index && typeof index.row === 'number') {
+              assignMember(u.email, u.u_role, userIdx, index);
+            } else {
+              setError('Invalid group selection');
+            }
+          }}
+          style={styles.groupSelect}
         >
           {groupNames.map((name, index) => (
             <SelectItem key={index} title={name} />
