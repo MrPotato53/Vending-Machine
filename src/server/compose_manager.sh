@@ -4,6 +4,7 @@
 CONTAINER_NAME="vending_machine-db1-1"
 BACKEND_CONTAINER_NAME="vending_machine-backend-1"
 MOSQUITTO_CONTAINER_NAME="vending_machine-mosquitto-1"
+FRONTEND_CONTAINER_NAME="vending_machine-frontend-1"
 VOLUME_NAME="vending_machine_vendingmachinedat"
 COMPOSE_FILE="docker_compose.yml"
 PROJECT_NAME="vending_machine"
@@ -34,6 +35,14 @@ shutdown() {
         docker stop "${MOSQUITTO_CONTAINER_NAME}" && docker rm "${MOSQUITTO_CONTAINER_NAME}"
     else
         echo "Container ${MOSQUITTO_CONTAINER_NAME} not found. Skipping removal."
+    fi
+
+    # Stop and remove the frontend container if it exists
+    if docker ps -a --format '{{.Names}}' | grep -q "^${FRONTEND_CONTAINER_NAME}$"; then
+        echo "Stopping and removing container: ${FRONTEND_CONTAINER_NAME}"
+        docker stop "${FRONTEND_CONTAINER_NAME}" && docker rm "${FRONTEND_CONTAINER_NAME}"
+    else
+        echo "Container ${FRONTEND_CONTAINER_NAME} not found. Skipping removal."
     fi
 
     # Bring down docker-compose services and remove associated volumes
@@ -99,6 +108,14 @@ down() {
         docker stop "${MOSQUITTO_CONTAINER_NAME}"
     else
         echo "Container ${MOSQUITTO_CONTAINER_NAME} not found."
+    fi
+
+    # Stop frontend container if it exists
+    if docker ps -a --format '{{.Names}}' | grep -q "^${FRONTEND_CONTAINER_NAME}$"; then
+        echo "Stopping container: ${FRONTEND_CONTAINER_NAME}"
+        docker stop "${FRONTEND_CONTAINER_NAME}"
+    else
+        echo "Container ${FRONTEND_CONTAINER_NAME} not found."
     fi
 
     echo "Containers stopped."
