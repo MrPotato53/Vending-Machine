@@ -50,7 +50,7 @@ export default function InventoryScreen({ route, navigation }) {
       // Column first (outer loop is column, inner loop is row)
       for (let r = 0; r < (vm.vm_row_count || 0); r++) {
         for (let c = 0; c < (vm.vm_column_count || 0); c++) {
-          slots.push(`${r}${c}`); // Creates 01, 11, 21, 02, 12, 22 etc.
+          slots.push(`${r}${c}`); // Creates 01, 01, 02, 10, 11, 12 etc.
         }
       }
       setOrderedSlots(slots);
@@ -373,11 +373,11 @@ export default function InventoryScreen({ route, navigation }) {
         {/* Bottom fixed button container */}
         <View style={styles.bottomFixedContainer}>
           {!isRestockMode ? (
-            <Button 
-              style={styles.bottomButton} 
-              disabled={!vmIsRegistered} 
+            <Button
+              disabled={!vmIsRegistered}
+              appearance={vmIsRegistered ? 'filled' : 'outline'}
+              status={vmIsRegistered ? 'primary' : 'basic'}   // neutral/basic palette when disabled
               onPress={startRestock}
-              status="primary"
             >
               Edit Stocks
             </Button>

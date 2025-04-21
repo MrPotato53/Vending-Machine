@@ -9,7 +9,7 @@ import {
   Text as RNText,
 } from 'react-native';
 import { Layout, Text, Input, Button, List, ListItem } from '@ui-kitten/components';
-import { useFocusEffect } from '@react-navigation/native';           // ⬅️ NEW
+import { useFocusEffect } from '@react-navigation/native';
 import api from './apiCommunicator';
 
 export default function DashboardScreen({ route, navigation }) {
@@ -18,7 +18,7 @@ export default function DashboardScreen({ route, navigation }) {
   const [onlineStatus, setStat]   = useState({});
   const [searchVM, setSearchVM]   = useState('');
 
-  const intervalRef = useRef(null);        // ⬅️ holds the polling timer
+  const intervalRef = useRef(null);
 
   const isAdmin      = user.u_role === 'admin';
   const isMaintainer = user.u_role === 'maintainer';
