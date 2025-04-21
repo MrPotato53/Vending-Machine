@@ -112,22 +112,36 @@ export default function DashboardScreen({ route, navigation }) {
 
           <List
             data={filtered}
-            renderItem={({ item }) => (
-              <ListItem
-                title={() => (
-                  <View style={styles.vmRow}>
-                    <View
-                      style={[
-                        styles.statusDot,
-                        onlineStatus[item.vm_id] ? styles.greenDot : styles.redDot,
-                      ]}
-                    />
-                    <Text>{item.vm_name}</Text>
-                  </View>
-                )}
-                onPress={() => navigation.navigate('Inventory', { user, vm: item })}
-              />
-            )}
+            renderItem={({ item }) => {
+              const registered =
+                (item.vm_row_count ?? 0) > 0 && (item.vm_column_count ?? 0) > 0;
+
+              const dimText = registered
+                ? `${item.vm_row_count} × ${item.vm_column_count}`  // e.g. “6 × 4”
+                : 'Unregistered';
+
+              return (
+                <ListItem
+                  title={() => (
+                    <View style={styles.vmRow}>
+                      <View
+                        style={[
+                          styles.statusDot,
+                          onlineStatus[item.vm_id] ? styles.greenDot : styles.redDot,
+                        ]}
+                      />
+                      <Text category="s1">{item.vm_name}</Text>
+                    </View>
+                  )}
+                  description={() => (
+                    <Text appearance="hint">
+                      ID: {item.vm_id} · {dimText}
+                    </Text>
+                  )}
+                  onPress={() => navigation.navigate('Inventory', { user, vm: item })}
+                />
+              );
+            }}
             style={styles.list}
             contentContainerStyle={{ paddingBottom: 120 }}
             keyboardShouldPersistTaps="handled"
