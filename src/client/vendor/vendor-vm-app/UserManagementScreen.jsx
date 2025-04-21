@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Alert, ScrollView } from 'react-native';
 import { Layout, Select, SelectItem, IndexPath, Button, Text, Input, List, ListItem, Card, Divider } from '@ui-kitten/components';
 import api from './apiCommunicator';
@@ -11,6 +11,30 @@ export default function UserManagementScreen({ route, navigation }) {
   const [inviteRoleIdx, setInviteRoleIdx] = useState(new IndexPath(1)); // Default: maintainer
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check if user is admin
+  const isAdmin = user.u_role === 'admin';
+
+  // Redirect non-admin users back to organization screen
+  useEffect(() => {
+    if (!isAdmin) {
+      Alert.alert(
+        'Access Denied',
+        'Only administrators can manage users.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }],
+        { cancelable: false }
+      );
+    }
+  }, [isAdmin, navigation]);
+
+  // If not admin, don't render the content
+  if (!isAdmin) {
+    return (
+      <Layout style={styles.container}>
+        <Text status="danger">Access Denied. Redirecting...</Text>
+      </Layout>
+    );
+  }
 
   const groupNames = groups.map(g => g.group_name);
 
@@ -142,7 +166,6 @@ export default function UserManagementScreen({ route, navigation }) {
                     <Text appearance="hint">Role: {u.u_role}</Text>
                   </Layout>
                   <Select
-                    disabled={user.u_role !== 'admin'}
                     label="Group"
                     selectedIndex={idxPath}
                     value={idxPath !== null ? groupNames[idxPath.row] : 'No Group'}
