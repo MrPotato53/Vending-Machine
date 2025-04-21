@@ -58,28 +58,34 @@ export default function UserManagementScreen({ route, navigation }) {
     }
   }, [isAdmin, orgId]);
 
-  // Invite new member
   const inviteMember = async () => {
     if (!inviteEmail.trim()) {
       setError('Please enter a valid email address');
       return;
     }
-    if (inviteGroupIdx === null) {
-      setError('Please select a group for the new member');
-      return;
-    }
-
+  
     setError('');
     try {
-      const role    = inviteRoleIdx.row === 0 ? 'admin' : 'maintainer';
-      const groupId = groups[inviteGroupIdx.row].group_id;
-
-      await api.addUserToOrg(orgId, inviteEmail.trim(), user.email, role, groupId);
+      const role = inviteRoleIdx.row === 0 ? 'admin' : 'maintainer';
+  
+      // Only include groupId if one was picked
+      if (inviteGroupIdx !== null) {
+        const groupId = groups[inviteGroupIdx.row].group_id;
+        await api.addUserToOrg(orgId, inviteEmail.trim(), user.email, role, groupId);
+      } else {
+        await api.addUserToOrg(orgId, inviteEmail.trim(), user.email, role);
+      }
+  
       await loadDisplay();
       onUsersUpdated?.();
-      Alert.alert('Success', `${inviteEmail.trim()} added as ${role}`);
-
-      // Reset form
+      Alert.alert(
+        'Success',
+        inviteGroupIdx !== null
+          ? `${inviteEmail.trim()} added as ${role}`
+          : `${inviteEmail.trim()} invited without group`
+      );
+  
+      // reset form
       setInviteEmail('');
       setInviteGroupIdx(null);
       setInviteRoleIdx(new IndexPath(1));
@@ -87,7 +93,6 @@ export default function UserManagementScreen({ route, navigation }) {
       setError(e.message);
     }
   };
-
   // Reassign an existing member to a group
   const assignMember = async (email, idxPath) => {
     if (!idxPath || idxPath.row < 0) return;
@@ -157,7 +162,7 @@ export default function UserManagementScreen({ route, navigation }) {
         </Select>
         <Button
           onPress={inviteMember}
-          disabled={loading || !inviteEmail.trim() || inviteGroupIdx === null}
+          disabled={loading || !inviteEmail.trim()}
           style={styles.button}
         >
           Add Member
