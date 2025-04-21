@@ -54,7 +54,7 @@ services:
     build: ./frontend
     restart: always
     working_dir: /app
-    volumes:
+    # volumes:
       # - ./frontend:/app
       # - /app/node_modules
     ports:
