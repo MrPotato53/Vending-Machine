@@ -314,7 +314,6 @@ export default function InventoryScreen({ route, navigation }) {
           <View style={styles.headerRow}>
             <Text category="h5">Inventory: {vm.vm_name}</Text>
             <View style={styles.actionsRow}>
-              
               <Button status="danger" size="tiny" disabled={isMaintainer} onPress={() => setShowDeleteConfirm(true)}>
                 Delete VM
               </Button>
@@ -349,35 +348,46 @@ export default function InventoryScreen({ route, navigation }) {
             {isRestockMode && <View style={{ width: 70 }} />}
           </View>
 
-          {/* Using FlatList instead of ScrollView for guaranteed scrolling */}
-          <FlatList
-            data={orderedSlots}
-            keyExtractor={(item) => item}
-            renderItem={renderItemRow}
-            style={styles.flatList}
-            contentContainerStyle={styles.listContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={true}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text>No inventory slots available</Text>
-              </View>
-            }
-          />
-          
-          <View style={styles.buttonRow}>
-            {!isRestockMode ? (
-              <Button style={styles.button} disabled={!vmIsRegistered} onPress={startRestock}>
-                Edit Stocks
-              </Button>
-            ) : (
-              <>
-                <Button style={styles.button} onPress={cancelRestock}>Cancel</Button>
-                <Button style={styles.button} onPress={submitRestock}>Submit Changes</Button>
-              </>
-            )}
+          {/* Using a wrapper View with explicit height and enhanced overflow properties */}
+          <View style={styles.listContainer}>
+            {/* Use FlatList with improved scrolling properties */}
+            <FlatList
+              data={orderedSlots}
+              keyExtractor={(item) => item}
+              renderItem={renderItemRow}
+              style={styles.flatList}
+              contentContainerStyle={styles.listContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={true}
+              scrollEnabled={true}
+              nestedScrollEnabled={true}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text>No inventory slots available</Text>
+                </View>
+              }
+            />
           </View>
         </Layout>
+
+        {/* Bottom fixed button container */}
+        <View style={styles.bottomFixedContainer}>
+          {!isRestockMode ? (
+            <Button 
+              style={styles.bottomButton} 
+              disabled={!vmIsRegistered} 
+              onPress={startRestock}
+              status="primary"
+            >
+              Edit Stocks
+            </Button>
+          ) : (
+            <View style={styles.buttonRow}>
+              <Button style={styles.button} onPress={cancelRestock}>Cancel</Button>
+              <Button style={styles.button} onPress={submitRestock}>Submit Changes</Button>
+            </View>
+          )}
+        </View>
 
         <Modal
           visible={showErrorModal}
@@ -410,6 +420,31 @@ export default function InventoryScreen({ route, navigation }) {
           </Card>
         </Modal>
       </KeyboardAvoidingView>
+
+      {/* Web-specific scrollbar styling */}
+      <style jsx global>{`
+        /* Ensure scrollbar is always visible and prominent */
+        *::-webkit-scrollbar {
+          width: 14px;
+          background-color: #f0f0f0;
+        }
+        
+        *::-webkit-scrollbar-thumb {
+          background-color: #FF6B81;
+          border-radius: 7px;
+          border: 3px solid #f0f0f0;
+        }
+        
+        *::-webkit-scrollbar-thumb:hover {
+          background-color: #C41C2F;
+        }
+        
+        /* Set specific scrolling mode for the list container */
+        .list-container {
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+      `}</style>
     </SafeAreaView>
   );
 }
@@ -420,13 +455,30 @@ const styles = StyleSheet.create({
   },
   keyboardAvoid: {
     flex: 1,
+    position: 'relative', // Required for absolute positioning of child elements
   },
   container: { 
     flex: 1,
     padding: 16,
+    display: 'flex',
+    flexDirection: 'column',
+    paddingBottom: 80, // Added padding to make room for the fixed bottom button
+  },
+  // New container specifically for the list area
+  listContainer: {
+    flex: 1,
+    minHeight: 200, // Ensure minimum height for scrolling
+    maxHeight: '85vh', // Use viewport height for web
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    backgroundColor: '#fff',
+    marginBottom: 16,
+    className: 'list-container', // For web-specific styling
   },
   flatList: {
-    flex: 1, // This is crucial for scrolling to work
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   listContent: {
     paddingBottom: 20,
@@ -487,6 +539,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    minHeight: 50, // Ensure enough height to be clickable
   },
   slotIndicator: {
     width: 50,
@@ -521,11 +574,30 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     color: '#888'
   },
+  // New styles for fixed bottom positioning
+  bottomFixedContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16, // Extra padding for iOS devices with home indicator
+    elevation: 5, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  bottomButton: {
+    backgroundColor: '#FF6B81', // Pink color to match scrollbar theme
+    borderColor: '#FF6B81',
+  },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingTop: 16,
-    paddingBottom: 8,
     width: '100%',
   },
   button: { 

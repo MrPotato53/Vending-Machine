@@ -1,46 +1,48 @@
 // DashboardScreen.js
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
   View,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
   Text as RNText,
 } from 'react-native';
 import { Layout, Text, Input, Button, List, ListItem } from '@ui-kitten/components';
+import { useFocusEffect } from '@react-navigation/native';           // ⬅️ NEW
 import api from './apiCommunicator';
 
 export default function DashboardScreen({ route, navigation }) {
-  const [user, setUser] = useState(route.params.user);
-  const [vendingMachines, setVendingMachines] = useState([]);
-  const [onlineStatus, setOnlineStatus] = useState({});
-  const [searchVM, setSearchVM] = useState('');
+  const [user, setUser]           = useState(route.params.user);
+  const [vendingMachines, setVMs] = useState([]);
+  const [onlineStatus, setStat]   = useState({});
+  const [searchVM, setSearchVM]   = useState('');
 
-  const isAdmin = user.u_role === 'admin';
+  const intervalRef = useRef(null);        // ⬅️ holds the polling timer
+
+  const isAdmin      = user.u_role === 'admin';
   const isMaintainer = user.u_role === 'maintainer';
 
-  // Refresh user periodically
+  /* ───────────── refresh the logged‑in user every 5 s ───────────── */
   useEffect(() => {
     const id = setInterval(async () => {
       try {
         const updated = await api.getUser(user.email);
         setUser(updated);
-      } catch {}
+      } catch {/* ignore */}
     }, 5000);
     return () => clearInterval(id);
   }, [user.email]);
 
-  // Load machines
+  /* ──────────── fetch VMs & their online status ──────────── */
   const fetchMachines = useCallback(async () => {
-    const DEFAULT_ORG  = 1000001;
+    const DEFAULT_ORG   = 1000001;
     const DEFAULT_GROUP = 3000001;
-    const groupId = user.group_id ?? user.groupId;
-  
-    // if we’re in the “default” org+group, don’t fetch anything
+    const groupId       = user.group_id ?? user.groupId;
+
     if (user.org_id === DEFAULT_ORG && groupId === DEFAULT_GROUP) {
-      setVendingMachines([]);
-      setOnlineStatus({});
+      setVMs([]);
+      setStat({});
       return;
     }
 
@@ -49,128 +51,153 @@ export default function DashboardScreen({ route, navigation }) {
       const display = await api.getOrgDisplay(user.org_id);
       vms = display.vms;
     } else if (isMaintainer) {
-      const groupId = user.group_id || user.groupId;
       vms = await api.getVendingMachinesByGroup(user.org_id, groupId);
     }
-    setVendingMachines(vms);
+    setVMs(vms);
 
-    const statusObj = {};
+    const status = {};
     await Promise.all(
       vms.map(async vm => {
         try {
           const { isOnline } = await api.isVMOnline(vm.vm_id);
-          statusObj[vm.vm_id] = isOnline;
-        } catch {
-          statusObj[vm.vm_id] = false;
-        }
-      })
+          status[vm.vm_id] = isOnline;
+        } catch { status[vm.vm_id] = false; }
+      }),
     );
-    setOnlineStatus(statusObj);
-  }, [user.org_id, isAdmin, isMaintainer, user.group_id, user.groupId]);
+    setStat(status);
+  }, [user.org_id, user.group_id, user.groupId, isAdmin, isMaintainer]);
 
-  // Initial load & polling
-  useEffect(() => {
-    fetchMachines();
-    const id = setInterval(fetchMachines, 1000);
-    return () => clearInterval(id);
-  }, [fetchMachines]);
+  /* ───────────────── focus‑aware polling ───────────────── */
+  useFocusEffect(
+    useCallback(() => {
+      // screen gains focus ➜ start polling
+      fetchMachines();
+      intervalRef.current = setInterval(fetchMachines, 5000);
 
-  // Filter by VM name
-  const filtered = vendingMachines.filter(vm =>
-    vm.vm_name.toLowerCase().includes(searchVM.toLowerCase())
+      // screen loses focus ➜ stop polling
+      return () => clearInterval(intervalRef.current);
+    }, [fetchMachines]),
   );
 
+  /* ───────────── filter by search string ───────────── */
+  const filtered = vendingMachines.filter(vm =>
+    vm.vm_name.toLowerCase().includes(searchVM.toLowerCase()),
+  );
+
+  /* ────────────────────────── render ────────────────────────── */
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <Layout style={styles.container}>
-        <Text category="h5">Dashboard</Text>
-        <Text>{`Welcome, ${user.email} (${user.u_role})`}</Text>
-        <RNText style={styles.instruction}>
-          Select a vending machine to manage inventory.
-        </RNText>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <Layout style={styles.container}>
+          <Text category="h5">Dashboard</Text>
+          <Text>{`Welcome, ${user.email} (${user.u_role})`}</Text>
+          <RNText style={styles.instruction}>
+            Select a vending machine to manage inventory.
+          </RNText>
 
-        <View style={styles.topRow}>
-          <Input
-            placeholder="Search VMs"
-            value={searchVM}
-            onChangeText={setSearchVM}
-            style={styles.input}
-          />
-          <Button size="tiny" onPress={fetchMachines} style={styles.reloadBtn}>
-            Reload
-          </Button>
-        </View>
-
-        <List
-          data={filtered}
-          renderItem={({ item }) => (
-            <ListItem
-              title={() => (
-                <View style={styles.vmRow}>
-                  <View
-                    style={[
-                      styles.statusDot,
-                      onlineStatus[item.vm_id] ? styles.greenDot : styles.redDot,
-                    ]}
-                  />
-                  <Text>{item.vm_name}</Text>
-                </View>
-              )}
-              onPress={() => navigation.navigate('Inventory', { user, vm: item })}
+          <View style={styles.topRow}>
+            <Input
+              placeholder="Search VMs"
+              value={searchVM}
+              onChangeText={setSearchVM}
+              style={styles.input}
             />
-          )}
-          style={styles.list}
-        />
+            <Button size="tiny" onPress={fetchMachines} style={styles.reloadBtn}>
+              Reload
+            </Button>
+          </View>
 
-        {/* Add VM button at bottom of list */}
-        <Button
-          style={styles.addButton}
-          disabled={!isAdmin}
-          appearance={isAdmin ? 'filled' : 'outline'}
-          onPress={() => navigation.navigate('AddVendingMachine', { user })}
-        >
-          Add Vending Machine
-        </Button>
+          <List
+            data={filtered}
+            renderItem={({ item }) => (
+              <ListItem
+                title={() => (
+                  <View style={styles.vmRow}>
+                    <View
+                      style={[
+                        styles.statusDot,
+                        onlineStatus[item.vm_id] ? styles.greenDot : styles.redDot,
+                      ]}
+                    />
+                    <Text>{item.vm_name}</Text>
+                  </View>
+                )}
+                onPress={() => navigation.navigate('Inventory', { user, vm: item })}
+              />
+            )}
+            style={styles.list}
+            contentContainerStyle={{ paddingBottom: 120 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator
+          />
+        </Layout>
 
-        <View style={styles.actionRow}>
-          {/* Everyone can manage org */}
+        <View style={styles.bottomBar}>
           <Button
-            style={styles.button}
-            onPress={() => navigation.navigate('Organization', { user })}
+            style={styles.addButton}
+            disabled={!isAdmin}
+            appearance={isAdmin ? 'filled' : 'outline'}
+            onPress={() => navigation.navigate('AddVendingMachine', { user })}
           >
-            Manage Organization
+            Add Vending Machine
           </Button>
-          <Button
-            style={styles.button}
-            onPress={() => navigation.replace('Login')}
-          >
-            Logout
-          </Button>
+
+          <View style={styles.actionRow}>
+            <Button
+              style={styles.button}
+              onPress={() => navigation.navigate('Organization', { user })}
+            >
+              Manage Organization
+            </Button>
+            <Button
+              style={styles.button}
+              onPress={() => navigation.replace('Login')}
+            >
+              Logout
+            </Button>
+          </View>
         </View>
-      </Layout>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
+/* ───────────────────────── styles ───────────────────────── */
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24 },
+  safeArea:      { flex: 1 },
+  keyboardAvoid: { flex: 1, position: 'relative' },
+
+  container: { flex: 1, padding: 24 , maxHeight: '91vh' },
+
   instruction: { marginVertical: 12, fontStyle: 'italic' },
-  topRow: { flexDirection: 'row', alignItems: 'center' },
-  input: { flex: 1, marginRight: 8 },
-  reloadBtn: { width: 80 },
-  list: { marginVertical: 8 },
+
+  topRow:   { flexDirection: 'row', alignItems: 'center' },
+  input:    { flex: 1, marginRight: 8 },
+  reloadBtn:{ width: 80 },
+
+  list: { flex: 1, marginVertical: 8 },
   vmRow: { flexDirection: 'row', alignItems: 'center' },
   statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-  greenDot: { backgroundColor: '#4caf50' },
-  redDot: { backgroundColor: '#f44336' },
-  addButton: { marginVertical: 12 },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
+  greenDot:  { backgroundColor: '#4caf50' },
+  redDot:    { backgroundColor: '#f44336' },
+
+  bottomBar: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0,
+    padding: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  button: { flex: 1, marginHorizontal: 4 },
+  addButton: { marginBottom: 12 },
+  actionRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  button:    { flex: 1, marginHorizontal: 4 },
 });
