@@ -108,6 +108,43 @@ export default function UserManagementScreen({ route, navigation }) {
     }
   };
 
+  const changeRole = async (targetEmail, idxPath) => {
+    if (!idxPath || idxPath.row < 0) return;
+  
+    const role = idxPath.row === 0 ? 'admin' : 'maintainer';
+
+    /* ‑‑ stop if the admin tries to demote themself ‑‑ */
+    if (targetEmail === user.email && role !== 'admin') {
+      Alert.alert(
+        'Permission denied',
+        'You cannot remove your own admin privilege.'
+      );
+      return;
+    }
+  
+    try {
+      /* 1 ─ send exactly the structure updateUser expects */
+      await api.updateUser(
+        user.email,                        // credential / path param
+        { [targetEmail]: { n_role: role } } // ← JUST the map of changes
+      );
+  
+      /* 2 ─ optimistic UI update */
+      setUsers(prev =>
+        prev.map(u =>
+          u.email === targetEmail ? { ...u, u_role: role } : u
+        )
+      );
+  
+      /* 3 ─ refresh from server */
+      await loadDisplay();
+      onUsersUpdated?.();
+      Alert.alert('Success', `${targetEmail} is now ${role}`);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
   // Render
   if (!isAdmin) {
     return (
@@ -174,19 +211,39 @@ export default function UserManagementScreen({ route, navigation }) {
         <Text category="h6" style={styles.cardHeader}>Organization Members</Text>
         <ScrollView style={styles.scrollView}>
           {users.map((u, userIdx) => {
-            const currentGroupIdx = groups.findIndex(g => g.group_id === u.group_id);
-            const idxPath = currentGroupIdx !== -1 ? new IndexPath(currentGroupIdx) : null;
+            /* group dropdown */
+            const grpIdx = groups.findIndex(g => g.group_id === u.group_id);
+            const grpPath = grpIdx !== -1 ? new IndexPath(grpIdx) : null;
+
+            /* role dropdown */
+            const roleIdx = u.u_role === 'admin' ? new IndexPath(0) : new IndexPath(1);
 
             return (
               <React.Fragment key={u.email}>
                 <Layout style={styles.userRow}>
+                  {/* name + email */}
                   <Layout style={styles.userInfo}>
                     <Text category="s1">{u.u_name || u.email}</Text>
-                    <Text appearance="hint">Role: {u.u_role}</Text>
+                    <Text appearance="hint">ID: {u.email}</Text>
                   </Layout>
+
+                  {/* role selector (only admins can change) */}
+                  {isAdmin && (
+                    <Select
+                      selectedIndex={roleIdx}
+                      value={roleIdx.row === 0 ? 'admin' : 'maintainer'}
+                      onSelect={idx => changeRole(u.email, idx)}
+                      style={styles.roleSelect}
+                    >
+                      <SelectItem title="admin" />
+                      <SelectItem title="maintainer" />
+                    </Select>
+                  )}
+
+                  {/* group selector */}
                   <Select
-                    selectedIndex={idxPath}
-                    value={idxPath !== null ? groupNames[idxPath.row] : 'No Group'}
+                    selectedIndex={grpPath}
+                    value={grpPath !== null ? groupNames[grpPath.row] : 'No Group'}
                     onSelect={idx => assignMember(u.email, idx)}
                     style={styles.groupSelect}
                   >
@@ -195,6 +252,7 @@ export default function UserManagementScreen({ route, navigation }) {
                     ))}
                   </Select>
                 </Layout>
+
                 {userIdx < users.length - 1 && <Divider />}
               </React.Fragment>
             );
