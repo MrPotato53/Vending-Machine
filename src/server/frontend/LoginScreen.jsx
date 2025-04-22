@@ -1,6 +1,6 @@
 // LoginScreen.jsx
 import React, { useState } from 'react';
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions, Image } from 'react-native';
 import { Layout, Input, Button, Text } from '@ui-kitten/components';
 import api from './apiCommunicator';
 
@@ -33,6 +33,12 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <Layout style={styles.container}>
+      <Image
+        source={require('./assets/nineLivesLogo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+
       <Text category='h4' style={styles.header}>Welcome Back</Text>
       {error ? <Text status='danger' style={styles.error}>{error}</Text> : null}
 

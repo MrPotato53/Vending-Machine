@@ -82,6 +82,25 @@ reloadBackend() {
     echo "Backend reloaded."
 }
 
+# Function to rebuild only the frontend service
+reloadFrontend() {
+    echo "Rebuilding frontend container..."
+
+    # Stop & remove the old container if it exists
+    if docker ps -a --format '{{.Names}}' | grep -q "^${FRONTEND_CONTAINER_NAME}$"; then
+        echo "Stopping and removing: ${FRONTEND_CONTAINER_NAME}"
+        docker stop "${FRONTEND_CONTAINER_NAME}" && docker rm "${FRONTEND_CONTAINER_NAME}"
+    else
+        echo "Container ${FRONTEND_CONTAINER_NAME} not found. Proceeding to build."
+    fi
+
+    # Re‑build the frontend image and start that service only
+    docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build frontend
+    docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d frontend
+
+    echo "Frontend rebuilt and restarted."
+}
+
 # Function to stop all services without removing them
 down() {
     echo "Stopping containers..."
@@ -137,6 +156,9 @@ case "$1" in
         ;;
     reloadBackend)
         reloadBackend
+        ;;
+    reloadFrontend)
+        reloadFrontend
         ;;
     down)
         down
