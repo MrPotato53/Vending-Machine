@@ -69,7 +69,7 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex:1, justifyContent:'center', alignItems:'center', padding:24 },
-  logo:     { width: quarterWidth, height: quarterWidth, marginBottom: 20 },
+  logo:     { width: width * 0.15, height: width * 0.15, marginBottom: 20 },
   header: { marginBottom:20, color:'#333' },
   error: { marginBottom:10 },
   input: { marginBottom:15 },
