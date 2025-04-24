@@ -3,6 +3,7 @@ import json
 import sys
 
 import exceptions as err
+from api_constants import NOT_FOUND
 from customer.Hardware.hardware_constants import (
     CARD_INFO_KEY,
     DELETE_KEY,
@@ -43,6 +44,8 @@ class VendingMachineRunner:
                 sys.exit(1)
             except err.QueryFailureError as e:
                 print("Error: ", e)
+                if(e.status_code == NOT_FOUND):
+                    print("Vending Machine not Registered on Vendor Side.")
                 sys.exit(1)
 
     async def run(self):

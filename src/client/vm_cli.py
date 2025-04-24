@@ -3,6 +3,7 @@ import sys
 import textwrap
 
 import exceptions as err
+from api_constants import NOT_FOUND
 from customer.vending_machine import VendingMachine
 
 vending_machine: VendingMachine = None
@@ -23,6 +24,8 @@ def main():
             sys.exit(1)
         except err.QueryFailureError as e:
             print("Error: ", e)
+            if(e.status_code == NOT_FOUND):
+                print("Vending Machine not Registered on Vendor Side.")
             sys.exit(1)
 
     customer_mode()

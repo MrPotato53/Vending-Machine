@@ -4,6 +4,7 @@
 CONTAINER_NAME="vending_machine-db1-1"
 BACKEND_CONTAINER_NAME="vending_machine-backend-1"
 MOSQUITTO_CONTAINER_NAME="vending_machine-mosquitto-1"
+FRONTEND_CONTAINER_NAME="vending_machine-frontend-1"
 VOLUME_NAME="vending_machine_vendingmachinedat"
 COMPOSE_FILE="docker_compose.yml"
 PROJECT_NAME="vending_machine"
@@ -34,6 +35,14 @@ shutdown() {
         docker stop "${MOSQUITTO_CONTAINER_NAME}" && docker rm "${MOSQUITTO_CONTAINER_NAME}"
     else
         echo "Container ${MOSQUITTO_CONTAINER_NAME} not found. Skipping removal."
+    fi
+
+    # Stop and remove the frontend container if it exists
+    if docker ps -a --format '{{.Names}}' | grep -q "^${FRONTEND_CONTAINER_NAME}$"; then
+        echo "Stopping and removing container: ${FRONTEND_CONTAINER_NAME}"
+        docker stop "${FRONTEND_CONTAINER_NAME}" && docker rm "${FRONTEND_CONTAINER_NAME}"
+    else
+        echo "Container ${FRONTEND_CONTAINER_NAME} not found. Skipping removal."
     fi
 
     # Bring down docker-compose services and remove associated volumes
@@ -73,6 +82,25 @@ reloadBackend() {
     echo "Backend reloaded."
 }
 
+# Function to rebuild only the frontend service
+reloadFrontend() {
+    echo "Rebuilding frontend container..."
+
+    # Stop & remove the old container if it exists
+    if docker ps -a --format '{{.Names}}' | grep -q "^${FRONTEND_CONTAINER_NAME}$"; then
+        echo "Stopping and removing: ${FRONTEND_CONTAINER_NAME}"
+        docker stop "${FRONTEND_CONTAINER_NAME}" && docker rm "${FRONTEND_CONTAINER_NAME}"
+    else
+        echo "Container ${FRONTEND_CONTAINER_NAME} not found. Proceeding to build."
+    fi
+
+    # Re‑build the frontend image and start that service only
+    docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" build frontend
+    docker compose -f "$COMPOSE_FILE" -p "$PROJECT_NAME" up -d frontend
+
+    echo "Frontend rebuilt and restarted."
+}
+
 # Function to stop all services without removing them
 down() {
     echo "Stopping containers..."
@@ -101,6 +129,14 @@ down() {
         echo "Container ${MOSQUITTO_CONTAINER_NAME} not found."
     fi
 
+    # Stop frontend container if it exists
+    if docker ps -a --format '{{.Names}}' | grep -q "^${FRONTEND_CONTAINER_NAME}$"; then
+        echo "Stopping container: ${FRONTEND_CONTAINER_NAME}"
+        docker stop "${FRONTEND_CONTAINER_NAME}"
+    else
+        echo "Container ${FRONTEND_CONTAINER_NAME} not found."
+    fi
+
     echo "Containers stopped."
 }
 
@@ -120,6 +156,9 @@ case "$1" in
         ;;
     reloadBackend)
         reloadBackend
+        ;;
+    reloadFrontend)
+        reloadFrontend
         ;;
     down)
         down

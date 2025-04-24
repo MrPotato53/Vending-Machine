@@ -70,7 +70,7 @@ async function healthCheck(hardwareId) {
         isOnline: false,
         error: 'Timeout waiting for status'
       });
-    }, 3000);
+    }, 500);
     
     // Store the pending check
     pendingChecks[hardwareId] = {

@@ -48,13 +48,9 @@ class VendorInterface:
     """
 
     def __init__(self, hardware_id: str):
-        # Check for existence of vending machine
-        try:
-            self.vm_db = VendingMachines.get_vending_machine(hardware_id)
-        except err.QueryFailureError as e:
-            if(e.status_code == 404):
-                e.message = "Cannot init vendor, vending machine ID DNE in DB"
-            raise
+        self.vm_db = VendingMachines.get_vending_machine(hardware_id)
+        if(self.vm_db is None):
+            raise err.QueryFailureError("Cannot init vendor, vending machine ID DNE in DB")
 
         self.__inv_man = InventoryManager(
             self.vm_db["vm_row_count"], self.vm_db["vm_column_count"], hardware_id)

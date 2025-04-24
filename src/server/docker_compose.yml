@@ -15,7 +15,7 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 5s
       retries: 10
-
+  
   mosquitto:
     image: eclipse-mosquitto:latest
     restart: always
@@ -30,7 +30,6 @@ services:
       test: ["CMD", "mosquitto_pub", "-h", "localhost", "-t", "healthcheck", "-m", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 5
 
   backend:
     build: ./api
@@ -48,6 +47,22 @@ services:
         condition: service_healthy
     env_file:
       - ./api/.env
+    environment:
+      - NODE_PATH=/app/node_modules
+
+  frontend:
+    build: ./frontend
+    restart: always
+    working_dir: /app
+    # volumes:
+      # - ./frontend:/app
+      # - /app/node_modules
+    ports:
+      - "80:8081"
+    depends_on:
+      - backend
+    environment:
+      - NODE_PATH=/app/node_modules
 
 volumes:
   vendingmachinedat:

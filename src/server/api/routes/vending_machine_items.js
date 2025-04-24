@@ -51,6 +51,9 @@ router.post("/:slot_name", async (req, res) => {
             return;
         }
 
+        // Notifies vending machine of restock if current operation is restock
+        await mqtt.notifyIfRestock(vendingMachineId)
+
         res.json({ 
             vm_id: vendingMachineId, 
             slot_name, 
