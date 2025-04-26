@@ -93,6 +93,21 @@ export default function UserManagementScreen({ route, navigation }) {
       setError(e.message);
     }
   };
+
+  // Actually call the API and refresh
+  const removeMember = (email) => {
+  setLoading(true);
+  api
+    .leaveOrganization(orgId, email)
+    .then(() => loadDisplay())
+    .then(() => {
+      onUsersUpdated?.();
+      Alert.alert('Removed', `${email} has been removed from the organization.`);
+    })
+    .catch(e => setError(e.message))
+    .finally(() => setLoading(false));
+  };
+
   // Reassign an existing member to a group
   const assignMember = async (email, idxPath) => {
     if (!idxPath || idxPath.row < 0) return;
@@ -251,6 +266,15 @@ export default function UserManagementScreen({ route, navigation }) {
                       <SelectItem key={i} title={name} />
                     ))}
                   </Select>
+                  <Button
+                    size="small"
+                    status="danger"
+                    onPress={() => removeMember(u.email)}
+                    disabled={loading || u.email === user.email}
+                    style={styles.removeButton}
+                  >
+                    Remove
+                  </Button>
                 </Layout>
 
                 {userIdx < users.length - 1 && <Divider />}
@@ -302,4 +326,11 @@ const styles = StyleSheet.create({
   scrollView: {
     maxHeight: 300,
   },
+  memberActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  removeButton: {
+    marginLeft: 8,
+  }
 });
