@@ -6,9 +6,10 @@ import api from './apiCommunicator';
 
 const { width } = Dimensions.get('window');
 // inputWidth for web, 90% width for mobile
-const inputWidth = Platform.OS === 'web'
-  ? width * 0.25
-  : width * 0.9;
+const isMobileWeb = Platform.OS === 'web' && width < 768;
+const inputWidth = isMobileWeb
+  ? width * 0.9
+  : width * 0.25;
 
 //const inputWidth = width * 0.25;
 
