@@ -112,17 +112,29 @@ export default function UserManagementScreen({ route, navigation }) {
   const assignMember = async (email, idxPath) => {
     if (!idxPath || idxPath.row < 0) return;
     setError('');
+  
+    // If user selected the “No Group” option (at index 0), reset to default group
+    const isNoGroup = idxPath.row === 0;
+    const groupId = isNoGroup
+      ? 3000001
+      : groups[idxPath.row - 1].group_id;  // real groups shifted by one in the dropdown
+  
     try {
-      const groupId = groups[idxPath.row].group_id;
       await api.assignUserToGroup(email, groupId, user.email);
       await loadDisplay();
       onUsersUpdated?.();
-      Alert.alert('Success', `${email} moved to ${groups[idxPath.row].group_name}`);
+      Alert.alert(
+        'Success',
+        isNoGroup
+          ? `${email} has been reset to the default group.`
+          : `${email} moved to ${groups[idxPath.row - 1].group_name}`
+      );
     } catch (e) {
       setError(e.message);
     }
   };
 
+  
   const changeRole = async (targetEmail, idxPath) => {
     if (!idxPath || idxPath.row < 0) return;
   
@@ -272,16 +284,29 @@ export default function UserManagementScreen({ route, navigation }) {
 
                   {/* group selector */}
                   <Select
-                    selectedIndex={grpPath}
-                    value={grpPath !== null ? groupNames[grpPath.row] : 'No Group'}
-                    onSelect={idx => assignMember(u.email, idx)}
-                    disabled={loading}
-                    style={styles.groupSelect}
-                  >
-                    {groupNames.map((name, i) => (
-                      <SelectItem key={i} title={name} />
-                    ))}
-                  </Select>
+  // If grpPath is not null, select its index+1; else select 0 (“No Group”)
+  selectedIndex={
+    grpPath !== null
+      ? new IndexPath(grpPath.row + 1)
+      : new IndexPath(0)
+  }
+  // Display the actual group name or “No Group”
+  value={
+    grpPath !== null
+      ? groupNames[grpPath.row]
+      : 'No Group'
+  }
+  onSelect={idx => assignMember(u.email, idx)}
+  disabled={loading}
+  style={styles.groupSelect}
+>
+  {/* 0: No Group */}
+  <SelectItem title="No Group" />
+  {/* 1…N: actual groups */}
+  {groupNames.map((name, i) => (
+    <SelectItem key={i + 1} title={name} />
+  ))}
+</Select>
                   <Button
                     size="small"
                     status="danger"
