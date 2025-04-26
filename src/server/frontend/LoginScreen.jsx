@@ -1,10 +1,9 @@
 // LoginScreen.jsx
 import React, { useState } from 'react';
-import { StyleSheet, Dimensions, Image } from 'react-native';
+import { StyleSheet, Platform, Dimensions, Image } from 'react-native';
 import { Layout, Input, Button, Text } from '@ui-kitten/components';
 import api from './apiCommunicator';
-// At top of file
-import { Platform, Dimensions } from 'react-native';
+
 const { width } = Dimensions.get('window');
 // inputWidth for web, 90% width for mobile
 const inputWidth = Platform.OS === 'web'
