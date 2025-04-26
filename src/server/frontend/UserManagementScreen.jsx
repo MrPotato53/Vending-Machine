@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, Alert, ScrollView, View, ActivityIndicator } from 'react-native';
 import { 
   Layout,
   Select,
@@ -238,10 +238,24 @@ export default function UserManagementScreen({ route, navigation }) {
                 <Layout style={styles.userRow}>
                   {/* name + email */}
                   <Layout style={styles.userInfo}>
-                    <Text category="s1">{u.u_name || u.email}</Text>
-                    <Text appearance="hint">ID: {u.email}</Text>
+                  <Text
+    category="s1"
+    numberOfLines={1}
+    ellipsizeMode="tail"
+    style={styles.noWrapText}
+  >
+    {u.u_name || u.email}
+  </Text>
+  <Text
+    appearance="hint"
+    numberOfLines={1}
+    ellipsizeMode="tail"
+    style={styles.noWrapText}
+  >
+    ID: {u.email}
+  </Text>
                   </Layout>
-
+              
                   {/* role selector (only admins can change) */}
                   {isAdmin && (
                     <Select
@@ -260,6 +274,7 @@ export default function UserManagementScreen({ route, navigation }) {
                     selectedIndex={grpPath}
                     value={grpPath !== null ? groupNames[grpPath.row] : 'No Group'}
                     onSelect={idx => assignMember(u.email, idx)}
+                    disabled={loading || u.email === user.email}
                     style={styles.groupSelect}
                   >
                     {groupNames.map((name, i) => (
@@ -312,13 +327,11 @@ const styles = StyleSheet.create({
   error: {
     marginVertical: 10,
   },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
   userInfo: {
-    flex: 1,
+    //flex: 1,
+    marginRight: 0,        // space between text block and controls
+    minWidth: 100,           // allow it to shrink below its content width
+    paddingRight: 100
   },
   groupSelect: {
     width: '40%',
@@ -332,5 +345,14 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     marginLeft: 8,
-  }
+  },
+  noWrapText: {
+    flexShrink: 1,    // allow it to shrink but not wrap
+  },
+  userRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',      // allow children to wrap onto next line
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
 });
