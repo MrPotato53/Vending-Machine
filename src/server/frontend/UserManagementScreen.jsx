@@ -262,6 +262,7 @@ export default function UserManagementScreen({ route, navigation }) {
                       selectedIndex={roleIdx}
                       value={roleIdx.row === 0 ? 'admin' : 'maintainer'}
                       onSelect={idx => changeRole(u.email, idx)}
+                      disabled={loading || u.email === user.email}
                       style={styles.roleSelect}
                     >
                       <SelectItem title="admin" />
@@ -274,7 +275,7 @@ export default function UserManagementScreen({ route, navigation }) {
                     selectedIndex={grpPath}
                     value={grpPath !== null ? groupNames[grpPath.row] : 'No Group'}
                     onSelect={idx => assignMember(u.email, idx)}
-                    disabled={loading || u.email === user.email}
+                    disabled={loading}
                     style={styles.groupSelect}
                   >
                     {groupNames.map((name, i) => (
