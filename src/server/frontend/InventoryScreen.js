@@ -300,7 +300,7 @@ export default function InventoryScreen({ route, navigation }) {
               <Input
                 style={styles.input}
                 placeholder="Price"
-                keyboardType="numeric"
+                keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'decimal-pad'}
                 value={newItems[slot]?.price}
                 onChangeText={v => handleNewItemChange(slot, 'price', v)}
               />
