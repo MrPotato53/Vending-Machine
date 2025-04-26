@@ -95,6 +95,24 @@ export default function GroupManagementScreen({ route, navigation }) {
     }
   };
 
+  // Delete a group
+  const deleteGroup = (group) => {
+    setLoading(true);
+    api
+      .deleteGroup(orgId, group.group_id, user.email)
+      .then(() => api.getOrgDisplay(orgId))
+      .then((display) => {
+        setGroups(display.groups);
+        onGroupsUpdated?.();
+        Alert.alert(
+          'Deleted',
+          `Group "${group.group_name}" has been deleted.`
+        );
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  };
+
   // Open VM assignment modal for a group
   const openVmAssignmentModal = (group) => {
     setSelectedGroup(group);
@@ -193,13 +211,24 @@ export default function GroupManagementScreen({ route, navigation }) {
               <ListItem
                 title={group.group_name}
                 accessoryRight={() => (
-                  <Button 
-                    size="small" 
-                    onPress={() => openVmAssignmentModal(group)}
-                    disabled={!vms.length}
-                  >
-                    Edit VMs
-                  </Button>
+                  <Layout style={styles.groupActions}>
+                    <Button
+                      size="small"
+                      onPress={() => openVmAssignmentModal(group)}
+                      disabled={!vms.length}
+                    >
+                      Edit VMs
+                    </Button>
+                    <Button
+                      size="small"
+                      status="danger"
+                      onPress={() => deleteGroup(group)}
+                      disabled={loading}
+                      style={styles.deleteButton}
+                    >
+                      Delete
+                    </Button>
+                  </Layout>
                 )}
               />
               {index < groups.length - 1 && <Divider />}
@@ -301,5 +330,11 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     marginHorizontal: 4,
+  },
+  groupActions: {
+    flexDirection: 'row',
+  },
+  deleteButton: {
+    marginLeft: 8,
   }
 });
