@@ -3,9 +3,15 @@ import React, { useState } from 'react';
 import { StyleSheet, Dimensions, Image } from 'react-native';
 import { Layout, Input, Button, Text } from '@ui-kitten/components';
 import api from './apiCommunicator';
-
+// At top of file
+import { Platform, Dimensions } from 'react-native';
 const { width } = Dimensions.get('window');
-const quarterWidth = width * 0.25;
+// inputWidth for web, 90% width for mobile
+const inputWidth = Platform.OS === 'web'
+  ? width * 0.25
+  : width * 0.9;
+
+//const inputWidth = width * 0.25;
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -43,24 +49,24 @@ export default function LoginScreen({ navigation }) {
       {error ? <Text status='danger' style={styles.error}>{error}</Text> : null}
 
       <Input
-        style={[styles.input, { width: quarterWidth }]}
+        style={[styles.input, { width: inputWidth }]}
         placeholder='Email'
         value={email}
         onChangeText={setEmail}
         autoCapitalize='none'
       />
       <Input
-        style={[styles.input, { width: quarterWidth }]}
+        style={[styles.input, { width: inputWidth }]}
         placeholder='Password'
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
 
-      <Button style={[styles.button, { width: quarterWidth }]} onPress={handleLogin}>
+      <Button style={[styles.button, { width: inputWidth }]} onPress={handleLogin}>
         LOGIN
       </Button>
-      <Button appearance='ghost' style={[styles.button, { width: quarterWidth }]} onPress={() => navigation.navigate('Register')}>
+      <Button appearance='ghost' style={[styles.button, { width: inputWidth }]} onPress={() => navigation.navigate('Register')}>
         REGISTER
       </Button>
     </Layout>
