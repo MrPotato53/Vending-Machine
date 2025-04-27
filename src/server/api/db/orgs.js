@@ -1,4 +1,3 @@
-const { verify } = require("crypto");
 const db = require("./db_connection");
 const users = require("../db/users");
 

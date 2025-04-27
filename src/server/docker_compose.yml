@@ -58,11 +58,20 @@ services:
       # - ./frontend:/app
       # - /app/node_modules
     ports:
-      - "80:8081"
+      - "81:8081"
     depends_on:
       - backend
     environment:
       - NODE_PATH=/app/node_modules
+
+  https-portal:
+    image: steveltn/https-portal:1
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAINS: 'cs506x19.cs.wisc.edu -> https://frontend:8081'
+      # STAGE: 'production' # Don't use production until staging works
 
 volumes:
   vendingmachinedat:
