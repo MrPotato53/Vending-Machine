@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 // Dynamically pick host & port
-// const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+//const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'cs506x19.cs.wisc.edu';
 const PORT = '8080';
 const API_BASE = `http://${HOST}:${PORT}`;
@@ -38,6 +38,14 @@ const api = {
       method: 'POST',
       body: { group_name, u_email },
     }),
+  deleteGroup: (org_id, group_id, admin_email) =>
+    apiFetch(
+      `/orgs/${org_id}/groups/${group_id}`,
+      {
+        method: 'DELETE',
+        body: { admin_email },
+      }
+    ),
   leaveOrganization: (org_id, u_email) =>
     apiFetch(`/orgs/${org_id}/leave`, {
       method: 'POST',

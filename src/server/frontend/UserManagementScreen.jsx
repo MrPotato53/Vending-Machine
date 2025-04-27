@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, Alert, ScrollView, View, ActivityIndicator } from 'react-native';
 import { 
   Layout,
   Select,
@@ -93,21 +93,48 @@ export default function UserManagementScreen({ route, navigation }) {
       setError(e.message);
     }
   };
+
+  // Actually call the API and refresh
+  const removeMember = (email) => {
+  setLoading(true);
+  api
+    .leaveOrganization(orgId, email)
+    .then(() => loadDisplay())
+    .then(() => {
+      onUsersUpdated?.();
+      Alert.alert('Removed', `${email} has been removed from the organization.`);
+    })
+    .catch(e => setError(e.message))
+    .finally(() => setLoading(false));
+  };
+
   // Reassign an existing member to a group
   const assignMember = async (email, idxPath) => {
     if (!idxPath || idxPath.row < 0) return;
     setError('');
+  
+    // If user selected the “No Group” option (at index 0), reset to default group
+    const isNoGroup = idxPath.row === 0;
+    const groupId = isNoGroup
+      ? 3000001
+      : groups[idxPath.row - 1].group_id;  // real groups shifted by one in the dropdown
+  
     try {
-      const groupId = groups[idxPath.row].group_id;
       await api.assignUserToGroup(email, groupId, user.email);
       await loadDisplay();
       onUsersUpdated?.();
-      Alert.alert('Success', `${email} moved to ${groups[idxPath.row].group_name}`);
+      Alert.alert(
+        'Success',
+        isNoGroup
+          ? `${email} has been reset to the default group.`
+          : `${email} moved to ${groups[idxPath.row - 1].group_name}`
+      );
     } catch (e) {
       setError(e.message);
     }
   };
 
+  
   const changeRole = async (targetEmail, idxPath) => {
     if (!idxPath || idxPath.row < 0) return;
   
@@ -223,16 +250,31 @@ export default function UserManagementScreen({ route, navigation }) {
                 <Layout style={styles.userRow}>
                   {/* name + email */}
                   <Layout style={styles.userInfo}>
-                    <Text category="s1">{u.u_name || u.email}</Text>
-                    <Text appearance="hint">ID: {u.email}</Text>
+                  <Text
+    category="s1"
+    numberOfLines={1}
+    ellipsizeMode="tail"
+    style={styles.noWrapText}
+  >
+    {u.u_name || u.email}
+  </Text>
+  <Text
+    appearance="hint"
+    numberOfLines={1}
+    ellipsizeMode="tail"
+    style={styles.noWrapText}
+  >
+    ID: {u.email}
+  </Text>
                   </Layout>
-
+              
                   {/* role selector (only admins can change) */}
                   {isAdmin && (
                     <Select
                       selectedIndex={roleIdx}
                       value={roleIdx.row === 0 ? 'admin' : 'maintainer'}
                       onSelect={idx => changeRole(u.email, idx)}
+                      disabled={loading || u.email === user.email}
                       style={styles.roleSelect}
                     >
                       <SelectItem title="admin" />
@@ -242,15 +284,38 @@ export default function UserManagementScreen({ route, navigation }) {
 
                   {/* group selector */}
                   <Select
-                    selectedIndex={grpPath}
-                    value={grpPath !== null ? groupNames[grpPath.row] : 'No Group'}
-                    onSelect={idx => assignMember(u.email, idx)}
-                    style={styles.groupSelect}
+  // If grpPath is not null, select its index+1; else select 0 (“No Group”)
+  selectedIndex={
+    grpPath !== null
+      ? new IndexPath(grpPath.row + 1)
+      : new IndexPath(0)
+  }
+  // Display the actual group name or “No Group”
+  value={
+    grpPath !== null
+      ? groupNames[grpPath.row]
+      : 'No Group'
+  }
+  onSelect={idx => assignMember(u.email, idx)}
+  disabled={loading}
+  style={styles.groupSelect}
+>
+  {/* 0: No Group */}
+  <SelectItem title="No Group" />
+  {/* 1…N: actual groups */}
+  {groupNames.map((name, i) => (
+    <SelectItem key={i + 1} title={name} />
+  ))}
+</Select>
+                  <Button
+                    size="small"
+                    status="danger"
+                    onPress={() => removeMember(u.email)}
+                    disabled={loading || u.email === user.email}
+                    style={styles.removeButton}
                   >
-                    {groupNames.map((name, i) => (
-                      <SelectItem key={i} title={name} />
-                    ))}
-                  </Select>
+                    Remove
+                  </Button>
                 </Layout>
 
                 {userIdx < users.length - 1 && <Divider />}
@@ -288,18 +353,32 @@ const styles = StyleSheet.create({
   error: {
     marginVertical: 10,
   },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
   userInfo: {
-    flex: 1,
+    //flex: 1,
+    marginRight: 0,        // space between text block and controls
+    minWidth: 100,           // allow it to shrink below its content width
+    paddingRight: 100
   },
   groupSelect: {
     width: '40%',
   },
   scrollView: {
     maxHeight: 300,
+  },
+  memberActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  removeButton: {
+    marginLeft: 8,
+  },
+  noWrapText: {
+    flexShrink: 1,    // allow it to shrink but not wrap
+  },
+  userRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',      // allow children to wrap onto next line
+    alignItems: 'center',
+    paddingVertical: 12,
   },
 });

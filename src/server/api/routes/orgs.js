@@ -125,6 +125,62 @@ router.post("/:id/groups", async (req, res) => {
   }
 });
 
+// DELETE /orgs/:id/groups/:group_id
+// body: { admin_email }
+router.delete("/:id/groups/:group_id", async (req, res) => {
+  const orgId       = req.params.id;
+  const groupId     = req.params.group_id;
+  const { admin_email } = req.body;
+
+  if (!admin_email) {
+    return res.status(400).json({ error: "admin_email is required" });
+  }
+
+  try {
+    // 1) org must exist
+    if (!(await orgData.org_exist(orgId))) {
+      return res.status(404).json({ error: `No org found with id ${orgId}` });
+    }
+
+    // 2) group must exist in this org
+    const [grpRows] = await db.query(
+      "SELECT group_id FROM grp WHERE group_id = ? AND org_id = ?",
+      [groupId, orgId]
+    );
+    if (!grpRows.length) {
+      return res
+        .status(404)
+        .json({ error: `Group ${groupId} not found in org ${orgId}` });
+    }
+
+    // 3) caller must be an admin of that org
+    const [[ adminUser ]] = await db.query(
+      "SELECT u_role, org_id FROM users WHERE email = ?",
+      [admin_email]
+    );
+    if (!adminUser || adminUser.u_role !== "admin" || adminUser.org_id !== parseInt(orgId, 10)) {
+      return res
+        .status(403)
+        .json({ error: `User ${admin_email} is not an admin of org ${orgId}` });
+    }
+
+    // 4) reset all users in this group back to the default group
+    await db.query(
+      "UPDATE users SET group_id = 3000001 WHERE group_id = ? AND org_id = ?",
+      [groupId, orgId]
+    );
+
+    // 5) delete the now-empty group
+    await db.query("DELETE FROM grp WHERE group_id = ?", [groupId]);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // POST /orgs/:id/leave
 // body: { u_email }
 router.post("/:id/leave", async (req, res) => {
