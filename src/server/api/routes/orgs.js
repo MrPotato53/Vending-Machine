@@ -188,7 +188,7 @@ router.post('/:id/add-user', async (req, res) => {
       'SELECT * FROM orgs WHERE org_id = ?',
       [orgId]
     );
-    if (orgRows.length === 0) {
+    if (orgData.org_exist(orgId) === false) {
       return res.status(404).json({ error: `Org ${orgId} not found` });
     }
 
@@ -201,7 +201,7 @@ router.post('/:id/add-user', async (req, res) => {
     // 3) check target user exists
     const exists = await users.userExist(u_email);
     if (!exists) {
-      emailer.inviteNewUser(u_email, orgId, group_id, role);
+      emailer.inviteNewUser(u_email, orgId, group_id, role, admin_email);
 
       return res.status(404).json({ error: `User ${u_email} not found, invite email sent.` });
     }
