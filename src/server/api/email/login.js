@@ -1,6 +1,6 @@
 const emailer = require("nodemailer");
 const crypto = require("crypto");
-
+const db = require("../db/db_connection");
 const EMAIL = process.env.EMAIL;
 const PASSWORD = process.env.EMAIL_APP_PASSWORD;
 
@@ -14,7 +14,7 @@ const sender = emailer.createTransport({
     }
 });
 
-const body = (site) => {
+const body = (site, orgName, role, admin_email) => {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,9 +64,10 @@ const body = (site) => {
 </head>
 <body>
   <div class="card">
-    <h2>Welcome to Our Service!</h2>
+    <h2>Welcome to Team Nine Lives!</h2>
+    <p>You have been invited by ${admin_email} to join ${orgName} as a ${role}.</p>
     <p>We are excited to have you join us. Please register to get started.</p>
-    <a href="http://cs506x19.cs.wisc.edu/" class="register-button">Register</a>
+    <a href=${site} class="register-button">Register</a>
   </div>
 </body>
 </html>`
@@ -100,16 +101,25 @@ function email(target){
     
 }
 
-function inviteNewUser(target, orgId, groupId, role) {
-    console.log(target, orgId, groupId, role);
+const inviteNewUser = async (target, orgID, groupId, role, admin_email) => {
+    console.log(target, orgID, groupId, role, admin_email);
     site ='http://cs506x19.cs.wisc.edu';
 
+    try{
+        org = await db.query("SELECT * FROM orgs WHERE org_id = ?", [orgID]);
+        orgName = org[0][0].org_name;
+    }
+    catch(err){
+        console.log(err);
+        return;
+    }
+    console.log(orgName);
     const mailOptions = {
         from: EMAIL,
         to: target,
         subject: "Invitation to join an organization",
-        text: `You have been invited to join the organization with ID ${orgId} and group ID ${groupId} \n as a ${role}. Register here to accept the invitation:http://cs506x19.cs.wisc.edu/`,
-        html: body(site) // Use the fallback HTML as the main content
+        text: `You have been invited to join the organization with ID ${orgName} and group ID ${groupId} \n as a ${role}. Register here to accept the invitation:http://cs506x19.cs.wisc.edu/`,
+        html: body(site, orgName, role, admin_email) // Use the fallback HTML as the main content
        // amp: body(site)
     };
 
