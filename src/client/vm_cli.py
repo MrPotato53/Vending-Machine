@@ -1,8 +1,9 @@
-import json  # noqa: INP001
+import json
 import sys
 import textwrap
 
 import exceptions as err
+from api_constants import NOT_FOUND
 from customer.vending_machine import VendingMachine
 
 vending_machine: VendingMachine = None
@@ -23,9 +24,12 @@ def main():
             sys.exit(1)
         except err.QueryFailureError as e:
             print("Error: ", e)
+            if(e.status_code == NOT_FOUND):
+                print("Vending Machine not Registered on Vendor Side.")
             sys.exit(1)
 
     customer_mode()
+
 
 def customer_mode():
     global vending_machine
@@ -36,19 +40,42 @@ def customer_mode():
         print(vending_machine.list_options())
         user_input = input(textwrap.dedent("""
                     Please select one of the following options
-                    1. Enter Payment Information
-                    2. Reload Inventory from Database
-                    3. Exit Customer CLI
+                    1. List Options
+                    2. Dispense Free Item
+                    3. Enter Payment Information
+                    4. Reload Inventory from Database
+                    5. Exit Customer CLI
                 """))
 
         if(user_input == "1"):
-            perform_transaction()
+            vending_machine.list_options()
         elif(user_input == "2"):
-            vending_machine.reload_data()
+            dispense_free()
         elif(user_input == "3"):
+            perform_transaction()
+        elif(user_input == "4"):
+            vending_machine.reload_data()
+        elif(user_input == "5"):
             return
         else:
-            print("Invalid input, please type 1 or 2")
+            print("Invalid input, please type an option 1 - 4")
+
+
+def dispense_free():
+    selection = input("Please type the slot name of the item you would like to purchase: ")
+
+    try:
+        dispensed_item = vending_machine.buy_free_item(selection)
+        print("Dispensing Item: " + dispensed_item)
+        print("Vending Machine Inventory: ")
+    except err.NegativeStockError:
+        print("Item at this slot is out of stock, please try another.")
+    except err.EmptySlotError as e:
+        print("Error: ", e)
+    except err.InvalidSlotNameError as e:
+        print("Error: ", e)
+    except ValueError as e:
+        print("Error: ", e)
 
 
 def perform_transaction():

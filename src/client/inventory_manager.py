@@ -54,7 +54,7 @@ class InventoryManager:
         Sets a new cost for a given slot
     def get_item(self, slot_name) -> Item
         Returns the item at a slot
-    def __get_coordinates_from_slotname(self, slot_name) -> tuple[int, int]
+    def get_coordinates_from_slotname(self, slot_name) -> tuple[int, int]
         Given a slot_name in the form of a string, returns the coordinates in items
 
     """
@@ -93,6 +93,8 @@ class InventoryManager:
 
     def sync_from_database(self) -> dict:
         vm_db = VendingMachines.get_vending_machine(self.hardware_id)
+        if(vm_db is None):
+            raise err.QueryFailureError("sync_to_database failed because vending machine DNE")
 
         # Check that dimensions match between database and local
         if(vm_db["vm_row_count"] != self.height or vm_db["vm_column_count"] != self.width):
@@ -110,9 +112,11 @@ class InventoryManager:
     def load_inventory_from_db(self) -> None:
         self.__items = [[None for i in range(self.width)] for j in range(self.height)]
         inventory: list[dict] = Inventory.get_inventory_of_vending_machine(self.hardware_id)
+        if(inventory is None):
+            raise err.QueryFailureError("get_inventory_of_vending_machine failed")
 
         for item in inventory:
-            row, col = self.__get_coordinates_from_slotname(item["slot_name"])
+            row, col = self.get_coordinates_from_slotname(item["slot_name"])
             self.__items[row][col] = Item(
                 item["item_name"], float(item["price"]), int(item["stock"]))
 
@@ -126,17 +130,23 @@ class InventoryManager:
         }
         for slot_name, item in self.__change_log.items()]
 
-        Inventory.update_database(self.hardware_id, req_body)
+        if(Inventory.update_database(self.hardware_id, req_body) is None):
+            raise err.QueryFailureError("update_database failed")
 
         self.__change_log = {}
+
 
     def get_mode(self) -> InventoryManagerMode:
         return self.__mode
 
+
     def load_mode_from_db(self) -> None:
         res = VendingMachines.get_vending_machine(self.hardware_id)
+        if(res is None):
+            raise err.QueryFailureError("get_vending_machine failed")
 
         self.__mode = self.mode_map[res["vm_mode"]]
+
 
     def set_mode(self, new_mode: InventoryManagerMode) -> None:
         self.load_mode_from_db()
@@ -155,7 +165,8 @@ class InventoryManager:
             )
 
         self.__mode = new_mode
-        VendingMachines.set_mode(self.hardware_id, self.mode_map[new_mode])
+        if(VendingMachines.set_mode(self.hardware_id, self.mode_map[new_mode]) is None):
+            raise err.QueryFailureError("set_mode failed")
 
     def get_stock_information(self, show_empty_slots: bool = False) -> str:
         out = ""
@@ -176,8 +187,9 @@ class InventoryManager:
 
         return out.strip()
 
+
     def change_stock(self, slot_name: str, item_stock: int) -> float:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
         if item is None:
@@ -190,19 +202,22 @@ class InventoryManager:
             return round(-1 * item_stock * item.get_cost(), 2)
         return 0
 
+
     def add_item(self, slot_name: str, item_name: str, item_stock: int, item_cost: float) -> None:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
         new_item: Item = Item(item_name, item_cost, item_stock)
         self.__items[itemrow][itemcol] = new_item
         self.__change_log[slot_name] = new_item
 
+
     def clear_slot(self, slot_name: str) -> None:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
         self.__items[itemrow][itemcol] = None
         self.__change_log[slot_name] = None
 
+
     def set_cost(self, slot_name: str, new_cost: float) -> None:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
         if item is None:
@@ -211,8 +226,9 @@ class InventoryManager:
         item.set_cost(new_cost)
         self.__change_log[slot_name] = item
 
+
     def get_item(self, slot_name: str) -> Item:
-        itemrow, itemcol = self.__get_coordinates_from_slotname(slot_name)
+        itemrow, itemcol = self.get_coordinates_from_slotname(slot_name)
 
         item: Item = self.__items[itemrow][itemcol]
         if item is None:
@@ -220,7 +236,8 @@ class InventoryManager:
 
         return item
 
-    def __get_coordinates_from_slotname(self, slot_name: str) -> tuple[int, int]:
+
+    def get_coordinates_from_slotname(self, slot_name: str) -> tuple[int, int]:
         if len(slot_name) != self.SLOTNAMELENGTH:
             raise err.InvalidSlotNameError("Slot name must be 2 characters long")
         row: int = ord(slot_name[0]) - ord("0")

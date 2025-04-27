@@ -4,19 +4,15 @@ from __future__ import annotations  # noqa: F404
 import exceptions as err
 import requests
 import stripe
+from api_constants import (
+    BACKEND_HOST,
+    INVENTORY_ROUTE,
+    ITEMS_ROUTE,
+    MACHINES_ROUTE,
+    REQUEST_HEADERS,
+    TIMEOUT,
+)
 
-host = "http://cs506x19.cs.wisc.edu:8080" #cs CLI machine hosting the DB
-# host = "http://localhost:8080" #For local testing
-machines = "vending-machines" #API route for the related class
-inventory = "inventory"
-items = "items"#API route for items
-headers = {'Content-Type':'application/json'} #header for api post
-
-SUCCESS = 200
-BAD_REQUEST = 400
-NOT_FOUND = 404
-INTERNAL_SERVER_ERROR = 500
-TIMEOUT = 10
 
 def string_builder(*args):
     return '/'.join(args)
@@ -47,22 +43,26 @@ class VMs:
     #Pull all VMs
     @staticmethod
     def get_machines() -> (dict | None):
-        api_route = string_builder(host,machines)
+        api_route = string_builder(BACKEND_HOST,MACHINES_ROUTE)
         try:
             response = requests.get(api_route, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return None
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
     #Pull specific VM based on the UNIQUEID on the Vending_machines table
     @staticmethod
     def get_single_machine(hardware_id:str) -> dict:
-        api_route = string_builder(host,machines,hardware_id)
+        api_route = string_builder(BACKEND_HOST,MACHINES_ROUTE,hardware_id)
         try:
             response = requests.get(api_route, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
@@ -79,49 +79,77 @@ class VMs:
             'vm_column_count': column,
             'vm_mode':vm_mode,
         }
-        api_route = string_builder(host,machines)
+        api_route = string_builder(BACKEND_HOST,MACHINES_ROUTE)
         try:
-            response = requests.post(api_route, json=new_info, headers=headers, timeout=TIMEOUT)
+            response = requests.post(api_route, json=new_info, headers=REQUEST_HEADERS, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
+
+
+    # Register hardware side vending machine
+    @staticmethod
+    def register_machine(hardware_id:str, row:int, column: int) -> dict:
+        new_info = {
+            'vm_row_count':row,
+            'vm_column_count': column,
+        }
+
+        api_route = string_builder(BACKEND_HOST, MACHINES_ROUTE, hardware_id, "register")
+        try:
+            response = requests.patch(api_route, json=new_info, headers=REQUEST_HEADERS, timeout=TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
+        except requests.exceptions.RequestException as e:
+            raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
+
 
     #Remove a specific machine based on it's UNIQUEID on the VM table
     @staticmethod
     def delete_machine(hardware_id:str) -> dict:
-        api_route = string_builder(host,machines,hardware_id)
+        api_route = string_builder(BACKEND_HOST,MACHINES_ROUTE,hardware_id)
 
         try:
             response = requests.delete(api_route, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
     #enum_types of MODE: i, r, t
     @staticmethod
     def alter_mode(hardware_id:str, mode:str) -> dict:
-        api_route = string_builder(host,machines,hardware_id,'mode')
+        api_route = string_builder(BACKEND_HOST,MACHINES_ROUTE,hardware_id,'mode')
         payload = {"vm_mode": mode}
 
         try:
-            response = requests.patch(api_route, json=payload, headers=headers, timeout=TIMEOUT)
+            response = requests.patch(api_route, json=payload, headers=REQUEST_HEADERS, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
     #Update name of a machine by ID
     @staticmethod
     def alter_name(hardware_id:str, name:str) -> dict:
-        api_route = string_builder(host,machines,hardware_id,'name')
+        api_route = string_builder(BACKEND_HOST,MACHINES_ROUTE,hardware_id,'name')
         payload = {"vm_name": name}
 
         try:
-            response = requests.patch(api_route, json=payload, headers=headers, timeout=TIMEOUT)
+            response = requests.patch(api_route, json=payload, headers=REQUEST_HEADERS, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
@@ -138,12 +166,14 @@ class AllItems:
     #Query all available items for stocking
     @staticmethod
     def get_items() -> dict:
-        api_route = string_builder(host,items)
+        api_route = string_builder(BACKEND_HOST,ITEMS_ROUTE)
 
         try:
             response = requests.get(api_route, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
@@ -167,24 +197,28 @@ class VMItems:
 
     @staticmethod
     def get_items(hardware_id:str) -> (dict | None):
-        api_route = string_builder(host,machines,hardware_id,inventory)
+        api_route = string_builder(BACKEND_HOST,MACHINES_ROUTE,hardware_id,INVENTORY_ROUTE)
 
         try:
             response = requests.get(api_route, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
     @staticmethod
     def update_vm_inv(hardware_id:str,updated_inventory:list[dict]) -> (dict | None):
-        api_route = string_builder(host,machines,hardware_id,inventory)
+        api_route = string_builder(BACKEND_HOST,MACHINES_ROUTE,hardware_id,INVENTORY_ROUTE)
 
         try:
             response = requests.post(
-                api_route, json=updated_inventory, headers=headers, timeout=TIMEOUT)
+                api_route, json=updated_inventory, headers=REQUEST_HEADERS, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
@@ -221,13 +255,15 @@ class Stripe:
 
     @staticmethod
     def charge_card(amount: int, payment_token: str = "") -> (dict | None):
-        api_route = string_builder(host, "stripes", "pay")
+        api_route = string_builder(BACKEND_HOST, "stripes", "pay")
         payload = {"amount": amount, "token": payment_token}
 
         try:
-            response = requests.post(api_route, json=payload, headers=headers, timeout=TIMEOUT)
+            response = requests.post(api_route, json=payload, headers=REQUEST_HEADERS, timeout=TIMEOUT)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.ConnectionError as e:
+            raise ConnectionError(f"Failed to connect to API: {e}") from e
         except requests.exceptions.RequestException as e:
             raise err.QueryFailureError("Error: " + str(e), status_code=response.status_code) from e
 
