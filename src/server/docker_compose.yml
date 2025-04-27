@@ -64,6 +64,7 @@ services:
     environment:
       - NODE_PATH=/app/node_modules
 
+  #https://hub.docker.com/r/steveltn/https-portal/#prerequisite
   https-portal:
     image: steveltn/https-portal:1
     ports:
@@ -71,7 +72,6 @@ services:
       - '443:443'
     environment:
       DOMAINS: 'cs506x19.cs.wisc.edu -> https://frontend:8081'
-      # STAGE: 'production' # Don't use production until staging works
 
 volumes:
   vendingmachinedat:
