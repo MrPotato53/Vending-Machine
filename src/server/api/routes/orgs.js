@@ -184,10 +184,7 @@ router.post('/:id/add-user', async (req, res) => {
 
   try {
     // 1) check org exists
-    const [orgRows] = await db.query(
-      'SELECT * FROM orgs WHERE org_id = ?',
-      [orgId]
-    );
+    
     if (orgData.org_exist(orgId) === false) {
       return res.status(404).json({ error: `Org ${orgId} not found` });
     }

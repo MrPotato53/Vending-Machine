@@ -71,6 +71,7 @@ export default function UserManagementScreen({ route, navigation }) {
       // Only include groupId if one was picked
       if (inviteGroupIdx !== null) {
         const groupId = groups[inviteGroupIdx.row].group_id;
+        groupId += 3000000;
         await api.addUserToOrg(orgId, inviteEmail.trim(), user.email, role, groupId);
       } else {
         await api.addUserToOrg(orgId, inviteEmail.trim(), user.email, role);
