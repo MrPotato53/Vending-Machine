@@ -58,21 +58,13 @@ services:
       # - ./frontend:/app
       # - /app/node_modules
     ports:
-      - "8081:8081"
+      - "80:8081"
     depends_on:
       - backend
     environment:
       - NODE_PATH=/app/node_modules
 
   #https://hub.docker.com/r/steveltn/https-portal/#prerequisite
-  https-portal:
-    image: steveltn/https-portal:1
-    ports:
-      - '80:80'
-      - '443:443'
-    environment:
-      stage: local
-      DOMAINS: 'localhost -> http://frontend:8081'
-
+  
 volumes:
   vendingmachinedat:
