@@ -151,7 +151,7 @@ export default function InventoryScreen({ route, navigation }) {
 
   const cancelRestock = async () => {
     try {
-      await api.updateVendingMachineMode(vm.vm_id, 'i');
+      vm.vm_mode == 'r' ? await api.updateVendingMachineMode(vm.vm_id, 'i') : null;
       setIsRestockMode(false);
       setEditedItems({});
       setNewItems({});

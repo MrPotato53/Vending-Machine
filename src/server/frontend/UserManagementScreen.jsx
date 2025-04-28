@@ -275,7 +275,7 @@ export default function UserManagementScreen({ route, navigation }) {
                       value={roleIdx.row === 0 ? 'admin' : 'maintainer'}
                       onSelect={idx => changeRole(u.email, idx)}
                       disabled={loading || u.email === user.email}
-                      style={styles.roleSelect}
+                      style={[styles.roleSelect, { marginLeft: 'auto' }]}
                     >
                       <SelectItem title="admin" />
                       <SelectItem title="maintainer" />
@@ -298,7 +298,7 @@ export default function UserManagementScreen({ route, navigation }) {
   }
   onSelect={idx => assignMember(u.email, idx)}
   disabled={loading}
-  style={styles.groupSelect}
+  style={[styles.groupSelect, { marginLeft: 'auto' }]}
 >
   {/* 0: No Group */}
   <SelectItem title="No Group" />
