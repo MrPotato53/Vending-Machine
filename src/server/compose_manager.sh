@@ -5,6 +5,7 @@ CONTAINER_NAME="vending_machine-db1-1"
 BACKEND_CONTAINER_NAME="vending_machine-backend-1"
 MOSQUITTO_CONTAINER_NAME="vending_machine-mosquitto-1"
 FRONTEND_CONTAINER_NAME="vending_machine-frontend-1"
+HTTPS_CONTAINER_NAME="vending_machine-https-1"
 VOLUME_NAME="vending_machine_vendingmachinedat"
 COMPOSE_FILE="docker_compose.yml"
 PROJECT_NAME="vending_machine"
@@ -43,6 +44,13 @@ shutdown() {
         docker stop "${FRONTEND_CONTAINER_NAME}" && docker rm "${FRONTEND_CONTAINER_NAME}"
     else
         echo "Container ${FRONTEND_CONTAINER_NAME} not found. Skipping removal."
+    fi
+
+    if docker ps -a --format '{{.Names}}' | grep -q "^${HTTPS_CONTAINER_NAME}$"; then
+        echo "Stopping and removing container: ${HTTPS_CONTAINER_NAME}"
+        docker stop "${HTTPS_CONTAINER_NAME}" && docker rm "${HTTPS_CONTAINER_NAME}"
+    else
+        echo "Container ${HTTPS_CONTAINER_NAME} not found. Skipping removal."
     fi
 
     # Bring down docker-compose services and remove associated volumes
@@ -127,6 +135,13 @@ down() {
         docker stop "${MOSQUITTO_CONTAINER_NAME}"
     else
         echo "Container ${MOSQUITTO_CONTAINER_NAME} not found."
+    fi
+
+     if docker ps -a --format '{{.Names}}' | grep -q "^${HTTPS_CONTAINER_NAME}$"; then
+        echo "Stopping container: ${HTTPS_CONTAINER_NAME}"
+        docker stop "${HTTPS_CONTAINER_NAME}"
+    else
+        echo "Container ${HTTPS_CONTAINER_NAME} not found."
     fi
 
     # Stop frontend container if it exists
