@@ -24,7 +24,15 @@ export default function InventoryScreen({ route, navigation }) {
   const [orderedSlots, setOrderedSlots] = useState([]);
 
   const vmIsRegistered = Boolean(vm.vm_row_count && vm.vm_column_count);
-
+  // Track vm_mode: 'i'=idle, 'r'=restock, 't'=transaction
+  const modeChar = vm.vm_mode ?? (isRestockMode ? 'r' : 'i');
+  const modeLabel = modeChar === 'i'
+  ? 'Idle'
+  : modeChar === 'r'
+  ? 'Restocking'
+  : modeChar === 't'
+  ? 'Ongoing Transaction'
+  : 'Unknown';
   const fetchInventory = useCallback(async () => {
     try {
       const inv = await api.getInventory(vm.vm_id);
@@ -346,7 +354,7 @@ export default function InventoryScreen({ route, navigation }) {
             <View style={[styles.statusDot, onlineStatus ? styles.greenDot : styles.redDot]} />
             <Text category="p2">{onlineStatus ? 'Online' : 'Offline'}</Text>
             <Text style={vmIsRegistered ? styles.registeredTag : styles.unregisteredTag}>
-              {vmIsRegistered ? 'Registered' : 'Unregistered'}
+              {vmIsRegistered ? `Registered — Mode: ${modeLabel}` : 'Unregistered'}
             </Text>
           </View>
 
