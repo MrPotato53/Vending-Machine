@@ -29,18 +29,20 @@ export default function DashboardScreen({ route, navigation }) {
     userIntervalRef.current = setInterval(async () => {
       try {
         const updated = await api.getUser(user.email);
-
-        if(updated.u_role !== user.u_role) {
-          // User role has changed, navicate to dashboard
-          navigation.replace('Dashboard', { user: updated });
-        }
         
-        setUser(updated);
+        // Get current user state using a function
+        setUser(currentUser => {
+          if(updated.u_role !== currentUser.u_role) {
+            // User role has changed, navigate to dashboard
+            navigation.replace('Dashboard', { user: updated });
+          }
+          return updated;
+        });
       } catch {/* ignore */}
     }, 5000);
     
     return () => clearInterval(userIntervalRef.current);
-  }, [user.email]);
+  }, [user.email, navigation]);
 
   const handleLogout = () => {
     clearInterval(userIntervalRef.current);
