@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, isValidElement } from 'react';
+import React, { useState, useEffect, useCallback, isValidElement, useRef } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -24,6 +24,8 @@ export default function InventoryScreen({ route, navigation }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orderedSlots, setOrderedSlots] = useState([]);
 
+  // Create a reference to store the interval ID
+  const intervalRef = useRef(null);
   const vmIsRegistered = Boolean(vm.vm_row_count && vm.vm_column_count);
   // Track vm_mode: 'i'=idle, 'r'=restock, 't'=transaction
   const modeChar = vm.vm_mode ?? (isRestockMode ? 'r' : 'i');
@@ -82,11 +84,24 @@ export default function InventoryScreen({ route, navigation }) {
 
   // Poll VM details and inventory every 1 second
   useEffect(() => {
-    const interval = setInterval(() => {
+    // Clear any existing interval first (belt and suspenders approach)
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
+    // Create new interval and store its ID in the ref
+    intervalRef.current = setInterval(() => {
       fetchVmDetails();
       fetchInventory();
     }, 1000);
-    return () => clearInterval(interval);
+    
+    // Return cleanup function
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [fetchVmDetails, fetchInventory]);
 
   const showError = (message) => {
@@ -96,13 +111,21 @@ export default function InventoryScreen({ route, navigation }) {
 
   const deleteVm = async () => {
     try {
-      setShowDeleteConfirm(false); // Close the confirmation modal first
+      setShowDeleteConfirm(false);
+      
+      // Clear the polling interval BEFORE deleting or navigating
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      
       await api.deleteVendingMachine(vm.vm_id);
       navigation.navigate('Dashboard', { user });
     } catch (e) {
       showError(`Could not delete: ${e.message}`);
     }
   };
+  
   const startRestock = async () => {
     if (!vmIsRegistered) return;
     

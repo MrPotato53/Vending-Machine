@@ -74,7 +74,7 @@ def dispense_free():
         print("Error: ", e)
     except err.InvalidSlotNameError as e:
         print("Error: ", e)
-    except ValueError as e:
+    except err.NotFreeItemError as e:
         print("Error: ", e)
 
 
