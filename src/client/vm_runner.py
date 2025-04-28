@@ -66,7 +66,12 @@ class VendingMachineRunner:
             )
             if input_string is CARD_INFO_KEY:
                 # Card info key is pressed, transaction start
-                await self.perform_transaction()
+                try:
+                    await self.perform_transaction()
+                except err.InvalidModeError as e:
+                    print("Error: " + str(e))
+                    await self.display.show_text("INVALID MODE", LCD_LINE_1)
+                    await asyncio.sleep(1)
             else:
                 try:
                     # Free item is chosen, dispense
