@@ -84,6 +84,14 @@ export default function DashboardScreen({ route, navigation }) {
     vm.vm_name.toLowerCase().includes(searchVM.toLowerCase()),
   );
 
+    /* Map mode codes to labels */
+  const modeLabelFor = (mode) =>
+    mode === 'i' ? 'Idle'
+    : mode === 'r' ? 'Restocking'
+    : mode === 't' ? 'Transaction'
+    : 'Unknown';
+
+      
   /* ────────────────────────── render ────────────────────────── */
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -119,7 +127,8 @@ export default function DashboardScreen({ route, navigation }) {
               const dimText = registered
                 ? `${item.vm_row_count} × ${item.vm_column_count}`  // e.g. “6 × 4”
                 : 'Unregistered';
-
+              const modeText = item.vm_mode ? modeLabelFor(item.vm_mode) : 'Unknown';
+            
               return (
                 <ListItem
                   title={() => (
@@ -135,7 +144,7 @@ export default function DashboardScreen({ route, navigation }) {
                   )}
                   description={() => (
                     <Text appearance="hint">
-                      ID: {item.vm_id} · {dimText}
+                      ID: {item.vm_id} · {dimText} · Mode: {onlineStatus[item.vm_id] ? modeText : 'Unknown'}
                     </Text>
                   )}
                   onPress={() => navigation.navigate('Inventory', { user, vm: item })}
