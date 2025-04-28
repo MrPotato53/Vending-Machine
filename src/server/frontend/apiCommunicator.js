@@ -3,7 +3,8 @@ import { Platform } from 'react-native';
 // Dynamically pick host & port
 const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 //const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'cs506x19.cs.wisc.edu';
-const PORT = '8080';
+//cannot go through https proxy under local conditions due to CORS policy on same source
+const PORT = '5000';
 const API_BASE = `http://${HOST}:${PORT}`;
 
 async function apiFetch(endpoint, { method = 'GET', body } = {}) {
