@@ -86,6 +86,8 @@ export default function InventoryScreen({ route, navigation }) {
       fetchVmDetails();
       fetchInventory();
     }, 1000);
+    
+    // Return cleanup function
     return () => clearInterval(interval);
   }, [fetchVmDetails, fetchInventory]);
 
@@ -98,11 +100,14 @@ export default function InventoryScreen({ route, navigation }) {
     try {
       setShowDeleteConfirm(false); // Close the confirmation modal first
       await api.deleteVendingMachine(vm.vm_id);
+      
+      // Navigate away from this screen
       navigation.navigate('Dashboard', { user });
     } catch (e) {
       showError(`Could not delete: ${e.message}`);
     }
   };
+  
   const startRestock = async () => {
     if (!vmIsRegistered) return;
     
