@@ -19,20 +19,33 @@ export default function DashboardScreen({ route, navigation }) {
   const [searchVM, setSearchVM]   = useState('');
 
   const intervalRef = useRef(null);
+  const userIntervalRef = useRef(null);
 
   const isAdmin      = user.u_role === 'admin';
   const isMaintainer = user.u_role === 'maintainer';
 
   /* ───────────── refresh the logged‑in user every 5 s ───────────── */
   useEffect(() => {
-    const id = setInterval(async () => {
+    userIntervalRef.current = setInterval(async () => {
       try {
         const updated = await api.getUser(user.email);
+
+        if(updated.u_role !== user.u_role) {
+          // User role has changed, navicate to dashboard
+          navigation.replace('Dashboard', { user: updated });
+        }
+        
         setUser(updated);
       } catch {/* ignore */}
     }, 5000);
-    return () => clearInterval(id);
+    
+    return () => clearInterval(userIntervalRef.current);
   }, [user.email]);
+
+  const handleLogout = () => {
+    clearInterval(userIntervalRef.current);
+    navigation.replace('Login');
+  };
 
   /* ──────────── fetch VMs & their online status ──────────── */
   const fetchMachines = useCallback(async () => {
@@ -177,7 +190,7 @@ export default function DashboardScreen({ route, navigation }) {
             </Button>
             <Button
               style={styles.button}
-              onPress={() => navigation.replace('Login')}
+              onPress={handleLogout}
             >
               Logout
             </Button>
