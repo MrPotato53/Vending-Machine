@@ -34,6 +34,7 @@ export default function DashboardScreen({ route, navigation }) {
         setUser(currentUser => {
           if(updated.u_role !== currentUser.u_role) {
             // User role has changed, navigate to dashboard
+            clearInterval(userIntervalRef.current);
             navigation.replace('Dashboard', { user: updated });
           }
           return updated;
