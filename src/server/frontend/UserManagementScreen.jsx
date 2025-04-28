@@ -298,7 +298,7 @@ export default function UserManagementScreen({ route, navigation }) {
   }
   onSelect={idx => assignMember(u.email, idx)}
   disabled={loading}
-  style={[styles.groupSelect, { marginLeft: 'auto' }]}
+  style={[styles.groupSelect, { marginLeft: 8 }]}
 >
   {/* 0: No Group */}
   <SelectItem title="No Group" />
