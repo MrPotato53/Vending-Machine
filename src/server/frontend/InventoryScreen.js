@@ -11,7 +11,8 @@ import { Layout, Text, Input, Button, Modal, Card } from '@ui-kitten/components'
 import api from './apiCommunicator';
 
 export default function InventoryScreen({ route, navigation }) {
-  const { user, vm } = route.params;
+  const { user, vm: initialVm } = route.params;
+  const [vm, setVm] = useState(initialVm);
   const [vmInventory, setVmInventory] = useState([]);
   const [onlineStatus, setOnlineStatus] = useState(false);
   const [isRestockMode, setIsRestockMode] = useState(false);
@@ -51,6 +52,16 @@ export default function InventoryScreen({ route, navigation }) {
     }
   }, [vm.vm_id]);
 
+  // Fetch latest VM details
+  const fetchVmDetails = useCallback(async () => {
+    try {
+      const updatedVm = await api.getVendingMachine(vm.vm_id);
+      setVm(updatedVm);
+    } catch (error) {
+      // ignore or show error
+    }
+  }, [vm.vm_id]);
+
   // Generate slots in column-first order
   useEffect(() => {
     if (vmIsRegistered) {
@@ -68,6 +79,15 @@ export default function InventoryScreen({ route, navigation }) {
   useEffect(() => {
     fetchInventory();
   }, [fetchInventory]);
+
+  // Poll VM details and inventory every 1 second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchVmDetails();
+      fetchInventory();
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [fetchVmDetails, fetchInventory]);
 
   const showError = (message) => {
     setErrorMessage(message);
@@ -354,7 +374,10 @@ export default function InventoryScreen({ route, navigation }) {
             <View style={[styles.statusDot, onlineStatus ? styles.greenDot : styles.redDot]} />
             <Text category="p2">{onlineStatus ? 'Online' : 'Offline'}</Text>
             <Text style={vmIsRegistered ? styles.registeredTag : styles.unregisteredTag}>
-              {vmIsRegistered ? `Registered — Mode: ${modeLabel}` : 'Unregistered'}
+              {vmIsRegistered ? `Registered` : 'Unregistered'}
+            </Text>
+            <Text >
+              {vmIsRegistered ? ` Mode: ${modeLabel}` : ''}
             </Text>
           </View>
 

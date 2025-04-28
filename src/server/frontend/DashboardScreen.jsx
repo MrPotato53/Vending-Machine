@@ -144,7 +144,7 @@ export default function DashboardScreen({ route, navigation }) {
                   )}
                   description={() => (
                     <Text appearance="hint">
-                      ID: {item.vm_id} · {dimText} · Mode: {modeText}
+                      ID: {item.vm_id} · {dimText} · Mode: {onlineStatus[item.vm_id] ? modeText : 'Unknown'}
                     </Text>
                   )}
                   onPress={() => navigation.navigate('Inventory', { user, vm: item })}
