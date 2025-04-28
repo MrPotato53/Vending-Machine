@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, isValidElement } from 'react';
+import React, { useState, useEffect, useCallback, isValidElement, useRef } from 'react';
 import {
   FlatList,
   StyleSheet,
