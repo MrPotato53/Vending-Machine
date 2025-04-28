@@ -1,14 +1,13 @@
 import { Platform } from 'react-native';
 
 // Dynamically pick host & port
-<<<<<<< HEAD
 //const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'cs506x19.cs.wisc.edu';
-=======
-const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+
 //const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'cs506x19.cs.wisc.edu';
->>>>>>> 41a5ffb (Implemented email invites)
+
 const PORT = '8080';
+//cannot go through https proxy under local conditions due to CORS policy on same source
 const API_BASE = `http://${HOST}:${PORT}`;
 
 async function apiFetch(endpoint, { method = 'GET', body } = {}) {

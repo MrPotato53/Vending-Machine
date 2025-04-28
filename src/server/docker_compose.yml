@@ -39,7 +39,7 @@ services:
       - ./api:/app
       - /app/node_modules
     ports:
-      - "8080:5000"
+      - "5000:5000"
     depends_on:
       db1:
         condition: service_healthy
@@ -63,6 +63,18 @@ services:
       - backend
     environment:
       - NODE_PATH=/app/node_modules
+
+  https-portal:
+    image: steveltn/https-portal
+    restart: always
+    ports:
+      - "443:443"
+    environment:
+      - STAGE=local
+      - DOMAINS=localhost -> http://backend:5000
+      - DEFAULT_EMAIL=admin@localhost
+    volumes:
+      - ./https-portal/certs:/var/lib/https-portal
 
   #https://hub.docker.com/r/steveltn/https-portal/#prerequisite
   

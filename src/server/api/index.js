@@ -15,6 +15,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type","Authorization"],
   credentials: true
 }));
+app.set("trust proxy", true); // trust first proxy
 // also enable pre‑flight on all routes
 app.options("*", cors());
 
