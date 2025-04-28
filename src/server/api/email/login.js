@@ -65,8 +65,7 @@ const body = (site, orgName, role, admin_email) => {
 <body>
   <div class="card">
     <h2>Welcome to Team Nine Lives!</h2>
-    <p>You have been invited by ${admin_email} to join ${orgName} as a ${role}.</p>
-    <p>We are excited to have you join us. Please register to get started.</p>
+    <p>You have been invited by ${admin_email} to join ${orgName} as a ${role}. We are excited to have you join us. Please register to get started.</p>
     <a href=${site} class="register-button">Register</a>
   </div>
 </body>
