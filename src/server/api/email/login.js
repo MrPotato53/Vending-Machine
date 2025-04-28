@@ -21,56 +21,58 @@ const body = (site, orgName, role, admin_email) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    body, table, td, a {
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+    }
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
       margin: 0;
       padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      width: 100% !important;
+      height: 100% !important;
+      background-color: #f4f4f4;
     }
-
-    .card {
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      width: 300px;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .card h2 {
-      color: #333;
-      font-size: 1.5rem;
-    }
-
-    .register-button {
-      background-color: salmon;
-      color: white;
-      padding: 15px 30px;
-      font-size: 1.2rem;
-      border-radius: 8px;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 20px;
-    }
-
-    .register-button:hover {
-      background-color: #fa8072;
+    table {
+      border-collapse: collapse !important;
     }
   </style>
 </head>
-<body>
-  <div class="card">
-    <h2>Welcome to Team Nine Lives!</h2>
-    <p>You have been invited by ${admin_email} to join ${orgName} as a ${role}.</p>
-    <p>We are excited to have you join us. Please register to get started.</p>
-    <a href=${site} class="register-button">Register</a>
-  </div>
+<body style="background-color:#f4f4f4; margin:0; padding:0; width:100%; height:100%;">
+  <center>
+    <table border="0" cellpadding="10" cellspacing="0" width="100%">
+      <tr>
+        <td align="center" valign="top" style="padding:40px 10px;">
+          <table border="0" cellpadding="10" cellspacing="0" width="300" style="background:white; border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.1); padding:20px; text-align:center;">
+            <tr>
+              <td style="font-family:Arial, sans-serif; color:#333333; font-size:24px; font-weight:bold;">
+                Welcome to Team Nine Lives!
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-top:20px; font-family:Arial, sans-serif; color:#333333; font-size:16px;">
+                You have been invited by ${admin_email} to join ${orgName} as a ${role}.
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-top:10px; font-family:Arial, sans-serif; color:#333333; font-size:16px;">
+                We are excited to have you join us. Please register to get started.
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-top:20px;">
+                <a href="${site}" style="background-color:salmon; color:white; padding:15px 30px; font-size:18px; border-radius:8px; text-decoration:none; display:inline-block;">
+                  Register
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </center>
 </body>
-</html>`
+</html>
+`
 };
 
    
