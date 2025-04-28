@@ -443,6 +443,7 @@ export default function InventoryScreen({ route, navigation }) {
           visible={showErrorModal}
           backdropStyle={styles.backdrop}
           onBackdropPress={() => setShowErrorModal(false)}
+          style={styles.modalContainer}
         >
           <Card>
             <Text category="h6">Error</Text>
@@ -455,6 +456,7 @@ export default function InventoryScreen({ route, navigation }) {
           visible={showDeleteConfirm}
           backdropStyle={styles.backdrop}
           onBackdropPress={() => setShowDeleteConfirm(false)}
+          style={styles.modalContainer}
         >
           <Card>
             <Text category="h6">Confirm Delete</Text>
@@ -664,6 +666,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 12,
+  },
+  modalContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 0,              // remove any default margins
   },
   emptyContainer: {
     flex: 1,
