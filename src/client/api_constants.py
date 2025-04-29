@@ -6,7 +6,7 @@ MACHINES_ROUTE = "vending-machines" #API route for the related class
 INVENTORY_ROUTE = "inventory"
 ITEMS_ROUTE = "items"#API route for items
 REQUEST_HEADERS = {'Content-Type':'application/json'} #header for api post
-
+GEO_API_KEY = "AIzaSyC3cjahiP69yWj9-DSY2YB_texkLJK4qqg" #Google API key for geolocation
 SUCCESS = 200
 BAD_REQUEST = 400
 NOT_FOUND = 404
