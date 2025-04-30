@@ -22,6 +22,7 @@ class MQTTConnection:
         # 1) Standard MQTT setup
         client = mqtt.Client(client_id=hardware_id, clean_session=False)
         client.on_message = lambda c, u, m: (
+            print("Restocked, syncing from database:") or
             inv_man.sync_from_database()
             if m.topic == f"vm/restocked/{hardware_id}" else None
         )
