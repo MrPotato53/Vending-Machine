@@ -1,22 +1,23 @@
+// VMMap.jsx
 import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import iconUrl from './assets/icon.png'; // Adjust path as needed
 
-// Create a custom icon
+// Use require() for Metro compatibility
+const iconUrl = require('./assets/icon.png');
+const shadowUrl = require('leaflet/dist/images/marker-shadow.png');
+
+// Create custom icon for vending machine marker
 const CustomIcon = new L.Icon({
   iconUrl,
-  iconSize: [25, 41],          // Default size for Leaflet
-  iconAnchor: [12, 41],        // Anchor the bottom point of the icon to the location
-  popupAnchor: [0, -41],       // Position popup above the marker
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+  shadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [0, -41],
   shadowSize: [41, 41],
   shadowAnchor: [12, 41],
 });
-
-// Override default icon
-L.Marker.prototype.options.icon = CustomIcon;
 
 export default function VMMap({ markers }) {
   if (!markers.length) return null;
@@ -29,15 +30,19 @@ export default function VMMap({ markers }) {
       <MapContainer
         center={[avgLat, avgLng]}
         zoom={13}
+        scrollWheelZoom={true}
         style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={false}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; OpenStreetMap contributors'
         />
         {markers.map(({ vm_id, vm_name, lat, lng }) => (
-          <Marker key={vm_id} position={[lat, lng]}>
+          <Marker
+            key={vm_id}
+            position={[lat, lng]}
+            icon={CustomIcon}
+          >
             <Popup>
               <div>
                 <strong>{vm_name}</strong><br />

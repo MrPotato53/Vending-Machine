@@ -149,17 +149,22 @@ export default function DashboardScreen({ route, navigation }) {
           </View>
           
           {/* Add this right here before the List */}
-          {Object.keys(locations).length > 0 && (
-            <VMMap
-              markers={Object.entries(locations).map(([vm_id, loc]) => ({
-                vm_id,
-                lat: loc.lat,
-                lng: loc.lng,
-                vm_name:
-                  vendingMachines.find(vm => vm.vm_id === Number(vm_id))?.vm_name || 'Unknown',
-              }))}
-            />
-          )}
+          {Object.keys(locations).length > 0 && (() => {
+            const vmIdToName = Object.fromEntries(
+              vendingMachines.map(vm => [String(vm.vm_id), vm.vm_name])
+            );
+          
+            return (
+              <VMMap
+                markers={Object.entries(locations).map(([vm_id, loc]) => ({
+                  vm_id,
+                  lat: loc.lat,
+                  lng: loc.lng,
+                  vm_name: vmIdToName[vm_id] || 'Unknown',
+                }))}
+              />
+            );
+          })()}
 
           <List
             data={filtered}
