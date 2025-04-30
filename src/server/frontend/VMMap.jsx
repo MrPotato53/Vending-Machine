@@ -3,15 +3,17 @@ import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { Image } from 'react-native';
+import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
 
-// Use require() for Metro compatibility
-const iconUrl = require('./assets/icon.png');
-const shadowUrl = require('leaflet/dist/images/marker-shadow.png');
+// Resolve the URI of the assets for Metro bundler
+const iconUri = resolveAssetSource(require('./assets/icon.png')).uri;
+const shadowUri = resolveAssetSource(require('leaflet/dist/images/marker-shadow.png')).uri;
 
-// Create custom icon for vending machine marker
+// Create custom Leaflet icon
 const CustomIcon = new L.Icon({
-  iconUrl,
-  shadowUrl,
+  iconUrl: iconUri,
+  shadowUrl: shadowUri,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [0, -41],
