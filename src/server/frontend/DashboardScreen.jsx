@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Layout, Text, Input, Button, List, ListItem } from '@ui-kitten/components';
 import { useFocusEffect } from '@react-navigation/native';
+import { MapView, Marker } from 'react-native-web-maps';
 import api from './apiCommunicator';
 
 export default function DashboardScreen({ route, navigation }) {
@@ -17,6 +18,8 @@ export default function DashboardScreen({ route, navigation }) {
   const [vendingMachines, setVMs] = useState([]);
   const [onlineStatus, setStat]   = useState({});
   const [searchVM, setSearchVM]   = useState('');
+  const [region, setRegion]       = useState(null);
+  const [markers, setMarkers]     = useState([]);
 
   const intervalRef = useRef(null);
   const userIntervalRef = useRef(null);
@@ -24,16 +27,12 @@ export default function DashboardScreen({ route, navigation }) {
   const isAdmin      = user.u_role === 'admin';
   const isMaintainer = user.u_role === 'maintainer';
 
-  /* ───────────── refresh the logged‑in user every 5 s ───────────── */
   useEffect(() => {
     userIntervalRef.current = setInterval(async () => {
       try {
         const updated = await api.getUser(user.email);
-        
-        // Get current user state using a function
         setUser(currentUser => {
-          if(updated.u_role !== currentUser.u_role) {
-            // User role has changed, navigate to dashboard
+          if (updated.u_role !== currentUser.u_role) {
             clearInterval(userIntervalRef.current);
             navigation.replace('Dashboard', { user: updated });
           }
@@ -41,7 +40,6 @@ export default function DashboardScreen({ route, navigation }) {
         });
       } catch {/* ignore */}
     }, 5000);
-    
     return () => clearInterval(userIntervalRef.current);
   }, [user.email, navigation]);
 
@@ -50,7 +48,6 @@ export default function DashboardScreen({ route, navigation }) {
     navigation.replace('Login');
   };
 
-  /* ──────────── fetch VMs & their online status ──────────── */
   const fetchMachines = useCallback(async () => {
     const DEFAULT_ORG   = 1000001;
     const DEFAULT_GROUP = 3000001;
@@ -59,6 +56,7 @@ export default function DashboardScreen({ route, navigation }) {
     if (user.org_id === DEFAULT_ORG && groupId === DEFAULT_GROUP) {
       setVMs([]);
       setStat({});
+      setMarkers([]);
       return;
     }
 
@@ -72,43 +70,68 @@ export default function DashboardScreen({ route, navigation }) {
     setVMs(vms);
 
     const status = {};
+    const locations = [];
     await Promise.all(
       vms.map(async vm => {
         try {
-          const { isOnline } = await api.isVMOnline(vm.vm_id);
-          status[vm.vm_id] = isOnline;
-        } catch { status[vm.vm_id] = false; }
-      }),
+          const [statusResp, locResp] = await Promise.all([
+            api.isVMOnline(vm.vm_id),
+            api.getVMLocation(vm.vm_id)
+          ]);
+
+          status[vm.vm_id] = statusResp.isOnline;
+
+          if (locResp?.location) {
+            locations.push({
+              vm_id: vm.vm_id,
+              vm_name: vm.vm_name,
+              lat: locResp.location.lat,
+              lng: locResp.location.lng
+            });
+          }
+        } catch {
+          status[vm.vm_id] = false;
+        }
+      })
     );
     setStat(status);
+    setMarkers(locations);
+
+    if (locations.length > 0) {
+      const lats = locations.map(l => l.lat);
+      const lngs = locations.map(l => l.lng);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+
+      setRegion({
+        latitude: (minLat + maxLat) / 2,
+        longitude: (minLng + maxLng) / 2,
+        latitudeDelta: Math.max(0.01, (maxLat - minLat) * 1.5),
+        longitudeDelta: Math.max(0.01, (maxLng - minLng) * 1.5),
+      });
+    }
   }, [user.org_id, user.group_id, user.groupId, isAdmin, isMaintainer]);
 
-  /* ───────────────── focus‑aware polling ───────────────── */
   useFocusEffect(
     useCallback(() => {
-      // screen gains focus ➜ start polling
       fetchMachines();
       intervalRef.current = setInterval(fetchMachines, 5000);
-
-      // screen loses focus ➜ stop polling
       return () => clearInterval(intervalRef.current);
     }, [fetchMachines]),
   );
 
-  /* ───────────── filter by search string ───────────── */
   const filtered = vendingMachines.filter(vm =>
     vm.vm_name.toLowerCase().includes(searchVM.toLowerCase()),
   );
 
-    /* Map mode codes to labels */
   const modeLabelFor = (mode) =>
     mode === 'i' ? 'Idle'
     : mode === 'r' ? 'Restocking'
     : mode === 't' ? 'Transaction'
     : 'Unknown';
 
-      
-  /* ────────────────────────── render ────────────────────────── */
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -121,6 +144,22 @@ export default function DashboardScreen({ route, navigation }) {
           <RNText style={styles.instruction}>
             Select a vending machine to manage inventory.
           </RNText>
+
+          {region && (
+            <MapView
+              style={styles.map}
+              region={region}
+            >
+              {markers.map(marker => (
+                <Marker
+                  key={marker.vm_id}
+                  coordinate={{ latitude: marker.lat, longitude: marker.lng }}
+                  title={marker.vm_name}
+                  description={`ID: ${marker.vm_id}`}
+                />
+              ))}
+            </MapView>
+          )}
 
           <View style={styles.topRow}>
             <Input
@@ -139,12 +178,11 @@ export default function DashboardScreen({ route, navigation }) {
             renderItem={({ item }) => {
               const registered =
                 (item.vm_row_count ?? 0) > 0 && (item.vm_column_count ?? 0) > 0;
-
               const dimText = registered
-                ? `${item.vm_row_count} × ${item.vm_column_count}`  // e.g. “6 × 4”
+                ? `${item.vm_row_count} × ${item.vm_column_count}`
                 : 'Unregistered';
               const modeText = item.vm_mode ? modeLabelFor(item.vm_mode) : 'Unknown';
-            
+
               return (
                 <ListItem
                   title={() => (
@@ -204,25 +242,19 @@ export default function DashboardScreen({ route, navigation }) {
   );
 }
 
-/* ───────────────────────── styles ───────────────────────── */
 const styles = StyleSheet.create({
-  safeArea:      { flex: 1 },
+  safeArea: { flex: 1 },
   keyboardAvoid: { flex: 1, position: 'relative' },
-
   container: { flex: 1, padding: 24 , maxHeight: '91vh' },
-
   instruction: { marginVertical: 12, fontStyle: 'italic' },
-
-  topRow:   { flexDirection: 'row', alignItems: 'center' },
-  input:    { flex: 1, marginRight: 8 },
-  reloadBtn:{ width: 80 },
-
+  topRow: { flexDirection: 'row', alignItems: 'center' },
+  input: { flex: 1, marginRight: 8 },
+  reloadBtn: { width: 80 },
   list: { flex: 1, marginVertical: 8 },
   vmRow: { flexDirection: 'row', alignItems: 'center' },
   statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-  greenDot:  { backgroundColor: '#4caf50' },
-  redDot:    { backgroundColor: '#f44336' },
-
+  greenDot: { backgroundColor: '#4caf50' },
+  redDot: { backgroundColor: '#f44336' },
   bottomBar: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0,
@@ -238,5 +270,6 @@ const styles = StyleSheet.create({
   },
   addButton: { marginBottom: 12 },
   actionRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  button:    { flex: 1, marginHorizontal: 4 },
+  button: { flex: 1, marginHorizontal: 4 },
+  map: { height: 250, width: '100%', marginVertical: 10 },
 });
