@@ -80,8 +80,19 @@ export default function DashboardScreen({ route, navigation }) {
         } catch { status[vm.vm_id] = false; }
       }),
     );
+    await Promise.all(
+      vms.map(async vm => {
+        if (vm.vm_mode == null) {
+          try {
+            const full = await api.getVendingMachine(vm.vm_id); // <- endpoint that has vm_mode
+            vm.vm_mode = full.vm_mode;                          // mutate in-place
+          } catch {/* ignore */}
+        }
+      })
+    );
     setStat(status);
   }, [user.org_id, user.group_id, user.groupId, isAdmin, isMaintainer]);
+  
 
   /* ───────────────── focus‑aware polling ───────────────── */
   useFocusEffect(
