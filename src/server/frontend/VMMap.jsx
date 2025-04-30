@@ -1,13 +1,22 @@
-// VMMap.jsx
 import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
+import iconUrl from './assets/icon.png'; // Adjust path as needed
 
-const DefaultIcon = L.icon({ iconUrl, shadowUrl: iconShadowUrl });
-L.Marker.prototype.options.icon = DefaultIcon;
+// Create a custom icon
+const CustomIcon = new L.Icon({
+  iconUrl,
+  iconSize: [25, 41],          // Default size for Leaflet
+  iconAnchor: [12, 41],        // Anchor the bottom point of the icon to the location
+  popupAnchor: [0, -41],       // Position popup above the marker
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+  shadowSize: [41, 41],
+  shadowAnchor: [12, 41],
+});
+
+// Override default icon
+L.Marker.prototype.options.icon = CustomIcon;
 
 export default function VMMap({ markers }) {
   if (!markers.length) return null;
@@ -16,7 +25,7 @@ export default function VMMap({ markers }) {
   const avgLng = markers.reduce((sum, m) => sum + m.lng, 0) / markers.length;
 
   return (
-    <div style={{ height: 300, marginVertical: 10 }}>
+    <div style={{ height: 300, margin: '10px 0' }}>
       <MapContainer
         center={[avgLat, avgLng]}
         zoom={13}
@@ -29,7 +38,19 @@ export default function VMMap({ markers }) {
         />
         {markers.map(({ vm_id, vm_name, lat, lng }) => (
           <Marker key={vm_id} position={[lat, lng]}>
-            <Popup>{`${vm_name} (ID: ${vm_id})`}</Popup>
+            <Popup>
+              <div>
+                <strong>{vm_name}</strong><br />
+                ID: {vm_id}<br />
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Get Directions
+                </a>
+              </div>
+            </Popup>
           </Marker>
         ))}
       </MapContainer>
