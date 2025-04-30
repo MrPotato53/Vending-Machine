@@ -6,6 +6,13 @@ FROM python:3.12-slim
 # Set the working directory to /app.
 WORKDIR /app
 
+# Install iwlist (wireless-tools) and any OS‐level deps
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      iproute2 \
+      wireless-tools \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 
 # Install any needed packages specified in requirements.txt
