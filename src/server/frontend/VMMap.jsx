@@ -10,16 +10,15 @@ import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource'
 const iconUri = resolveAssetSource(require('./assets/icon.png')).uri;
 const shadowUri = resolveAssetSource(require('leaflet/dist/images/marker-shadow.png')).uri;
 
-// Create custom Leaflet icon
 const CustomIcon = new L.Icon({
-  iconUrl: iconUri,
-  shadowUrl: shadowUri,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [0, -41],
-  shadowSize: [41, 41],
-  shadowAnchor: [12, 41],
-});
+    iconUrl: iconUri,
+    shadowUrl: shadowUri,
+    iconSize: [33, 41],         // ← wider by ~30%
+    iconAnchor: [16, 41],       // ← adjust anchor horizontally
+    popupAnchor: [0, -41],
+    shadowSize: [41, 41],
+    shadowAnchor: [12, 41],
+  });
 
 export default function VMMap({ markers }) {
   if (!markers.length) return null;
