@@ -2,48 +2,13 @@
   "considerIp": false,
   "wifiAccessPoints": [
     {
-      "macAddress": "94:91:7f:c6:d4:26",
-      "signalStrength": -100,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "2c:67:be:14:11:ab",
-      "signalStrength": -78,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "18:a5:d3:a5:c5:59",
-      "signalStrength": -84,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "64:97:14:e2:8b:64",
-      "signalStrength": -61,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "b0:5d:d4:b4:99:63",
-      "signalStrength": -54,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "64:97:14:e2:8b:63",
-      "signalStrength": -67,
-      "signalToNoiseRatio": 0
-    },
-    {
       "macAddress": "2c:67:be:15:02:c3",
       "signalStrength": -94,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "fc:12:63:f1:c3:36",
-      "signalStrength": -93,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "e4:c0:e2:5d:f8:77",
-      "signalStrength": -91,
+      "macAddress": "80:69:1a:31:9e:c2",
+      "signalStrength": -90,
       "signalToNoiseRatio": 0
     },
     {
@@ -52,28 +17,168 @@
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "d8:ec:5e:57:dc:9f",
+      "macAddress": "d8:44:89:a1:0a:0c",
+      "signalStrength": -76,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "00:31:92:db:11:69",
       "signalStrength": -85,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "2c:67:be:14:4c:b1",
+      "macAddress": "2c:67:be:14:10:48",
+      "signalStrength": -60,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "2c:67:be:14:10:49",
+      "signalStrength": -59,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "d8:ec:5e:57:dc:9f",
       "signalStrength": -84,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "74:93:da:88:cf:3a",
+      "macAddress": "2c:ea:dc:09:4d:41",
+      "signalStrength": -84,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "4c:ab:f8:f5:f6:ed",
       "signalStrength": -82,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "4c:ab:f8:f5:f6:ee",
+      "signalStrength": -72,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "b0:fc:88:6a:63:f8",
+      "signalStrength": -76,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "b0:fc:88:6a:63:f7",
+      "signalStrength": -72,
       "signalToNoiseRatio": 0
     },
     {
       "macAddress": "74:93:da:88:cf:39",
+      "signalStrength": -76,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "78:29:ed:7c:f7:c5",
+      "signalStrength": -76,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "fc:12:63:f1:c1:ad",
+      "signalStrength": -76,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "fc:12:63:f1:c1:85",
+      "signalStrength": -75,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "f0:81:75:df:78:0e",
+      "signalStrength": -73,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "f0:81:75:df:78:0f",
+      "signalStrength": -60,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "6c:cd:d6:28:be:29",
+      "signalStrength": -73,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "2c:67:be:14:11:ab",
+      "signalStrength": -73,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "2c:67:be:14:11:ac",
+      "signalStrength": -59,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "d8:44:89:9c:b8:a3",
+      "signalStrength": -73,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "4c:ab:f8:c6:30:a9",
+      "signalStrength": -72,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "fc:12:63:f1:c3:35",
       "signalStrength": -70,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "18:a5:ff:9e:c5:59",
-      "signalStrength": -82,
+      "macAddress": "fc:12:63:f1:c3:36",
+      "signalStrength": -96,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "b0:fc:88:70:bb:3d",
+      "signalStrength": -70,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "2c:67:be:14:f3:7e",
+      "signalStrength": -70,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "b0:95:75:83:e2:e6",
+      "signalStrength": -70,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "5c:62:8b:e8:42:bd",
+      "signalStrength": -69,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "10:d7:b0:f2:69:de",
+      "signalStrength": -69,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "10:d7:b0:f2:69:df",
+      "signalStrength": -60,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "90:d3:cf:a1:de:b7",
+      "signalStrength": -69,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "90:d3:cf:a1:de:b8",
+      "signalStrength": -72,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "2c:67:be:14:d7:7b",
+      "signalStrength": -78,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "2c:67:be:14:d7:7c",
+      "signalStrength": -67,
       "signalToNoiseRatio": 0
     },
     {
@@ -88,117 +193,62 @@
     },
     {
       "macAddress": "f0:7b:65:5d:10:26",
+      "signalStrength": -58,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "44:d4:53:85:11:2e",
+      "signalStrength": -67,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "44:d4:53:85:11:2f",
       "signalStrength": -61,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "fc:12:63:a8:f5:bd",
-      "signalStrength": -81,
+      "macAddress": "2c:ea:dc:ed:fa:2a",
+      "signalStrength": -66,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "fc:12:63:a8:f5:be",
-      "signalStrength": -70,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "f8:5b:3b:7e:fe:e2",
-      "signalStrength": -76,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "34:53:d2:d4:a8:2b",
-      "signalStrength": -76,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "74:37:5f:c7:3c:a7",
-      "signalStrength": -76,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "74:37:5f:c7:3c:a6",
-      "signalStrength": -63,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "2c:67:be:14:10:48",
+      "macAddress": "2c:ea:dc:ed:fa:29",
       "signalStrength": -60,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "2c:67:be:14:10:49",
-      "signalStrength": -59,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "b0:fc:88:70:bb:3c",
-      "signalStrength": -75,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "b0:fc:88:70:bb:3d",
-      "signalStrength": -67,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "a0:55:1f:35:c5:26",
-      "signalStrength": -75,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "a0:55:1f:35:c5:25",
-      "signalStrength": -73,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "4c:ab:f8:f5:f6:ee",
-      "signalStrength": -73,
+      "macAddress": "84:1e:a3:c5:6e:27",
+      "signalStrength": -66,
       "signalToNoiseRatio": 0
     },
     {
       "macAddress": "c8:b4:22:ea:75:96",
-      "signalStrength": -69,
+      "signalStrength": -66,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "5c:62:8b:e8:42:bd",
-      "signalStrength": -69,
+      "macAddress": "c8:b4:22:ea:75:95",
+      "signalStrength": -60,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "34:53:d2:35:77:0f",
-      "signalStrength": -64,
+      "macAddress": "4c:ab:f8:c6:91:59",
+      "signalStrength": -66,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "34:53:d2:35:77:0e",
-      "signalStrength": -62,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "6c:cd:d6:28:be:28",
-      "signalStrength": -64,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "b0:5d:d4:b4:99:60",
-      "signalStrength": -63,
+      "macAddress": "44:05:3f:48:cc:96",
+      "signalStrength": -66,
       "signalToNoiseRatio": 0
     },
     {
       "macAddress": "a0:63:91:cc:2c:d4",
-      "signalStrength": -63,
+      "signalStrength": -64,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "04:42:1a:b4:4f:90",
-      "signalStrength": -63,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "04:42:1a:b4:4f:94",
-      "signalStrength": -67,
+      "macAddress": "d8:ec:5e:57:dc:9e",
+      "signalStrength": -64,
       "signalToNoiseRatio": 0
     },
     {
@@ -208,67 +258,37 @@
     },
     {
       "macAddress": "b0:fc:88:70:2d:c4",
-      "signalStrength": -62,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "5c:62:8b:e8:42:bb",
-      "signalStrength": -62,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "2c:ea:dc:33:39:bd",
-      "signalStrength": -62,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "2c:ea:dc:33:39:be",
-      "signalStrength": -58,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "2c:ea:dc:ed:fa:2a",
-      "signalStrength": -62,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "2c:ea:dc:ed:fa:29",
-      "signalStrength": -60,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "74:93:da:04:8b:ea",
       "signalStrength": -61,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "74:93:da:04:8b:eb",
-      "signalStrength": -58,
+      "macAddress": "74:37:5f:c7:3c:a6",
+      "signalStrength": -63,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "64:97:14:e2:8b:65",
-      "signalStrength": -67,
+      "macAddress": "74:37:5f:c7:3c:a7",
+      "signalStrength": -61,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "64:97:14:e2:8b:66",
-      "signalStrength": -60,
+      "macAddress": "74:37:5f:38:9a:bb",
+      "signalStrength": -62,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "64:97:14:e2:8b:68",
-      "signalStrength": -60,
+      "macAddress": "04:42:1a:b4:4f:90",
+      "signalStrength": -62,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "64:97:14:e2:8b:67",
+      "macAddress": "04:42:1a:b4:4f:94",
       "signalStrength": -67,
       "signalToNoiseRatio": 0
     },
     {
       "macAddress": "34:53:d2:d0:ab:72",
-      "signalStrength": -60,
+      "signalStrength": -61,
       "signalToNoiseRatio": 0
     },
     {
@@ -277,23 +297,13 @@
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "44:d4:53:85:11:2f",
+      "macAddress": "a0:55:1f:35:c5:25",
       "signalStrength": -60,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "44:d4:53:85:11:2e",
-      "signalStrength": -59,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "10:d7:b0:f2:69:de",
-      "signalStrength": -60,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "10:d7:b0:f2:69:df",
-      "signalStrength": -59,
+      "macAddress": "18:a5:d3:a5:c5:59",
+      "signalStrength": -81,
       "signalToNoiseRatio": 0
     },
     {
@@ -303,17 +313,27 @@
     },
     {
       "macAddress": "fc:12:63:e7:a6:46",
-      "signalStrength": -59,
+      "signalStrength": -58,
       "signalToNoiseRatio": 0
     },
     {
       "macAddress": "fc:12:63:e7:a6:45",
-      "signalStrength": -57,
+      "signalStrength": -54,
       "signalToNoiseRatio": 0
     },
     {
       "macAddress": "e8:65:d4:31:98:b1",
       "signalStrength": -57,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "2c:ea:dc:33:39:bd",
+      "signalStrength": -57,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "2c:ea:dc:33:39:be",
+      "signalStrength": -58,
       "signalToNoiseRatio": 0
     },
     {
@@ -327,18 +347,28 @@
       "signalToNoiseRatio": 0
     },
     {
+      "macAddress": "7c:10:c9:b4:00:34",
+      "signalStrength": -55,
+      "signalToNoiseRatio": 0
+    },
+    {
       "macAddress": "7c:10:c9:b4:00:30",
-      "signalStrength": -53,
+      "signalStrength": -54,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "00:31:92:db:11:68",
-      "signalStrength": -94,
+      "macAddress": "74:93:da:04:8b:ea",
+      "signalStrength": -54,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "44:05:3f:48:cc:97",
-      "signalStrength": -93,
+      "macAddress": "74:93:da:04:8b:eb",
+      "signalStrength": -59,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "30:23:03:b6:b0:1b",
+      "signalStrength": -96,
       "signalToNoiseRatio": 0
     },
     {
@@ -352,63 +382,78 @@
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "fc:12:63:07:f1:12",
+      "macAddress": "f0:09:0d:0c:6e:f9",
       "signalStrength": -90,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "d8:44:89:9c:b8:a3",
+      "macAddress": "e4:c0:e2:5d:f8:77",
       "signalStrength": -90,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "14:dd:a9:83:df:4c",
-      "signalStrength": -88,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "90:d3:cf:25:87:06",
-      "signalStrength": -87,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "4c:19:5d:82:c4:7a",
+      "macAddress": "34:53:d2:d4:a8:2b",
       "signalStrength": -85,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "34:53:d2:49:49:ef",
-      "signalStrength": -76,
+      "macAddress": "4c:19:5d:00:45:f4",
+      "signalStrength": -84,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "ac:df:9f:73:80:86",
+      "signalStrength": -82,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "18:a5:ff:9e:c5:59",
+      "signalStrength": -81,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "18:a5:ff:9e:c5:58",
+      "signalStrength": -73,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "64:67:72:46:48:5f",
+      "signalStrength": -78,
       "signalToNoiseRatio": 0
     },
     {
       "macAddress": "fc:12:63:f1:81:95",
+      "signalStrength": -76,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "f8:5b:3b:7c:f2:06",
       "signalStrength": -75,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "90:d3:cf:a1:de:b8",
+      "macAddress": "a4:97:33:af:35:f8",
+      "signalStrength": -73,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "34:53:d2:49:49:ef",
+      "signalStrength": -73,
+      "signalToNoiseRatio": 0
+    },
+    {
+      "macAddress": "74:93:da:1d:aa:4d",
       "signalStrength": -72,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "f0:81:75:df:78:0e",
-      "signalStrength": -67,
+      "macAddress": "fc:12:63:a8:f5:be",
+      "signalStrength": -70,
       "signalToNoiseRatio": 0
     },
     {
-      "macAddress": "f0:81:75:df:78:0f",
-      "signalStrength": -61,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "84:1e:a3:c5:6e:27",
-      "signalStrength": -66,
-      "signalToNoiseRatio": 0
-    },
-    {
-      "macAddress": "80:69:1a:31:9e:c1",
-      "signalStrength": -63,
+      "macAddress": "34:53:d2:35:77:0f",
+      "signalStrength": -64,
       "signalToNoiseRatio": 0
     }
   ]

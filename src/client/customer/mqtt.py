@@ -55,10 +55,10 @@ class MQTTConnection:
                     with open(json_path, 'r', encoding='utf-8-sig') as f:
                         data = json.load(f)
                     aps = data.get('wifiAccessPoints', [])
-                    print(f"Loaded {len(aps)} Wi-Fi APs from {json_path}")
+                    # print(f"Loaded {len(aps)} Wi-Fi APs from {json_path}")
                     return aps
                 except Exception as e:
-                    print(f"Failed to parse Wi-Fi JSON: {e}")
+                    # print(f"Failed to parse Wi-Fi JSON: {e}")
                     return []
             print(f"Wi-Fi JSON file not found at {json_path}, attempting live scan")
 
@@ -109,7 +109,7 @@ class MQTTConnection:
                 body['wifiAccessPoints'] = wifi_aps
 
             # DEBUG: print request body
-            print(f"Geolocation request body: {json.dumps(body)}")
+            # print(f"Geolocation request body: {json.dumps(body)}")
 
             geo_url = f"https://www.googleapis.com/geolocation/v1/geolocate?key={GEO_API_KEY}"
             try:
@@ -122,7 +122,7 @@ class MQTTConnection:
                 print("Geolocation API returned 404 Not Found; falling back to IP-only geolocation")
                 # Fallback to IP-only without raising
                 fallback_body = {'considerIp': True}
-                print(f"Fallback request body: {json.dumps(fallback_body)}")
+                # print(f"Fallback request body: {json.dumps(fallback_body)}")
                 fallback = session.post(geo_url, json=fallback_body, timeout=5)
                 if fallback.status_code != 200:
                     print(f"Fallback geolocation error {fallback.status_code}: {fallback.text}")
@@ -136,7 +136,7 @@ class MQTTConnection:
                 return None
 
             data = resp.json()
-            print(f"Geolocation API returned: location={data.get('location')}, accuracy={data.get('accuracy')}")
+            # print(f"Geolocation API returned: location={data.get('location')}, accuracy={data.get('accuracy')}")
             return data.get('location')
 
         # 3) Background location publisher
@@ -162,7 +162,7 @@ class MQTTConnection:
                         if loc:
                             payload = json.dumps({'lat': loc['lat'], 'lng': loc['lng']})
                             client.publish(loc_topic, payload, qos=1, retain=True)
-                            print(f"Published location for {hardware_id}: {payload}")
+                            # print(f"Published location for {hardware_id}: {payload}")
                         else:
                             print(f"Geolocation API returned no location for {hardware_id}")
 
