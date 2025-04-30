@@ -80,16 +80,23 @@ export default function DashboardScreen({ route, navigation }) {
             api.isVMOnline(vm.vm_id),
             api.getVMLocation(vm.vm_id),
             api.getInventory(vm.vm_id),
-            vm.vm_mode == null           // run only if needed
-            ? api.getVendingMachine(vm.vm_id)
-            : Promise.resolve(null),
           ]);
-
+          
           statusObj[vm.vm_id] = isOnline;
           if (locRes?.location) locObj[vm.vm_id] = locRes.location;
           invObj[vm.vm_id] = inv;           // full inventory array
         } catch {
           statusObj[vm.vm_id] = false;
+        }
+      })
+    );
+    await Promise.all(
+      vms.map(async vm => {
+        if (vm.vm_mode == null) {
+          try {
+            const full = await api.getVendingMachine(vm.vm_id); // <- endpoint that has vm_mode
+            vm.vm_mode = full.vm_mode;                          // mutate in-place
+          } catch {/* ignore */}
         }
       })
     );
