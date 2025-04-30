@@ -11,6 +11,7 @@ import {
 import { Layout, Text, Input, Button, List, ListItem } from '@ui-kitten/components';
 import { useFocusEffect } from '@react-navigation/native';
 import api from './apiCommunicator';
+import VMMap from './VMMap.jsx';
 
 export default function DashboardScreen({ route, navigation }) {
   const [user, setUser]           = useState(route.params.user);
@@ -146,6 +147,19 @@ export default function DashboardScreen({ route, navigation }) {
               Reload
             </Button>
           </View>
+          
+          {/* Add this right here before the List */}
+          {Object.keys(locations).length > 0 && (
+            <VMMap
+              markers={Object.entries(locations).map(([vm_id, loc]) => ({
+                vm_id,
+                lat: loc.lat,
+                lng: loc.lng,
+                vm_name:
+                  vendingMachines.find(vm => vm.vm_id === Number(vm_id))?.vm_name || 'Unknown',
+              }))}
+            />
+          )}
 
           <List
             data={filtered}
