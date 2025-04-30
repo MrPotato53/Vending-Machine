@@ -1,4 +1,4 @@
-// DashboardScreen.js
+// DashboardScreen.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
@@ -14,115 +14,111 @@ import api from './apiCommunicator';
 import VMMap from './VMMap.jsx';
 
 export default function DashboardScreen({ route, navigation }) {
-  const [user, setUser]           = useState(route.params.user);
-  const [vendingMachines, setVMs] = useState([]);
-  const [onlineStatus, setStat]   = useState({});
-  const [locations, setLocations] = useState({});
-  const [searchVM, setSearchVM]   = useState('');
+  /* ───────────── state ───────────── */
+  const [user, setUser]             = useState(route.params.user);
+  const [vendingMachines, setVMs]   = useState([]);
+  const [onlineStatus, setStatus]   = useState({});
+  const [locations, setLocations]   = useState({});
+  const [inventories, setInv]       = useState({});
+  const [searchVM, setSearchVM]     = useState('');
 
-  const intervalRef = useRef(null);
-  const userIntervalRef = useRef(null);
+  const pollRef   = useRef(null);
+  const userRef   = useRef(null);
 
   const isAdmin      = user.u_role === 'admin';
   const isMaintainer = user.u_role === 'maintainer';
 
-  /* ───────────── refresh the logged‑in user every 5 s ───────────── */
+  /* ───────── refresh logged-in user ───────── */
   useEffect(() => {
-    userIntervalRef.current = setInterval(async () => {
+    userRef.current = setInterval(async () => {
       try {
         const updated = await api.getUser(user.email);
-        
-        // Get current user state using a function
-        setUser(currentUser => {
-          if(updated.u_role !== currentUser.u_role) {
-            // User role has changed, navigate to dashboard
-            clearInterval(userIntervalRef.current);
+        setUser(cur => {
+          if (updated.u_role !== cur.u_role) {
+            clearInterval(userRef.current);
             navigation.replace('Dashboard', { user: updated });
           }
           return updated;
         });
       } catch {/* ignore */}
     }, 5000);
-    
-    return () => clearInterval(userIntervalRef.current);
+
+    return () => clearInterval(userRef.current);
   }, [user.email, navigation]);
 
   const handleLogout = () => {
-    clearInterval(userIntervalRef.current);
+    clearInterval(userRef.current);
     navigation.replace('Login');
   };
 
-  /* ──────────── fetch VMs & their online status ──────────── */
+  /* ─────────── fetch VMs + status + location + inventory ─────────── */
   const fetchMachines = useCallback(async () => {
     const DEFAULT_ORG   = 1000001;
     const DEFAULT_GROUP = 3000001;
     const groupId       = user.group_id ?? user.groupId;
 
     if (user.org_id === DEFAULT_ORG && groupId === DEFAULT_GROUP) {
-      setVMs([]);
-      setStat({});
-      setLocations({});
+      setVMs([]); setStatus({}); setLocations({}); setInv({});
       return;
     }
 
     let vms = [];
     if (isAdmin) {
-      const display = await api.getOrgDisplay(user.org_id);
-      vms = display.vms;
+      const { vms: list } = await api.getOrgDisplay(user.org_id);
+      vms = list;
     } else if (isMaintainer) {
       vms = await api.getVendingMachinesByGroup(user.org_id, groupId);
     }
-    setVMs(vms);
 
-    const status = {};
-    const locs = {};
+    /* parallel per-VM fetch */
+    const statusObj = {}, locObj = {}, invObj = {};
 
     await Promise.all(
       vms.map(async vm => {
         try {
-          const [{ isOnline }, loc] = await Promise.all([
+          const [{ isOnline }, locRes, inv] = await Promise.all([
             api.isVMOnline(vm.vm_id),
-            api.getVMLocation(vm.vm_id)
+            api.getVMLocation(vm.vm_id),
+            api.getInventory(vm.vm_id),
           ]);
-          status[vm.vm_id] = isOnline;
-          if (loc?.location) {
-            locs[vm.vm_id] = loc.location;
-          }
+
+          statusObj[vm.vm_id] = isOnline;
+          if (locRes?.location) locObj[vm.vm_id] = locRes.location;
+          invObj[vm.vm_id] = inv;           // full inventory array
         } catch {
-          status[vm.vm_id] = false;
+          statusObj[vm.vm_id] = false;
         }
       })
     );
-    setStat(status);
-    setLocations(locs);
+
+    setVMs(vms);
+    setStatus(statusObj);
+    setLocations(locObj);
+    setInv(invObj);
   }, [user.org_id, user.group_id, user.groupId, isAdmin, isMaintainer]);
 
-  /* ───────────────── focus‑aware polling ───────────────── */
+  /* ───────── focus-aware polling ───────── */
   useFocusEffect(
     useCallback(() => {
-      // screen gains focus ➜ start polling
       fetchMachines();
-      intervalRef.current = setInterval(fetchMachines, 5000);
-
-      // screen loses focus ➜ stop polling
-      return () => clearInterval(intervalRef.current);
-    }, [fetchMachines]),
+      pollRef.current = setInterval(fetchMachines, 5000);
+      return () => clearInterval(pollRef.current);
+    }, [fetchMachines])
   );
 
-  /* ───────────── filter by search string ───────────── */
+  /* ───────── helpers ───────── */
   const filtered = vendingMachines.filter(vm =>
-    vm.vm_name.toLowerCase().includes(searchVM.toLowerCase()),
+    vm.vm_name.toLowerCase().includes(searchVM.toLowerCase())
   );
 
-    /* Map mode codes to labels */
-  const modeLabelFor = (mode) =>
-    mode === 'i' ? 'Idle'
-    : mode === 'r' ? 'Restocking'
-    : mode === 't' ? 'Transaction'
-    : 'Unknown';
+  const modeLabelFor = m =>
+    m === 'i' ? 'Idle' : m === 'r' ? 'Restocking' : m === 't' ? 'Transaction' : 'Unknown';
 
-      
-  /* ────────────────────────── render ────────────────────────── */
+  const vmIdToName = Object.fromEntries(
+    vendingMachines.map(vm => [String(vm.vm_id), vm.vm_name])
+  );
+
+  /* ─────────────── render ─────────────── */
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -132,10 +128,9 @@ export default function DashboardScreen({ route, navigation }) {
         <Layout style={styles.container}>
           <Text category="h5">Dashboard</Text>
           <Text>{`Welcome, ${user.email} (${user.u_role})`}</Text>
-          <RNText style={styles.instruction}>
-            Select a vending machine to manage inventory.
-          </RNText>
+          <RNText style={styles.instruction}>Select a vending machine to manage inventory.</RNText>
 
+          {/* search + reload */}
           <View style={styles.topRow}>
             <Input
               placeholder="Search VMs"
@@ -147,36 +142,31 @@ export default function DashboardScreen({ route, navigation }) {
               Reload
             </Button>
           </View>
-          
-          {/* Add this right here before the List */}
-          {Object.keys(locations).length > 0 && (() => {
-            const vmIdToName = Object.fromEntries(
-              vendingMachines.map(vm => [String(vm.vm_id), vm.vm_name])
-            );
-          
-            return (
-              <VMMap
-                markers={Object.entries(locations).map(([vm_id, loc]) => ({
-                  vm_id,
-                  lat: loc.lat,
-                  lng: loc.lng,
-                  vm_name: vmIdToName[vm_id] || 'Unknown',
-                }))}
-              />
-            );
-          })()}
 
+          {/* map with inventory-aware markers */}
+          {Object.keys(locations).length > 0 && (
+            <VMMap
+              markers={Object.entries(locations).map(([id, loc]) => ({
+                vm_id: id,
+                lat: loc.lat,
+                lng: loc.lng,
+                vm_name: vmIdToName[id] || 'Unknown',
+                inventory: inventories[id] || [],
+              }))}
+            />
+          )}
+
+          {/* VM list */}
           <List
             data={filtered}
             renderItem={({ item }) => {
               const registered =
                 (item.vm_row_count ?? 0) > 0 && (item.vm_column_count ?? 0) > 0;
-
-              const dimText = registered
-                ? `${item.vm_row_count} × ${item.vm_column_count}`  // e.g. “6 × 4”
+              const dim = registered
+                ? `${item.vm_row_count} × ${item.vm_column_count}`
                 : 'Unregistered';
-              const modeText = item.vm_mode ? modeLabelFor(item.vm_mode) : 'Unknown';
-            
+              const mode = item.vm_mode ? modeLabelFor(item.vm_mode) : 'Unknown';
+
               return (
                 <ListItem
                   title={() => (
@@ -192,10 +182,12 @@ export default function DashboardScreen({ route, navigation }) {
                   )}
                   description={() => {
                     const loc = locations[item.vm_id];
-                    const coords = loc ? `Lat: ${loc.lat.toFixed(4)}, Lng: ${loc.lng.toFixed(4)}` : 'No Location';
+                    const coords = loc
+                      ? `Lat: ${loc.lat.toFixed(4)}, Lng: ${loc.lng.toFixed(4)}`
+                      : 'No Location';
                     return (
                       <Text appearance="hint">
-                        ID: {item.vm_id} · {dimText} · Mode: {onlineStatus[item.vm_id] ? modeText : 'Unknown'} · {coords}
+                        ID: {item.vm_id} · {dim} · Mode: {onlineStatus[item.vm_id] ? mode : 'Unknown'}
                       </Text>
                     );
                   }}
@@ -210,6 +202,7 @@ export default function DashboardScreen({ route, navigation }) {
           />
         </Layout>
 
+        {/* bottom bar */}
         <View style={styles.bottomBar}>
           <Button
             style={styles.addButton}
@@ -221,16 +214,10 @@ export default function DashboardScreen({ route, navigation }) {
           </Button>
 
           <View style={styles.actionRow}>
-            <Button
-              style={styles.button}
-              onPress={() => navigation.navigate('Organization', { user })}
-            >
+            <Button style={styles.button} onPress={() => navigation.navigate('Organization', { user })}>
               Manage Organization
             </Button>
-            <Button
-              style={styles.button}
-              onPress={handleLogout}
-            >
+            <Button style={styles.button} onPress={handleLogout}>
               Logout
             </Button>
           </View>
@@ -240,28 +227,25 @@ export default function DashboardScreen({ route, navigation }) {
   );
 }
 
-/* ───────────────────────── styles ───────────────────────── */
+/* ───────── styles ───────── */
 const styles = StyleSheet.create({
-  safeArea:      { flex: 1 },
+  safeArea: { flex: 1 },
   keyboardAvoid: { flex: 1, position: 'relative' },
-
-  container: { flex: 1, padding: 24 , maxHeight: '91vh' },
-
+  container: { flex: 1, padding: 24, maxHeight: '91vh' },
   instruction: { marginVertical: 12, fontStyle: 'italic' },
-
-  topRow:   { flexDirection: 'row', alignItems: 'center' },
-  input:    { flex: 1, marginRight: 8 },
-  reloadBtn:{ width: 80 },
-
+  topRow: { flexDirection: 'row', alignItems: 'center' },
+  input: { flex: 1, marginRight: 8 },
+  reloadBtn: { width: 80 },
   list: { flex: 1, marginVertical: 8 },
   vmRow: { flexDirection: 'row', alignItems: 'center' },
   statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
-  greenDot:  { backgroundColor: '#4caf50' },
-  redDot:    { backgroundColor: '#f44336' },
-
+  greenDot: { backgroundColor: '#4caf50' },
+  redDot: { backgroundColor: '#f44336' },
   bottomBar: {
     position: 'absolute',
-    left: 0, right: 0, bottom: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     padding: 16,
     backgroundColor: '#fff',
     borderTopWidth: 1,
@@ -274,5 +258,5 @@ const styles = StyleSheet.create({
   },
   addButton: { marginBottom: 12 },
   actionRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  button:    { flex: 1, marginHorizontal: 4 },
+  button: { flex: 1, marginHorizontal: 4 },
 });
