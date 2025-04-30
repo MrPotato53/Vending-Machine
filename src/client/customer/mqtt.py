@@ -45,7 +45,7 @@ class MQTTConnection:
             resp = session.get('https://api.ipify.org?format=json', timeout=5)
             resp.raise_for_status()
             ip = resp.json().get('ip')
-            print(f"Fetched public IP: {ip}")
+            # print(f"Fetched public IP: {ip}")
             return ip
 
         def scan_wifi_aps() -> list:
@@ -163,7 +163,7 @@ class MQTTConnection:
                         if loc:
                             payload = json.dumps({'lat': loc['lat'], 'lng': loc['lng']})
                             client.publish(loc_topic, payload, qos=1, retain=True)
-                            # print(f"Published location for {hardware_id}: {payload}")
+                            print(f"Published location for {hardware_id}: {payload}")
                         else:
                             print(f"Geolocation API returned no location for {hardware_id}")
 

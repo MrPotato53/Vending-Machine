@@ -80,6 +80,9 @@ export default function DashboardScreen({ route, navigation }) {
             api.isVMOnline(vm.vm_id),
             api.getVMLocation(vm.vm_id),
             api.getInventory(vm.vm_id),
+            vm.vm_mode == null           // run only if needed
+            ? api.getVendingMachine(vm.vm_id)
+            : Promise.resolve(null),
           ]);
 
           statusObj[vm.vm_id] = isOnline;
