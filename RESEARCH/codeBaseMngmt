@@ -1,0 +1,18 @@
+Closses Issue #26
+Through settings -> Repository -> Push Rules -> Prohibited File 
+Names
+https://docs.gitlab.com/user/project/repository/push_rules/#prohibit-files-by-name
+
+It only takes regex and I think the expression (logo||LOGO) should be fine. It would prevent any logo files from being pushed to the repo. But anyone could change the Prohibited File Names regex. 
+
+Alternatively, 
+Through Project_19 -> logo.png -> lock (upper right)
+https://docs.gitlab.com/user/project/file_lock/
+
+We could use locks instead. Which would still allow the person who holds the lock to edit the logo.
+https://docs.gitlab.com/user/project/file_lock/
+
+More complex rules can be made with hooks. 
+https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks
+
+We might need hooks or locks in the future but a prohibited name works fine here. We aren't changing it atm. If that's alright with everyone I'll set it up.

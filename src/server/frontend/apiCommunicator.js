@@ -1,8 +1,18 @@
 import { Platform } from 'react-native';
 
 // Dynamically pick host & port
+<<<<<<< HEAD
+<<<<<<< HEAD
 //const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'cs506x19.cs.wisc.edu';
+=======
+const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+//const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'cs506x19.cs.wisc.edu';
+>>>>>>> aa7e6a5 (Implemented email invites)
+=======
+const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+//const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'cs506x19.cs.wisc.edu';
+>>>>>>> d9e5014e66e1592b527c63d07e404b8fd5fa3da0
 const PORT = '8080';
 const API_BASE = `http://${HOST}:${PORT}`;
 
