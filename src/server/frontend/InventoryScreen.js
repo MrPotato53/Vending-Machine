@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, isValidElement } from 'react';
+import React, { useState, useEffect, useCallback, isValidElement, useRef } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -11,7 +11,8 @@ import { Layout, Text, Input, Button, Modal, Card } from '@ui-kitten/components'
 import api from './apiCommunicator';
 
 export default function InventoryScreen({ route, navigation }) {
-  const { user, vm } = route.params;
+  const { user, vm: initialVm } = route.params;
+  const [vm, setVm] = useState(initialVm);
   const [vmInventory, setVmInventory] = useState([]);
   const [onlineStatus, setOnlineStatus] = useState(false);
   const [isRestockMode, setIsRestockMode] = useState(false);
@@ -23,8 +24,18 @@ export default function InventoryScreen({ route, navigation }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [orderedSlots, setOrderedSlots] = useState([]);
 
+  // Create a reference to store the interval ID
+  const intervalRef = useRef(null);
   const vmIsRegistered = Boolean(vm.vm_row_count && vm.vm_column_count);
-
+  // Track vm_mode: 'i'=idle, 'r'=restock, 't'=transaction
+  const modeChar = vm.vm_mode ?? (isRestockMode ? 'r' : 'i');
+  const modeLabel = modeChar === 'i'
+  ? 'Idle'
+  : modeChar === 'r'
+  ? 'Restocking'
+  : modeChar === 't'
+  ? 'Ongoing Transaction'
+  : 'Unknown';
   const fetchInventory = useCallback(async () => {
     try {
       const inv = await api.getInventory(vm.vm_id);
@@ -40,6 +51,16 @@ export default function InventoryScreen({ route, navigation }) {
       setOnlineStatus(isOnline);
     } catch (error) {
       showError(`Failed to fetch inventory: ${error.message}`);
+    }
+  }, [vm.vm_id]);
+
+  // Fetch latest VM details
+  const fetchVmDetails = useCallback(async () => {
+    try {
+      const updatedVm = await api.getVendingMachine(vm.vm_id);
+      setVm(updatedVm);
+    } catch (error) {
+      // ignore or show error
     }
   }, [vm.vm_id]);
 
@@ -61,6 +82,28 @@ export default function InventoryScreen({ route, navigation }) {
     fetchInventory();
   }, [fetchInventory]);
 
+  // Poll VM details and inventory every 1 second
+  useEffect(() => {
+    // Clear any existing interval first (belt and suspenders approach)
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+    
+    // Create new interval and store its ID in the ref
+    intervalRef.current = setInterval(() => {
+      fetchVmDetails();
+      fetchInventory();
+    }, 1000);
+    
+    // Return cleanup function
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [fetchVmDetails, fetchInventory]);
+
   const showError = (message) => {
     setErrorMessage(message);
     setShowErrorModal(true);
@@ -68,13 +111,21 @@ export default function InventoryScreen({ route, navigation }) {
 
   const deleteVm = async () => {
     try {
-      setShowDeleteConfirm(false); // Close the confirmation modal first
+      setShowDeleteConfirm(false);
+      
+      // Clear the polling interval BEFORE deleting or navigating
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      
       await api.deleteVendingMachine(vm.vm_id);
       navigation.navigate('Dashboard', { user });
     } catch (e) {
       showError(`Could not delete: ${e.message}`);
     }
   };
+  
   const startRestock = async () => {
     if (!vmIsRegistered) return;
     
@@ -123,7 +174,7 @@ export default function InventoryScreen({ route, navigation }) {
 
   const cancelRestock = async () => {
     try {
-      await api.updateVendingMachineMode(vm.vm_id, 'i');
+      vm.vm_mode == 'r' ? await api.updateVendingMachineMode(vm.vm_id, 'i') : null;
       setIsRestockMode(false);
       setEditedItems({});
       setNewItems({});
@@ -244,7 +295,7 @@ export default function InventoryScreen({ route, navigation }) {
               <Input
                 style={styles.input}
                 placeholder="Price"
-                keyboardType="numeric"
+                keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'decimal-pad'}
                 value={editedItems[slot]?.price}
                 onChangeText={v => handleItemChange(slot, 'price', v)}
               />
@@ -300,7 +351,7 @@ export default function InventoryScreen({ route, navigation }) {
               <Input
                 style={styles.input}
                 placeholder="Price"
-                keyboardType="numeric"
+                keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'decimal-pad'}
                 value={newItems[slot]?.price}
                 onChangeText={v => handleNewItemChange(slot, 'price', v)}
               />
@@ -346,7 +397,10 @@ export default function InventoryScreen({ route, navigation }) {
             <View style={[styles.statusDot, onlineStatus ? styles.greenDot : styles.redDot]} />
             <Text category="p2">{onlineStatus ? 'Online' : 'Offline'}</Text>
             <Text style={vmIsRegistered ? styles.registeredTag : styles.unregisteredTag}>
-              {vmIsRegistered ? 'Registered' : 'Unregistered'}
+              {vmIsRegistered ? `Registered` : 'Unregistered'}
+            </Text>
+            <Text >
+              {vmIsRegistered ? ` Mode: ${modeLabel}` : ''}
             </Text>
           </View>
 
@@ -412,6 +466,7 @@ export default function InventoryScreen({ route, navigation }) {
           visible={showErrorModal}
           backdropStyle={styles.backdrop}
           onBackdropPress={() => setShowErrorModal(false)}
+          style={styles.modalContainer}
         >
           <Card>
             <Text category="h6">Error</Text>
@@ -424,6 +479,7 @@ export default function InventoryScreen({ route, navigation }) {
           visible={showDeleteConfirm}
           backdropStyle={styles.backdrop}
           onBackdropPress={() => setShowDeleteConfirm(false)}
+          style={styles.modalContainer}
         >
           <Card>
             <Text category="h6">Confirm Delete</Text>
@@ -633,6 +689,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 12,
+  },
+  modalContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 0,              // remove any default margins
   },
   emptyContainer: {
     flex: 1,
