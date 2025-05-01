@@ -62,7 +62,8 @@ const api = {
     apiFetch(`/mqtt/health/${encodeURIComponent(vmId)}`),
   notifyRestock: (vmId) =>
     apiFetch(`/mqtt/restock/${encodeURIComponent(vmId)}`, { method: 'POST' }),
-
+  getVMLocation: (vmId) =>
+    apiFetch(`/mqtt/location/${encodeURIComponent(vmId)}`),
   // —— Users (/users) ——
   createUser: (userData) =>
     apiFetch(`/users/new`, { method: 'POST', body: userData }),
