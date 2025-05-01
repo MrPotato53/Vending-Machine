@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("../db/db_connection");
 const orgData = require("../db/orgs");
 const users = require("../db/users");
+const emailer = require("../email/login");
 const router = express.Router();
 
 // GET /orgs/by-name/:org_name
@@ -229,19 +230,18 @@ router.get("/:id/display", async (req, res) => {
 
 router.post('/:id/add-user', async (req, res) => {
   const orgId = req.params.id;
-  const { u_email, admin_email } = req.body;
+
+  const { u_email, admin_email, group_id, role } = req.body;
 
   if (!u_email || !admin_email) {
     return res.status(400).json({ error: 'u_email and admin_email required' });
+
   }
 
   try {
     // 1) check org exists
-    const [orgRows] = await db.query(
-      'SELECT * FROM orgs WHERE org_id = ?',
-      [orgId]
-    );
-    if (orgRows.length === 0) {
+    
+    if (orgData.org_exist(orgId) === false) {
       return res.status(404).json({ error: `Org ${orgId} not found` });
     }
 
@@ -254,7 +254,9 @@ router.post('/:id/add-user', async (req, res) => {
     // 3) check target user exists
     const exists = await users.userExist(u_email);
     if (!exists) {
-      return res.status(404).json({ error: `User ${u_email} not found` });
+      emailer.inviteNewUser(u_email, orgId, group_id, role, admin_email);
+
+      return res.status(404).json({ error: `User ${u_email} not found, invite email sent.` });
     }
 
     // 4) update their org_id
