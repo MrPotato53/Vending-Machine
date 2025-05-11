@@ -4,6 +4,7 @@ import { ApplicationProvider, IconRegistry } from '@ui-kitten/components';
 import { EvaIconsPack } from '@ui-kitten/eva-icons';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import 'leaflet/dist/leaflet.css';
 
 import LoginScreen from './LoginScreen';
 import RegisterScreen from './RegisterScreen';

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 print_usage() {
     echo ""
@@ -51,15 +51,47 @@ OS="$(uname -s)"
 
 if [ "$OS" = "Linux" ] || [ "$OS" = "Darwin" ]; then
     # Linux (including Raspberry Pi OS) and macOS
-    docker run --network=host --rm -it vending-machine-frontend python "$SCRIPT"
+    docker run \
+      --network host \
+      --cap-add NET_ADMIN \
+      --cap-add SYS_MODULE \
+      --device /dev/net/tun \
+      --rm -it vending-machine-frontend \
+      python "$SCRIPT"
+
 elif [[ "$OS" == MINGW* || "$OS" == MSYS* || "$OS" == CYGWIN* ]]; then
-    # Windows (Git Bash) — fallback, assuming winpty is available
+    # Windows (Git Bash)
+    echo "Generating Wi-Fi AP list for Windows via Python…"
+    python ./generate_wifi_aps.py
+
+    # Ensure the JSON file exists
+    if [ ! -f customer/wifi_aps.json ]; then
+        echo "ERROR: customer/wifi_aps.json not found after generation!"
+        exit 1
+    fi
+
+    # Convert to Windows-style path for Docker
+    HOST_WIFI_JSON="$(pwd -W | sed 's|/|\\\\|g')\\customer\\wifi_aps.json"
+    echo "Mounting host file (Windows path): $HOST_WIFI_JSON"
+
+    # Pause before launching
+    echo "Pausing for 3 seconds..."
+    sleep 3
+
+    # Run container, mounting the JSON
     if command -v winpty >/dev/null 2>&1; then
-        winpty docker run --rm -it vending-machine-frontend python "$SCRIPT"
+        winpty docker run --rm -it \
+          -v "$HOST_WIFI_JSON:/app/wifi_aps.json:ro" \
+          vending-machine-frontend \
+          python "$SCRIPT"
     else
         echo "Warning: winpty not found. Running without it..."
-        docker run --rm -it vending-machine-frontend python "$SCRIPT"
+        docker run --rm -it \
+          -v "$HOST_WIFI_JSON:/app/wifi_aps.json:ro" \
+          vending-machine-frontend \
+          python "$SCRIPT"
     fi
+
 else
     echo "Unsupported OS: $OS"
     exit 1
